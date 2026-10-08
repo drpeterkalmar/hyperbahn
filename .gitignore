@@ -1,0 +1,4 @@
+node_modules/
+assets_src/
+tests/shots/*
+!tests/shots/final/
