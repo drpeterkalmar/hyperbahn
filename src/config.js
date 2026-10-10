@@ -26,7 +26,7 @@ export const GLEITER = {
   schub: 26,         // m/s² Beschleunigung aus dem Stand (fällt quadratisch zum Höchsttempo ab)
   hoehe: 1.2,        // m Schwebehöhe (Ruhelage der Federn)
   reichweite: 4.5,   // m Reichweite der Schwebe-Raycasts (darüber = in der Luft)
-  omega: 15,         // rad/s Eigenfrequenz der Schwebe-Federn (steif genug für ~10 g im Looping)
+  omega: 18,         // rad/s Eigenfrequenz der Schwebe-Federn (+ progressiver Anteil: hält ~15 g im Looping)
   zeta: 0.75,        // Dämpfungsgrad
   minHoehe: 0.3,     // m darunter: harter Aufsetzer (Funken, Tempoverlust)
   gierMax: 1.9,      // rad/s größte Gierrate (Lenken) bei niedrigem Tempo
@@ -52,7 +52,7 @@ export const MAGNET = {
 export const BOOST = {
   gewinn: 0.5,       // +50 % Höchsttempo und Schub je Pad (?boost=)
   dauer: 1.5,        // s je Pad
-  deckel: 1.0,       // höchstens +100 % gestapelt
+  deckel: 0.7,       // höchstens +70 % gestapelt (Kette = immer schneller, gedeckelt)
   ring: 0.35,        // Boost-Ring in der Luft
   rolle: 0.4,        // Barrel-Roll im Sprung = Turbo
 };

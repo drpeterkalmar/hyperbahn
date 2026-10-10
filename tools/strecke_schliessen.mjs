@@ -6,7 +6,7 @@ import { strecke1Abschnitte, SCHLUSS } from '../src/track/strecke1.js';
 
 function fehler(x) {
   const [a, b, c, d] = x;
-  if (a < 150 || b < 150 || d < 0 || d > 12) return 1e12;
+  if (a < 60 || b < 150 || d < 0 || d > 16) return 1e12;
   const bahn = baueBahn(strecke1Abschnitte({ a, b, c, d }));
   return bahn.schluss.m ** 2 + (bahn.schluss.grad * 20) ** 2;
 }

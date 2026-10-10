@@ -80,13 +80,16 @@ test('Pflicht-Passagen vorhanden', () => {
   const spr = segNamen('sprung');
   assert.ok(spr.length >= 2);
   for (const [a, k] of spr) {
-    assert.ok(a.len >= 400 && a.luecke);
+    // Lücke = zusammenhängende Abschnitte mit luecke (Sprung + Sprung-Mitte)
+    let lk = 0, kk = k; while (ab[kk].luecke) { lk += ab[kk].len; kk++; }
+    assert.ok(lk >= 400 && a.luecke, `${a.name}: Lücke ${lk} m`);
     const s0 = bahn.segStart[k - 1];   // Absprung-Rampe
     assert.equal(ab[k - 1].absprung, true);
     const pads = bahn.pads.filter((p) => p.s0 < s0 && p.s0 > s0 - 600);
     assert.ok(pads.length >= 3, `${a.name}: ${pads.length} Pads in der Kette`);
-    assert.ok(ab[k + 1].landezone && ab[k + 1].breite >= 18, 'breite Landezone');
-    assert.ok((a.ringe || []).length >= 2, 'Boost-Ringe in der Luft');
+    assert.ok(ab[kk].landezone && ab[kk].breite >= 18, 'breite Landezone');
+    const ringe = bahn.ringe.filter((r) => r.s >= bahn.segStart[k] && r.s <= bahn.segStart[kk]);
+    assert.ok(ringe.length >= 2, 'Boost-Ringe in der Luft');
   }
   // Steilkurve ≥ 45°, Tunnel
   assert.ok(ab.some((a) => a.typ === 'kurve' && Math.max(...[].concat(a.bank)) >= 45));
