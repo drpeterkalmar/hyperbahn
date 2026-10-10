@@ -63,7 +63,7 @@ import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => consol
 const eingabe = new Eingabe(window);
 const rig = new KameraRig();
 let rennen = null, hilfe = null, waechter = null, regie = null, uhr = null, meshes = [], spielerT = null;
-let laeuft = false, praes = 0, vibLetzt = -9, autopilot = null;
+let laeuft = false, praes = 0, vibLetzt = -9, autopilot = null, scheinBis = 0;
 // ?at=Großer Looping | ?at=1600 → Bogenlänge oder null
 function startStelle() {
   if (!q.has('at')) return null;
@@ -149,7 +149,10 @@ function ereignisse() {
         case 'ring': blitz(0.6, [1, 0.3, 0.9]); hud.meldung('BOOST-RING', praes, 0.8); break;
         case 'wand': blitz(0.4 * e.staerke, [1, 0.25, 0.1]); rig.stoss(0.5 * e.staerke); break;
         case 'landung': if (e.luft > 1.5) { blitz(0.5, [1, 0.9, 0.7]); rig.stoss(0.7); funken.spruehe(g.p, g.v, 60, 20); hud.meldung(`${e.luft.toFixed(1)} s · ${Math.round(e.weite)} m`, praes, 1.4); } break;
-        case 'absprung': uhr.akzent(); break;   // offline echter Akzent, online nur Schein (Kamera)
+        case 'absprung':
+          // offline: echter Zeitlupe-Akzent (0,3 s); online: Schein-Akzent (nur Kamera/Ton, Zeit bleibt echt)
+          if (!uhr.akzent() && SPIEL.online && ZEIT.slowmo) scheinBis = praes + ZEIT.slowmoDauer;
+          break;
         case 'magnet': blitz(0.45, [0.6, 0.25, 1]); vibriere(30); break;
         case 'rolle': hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); break;
         case 'patzer': hud.meldung('PATZER', praes, 1); break;
@@ -204,13 +207,15 @@ function bild() {
     if (rennen.phase === 'ziel' && laeuft) { laeuft = false; setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k), 1500); }
     rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
     rig.update(dt, g, fx);
+    const schein = praes < scheinBis ? 1 : 0;   // Schein-Akzent online: kurzer Ran-Zoom statt Zeitlupe
+    rig.fov -= 8 * schein;
     wendeAn(camera, rig);
     hud.update({
       tempo: g.tempo, platz: spielerT.platz, von: rennen.alle.length, runde: spielerT.runde, runden: rennen.runden,
       zeit: rennen.zeit - spielerT.rundenStart, beste: spielerT.beste, schild: g.schild, boost: g.boost / 0.7,
       magnet: !!(g.q.flags & F_MAGNET), speedOk: speedOk(g), countdown: rennen.countdown,
     }, praes);
-    if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton });
+    if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {
     // Menü: langsame Kamerafahrt über die Strecke
     const s = (praes * 40) % bahn.L, i = Math.floor(s / bahn.ds);
