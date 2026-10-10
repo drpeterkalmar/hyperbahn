@@ -16,7 +16,7 @@ import { clamp, smoothstep } from '../core/util.js';
 // Beschleunigung je Band in m/s² (bei Höchsttempo 95 m/s; ausgelegt auf 0→90 % in 2,5 / 3,0 / 2,8 s, letzte 10 % ≈ 1,5 s)
 export const KLASSEN = {
   leicht: { name: 'Leicht', baender: [42.2, 45.5, 50.3, 55.2, 53.6, 43.8, 32.5, 21.9, 16.2, 6.3], top: 1.015, stoss: 0.8, rand: 0.26, neustart: 2.5 },
-  mittel: { name: 'Mittel', baender: [49.2, 47.7, 44.9, 39.1, 33.3, 27.5, 23.2, 19.5, 15.2, 6.3], top: 1.0, stoss: 1.1, rand: 0.30, neustart: 2.0 },
+  mittel: { name: 'Mittel', baender: [49.2, 47.7, 44.9, 39.1, 33.3, 27.5, 23.2, 19.5, 15.2, 7.0], top: 1.0, stoss: 1.1, rand: 0.30, neustart: 2.0 },
   schwer: { name: 'Schwer', baender: [53.3, 52.2, 49.2, 36.9, 22.5, 19.0, 23.6, 29.7, 27.7, 6.3], top: 1.0, stoss: 2.2, rand: 0.34, neustart: 1.5 },
 };
 export const KLASSEN_LISTE = Object.keys(KLASSEN);
@@ -54,7 +54,7 @@ export const GEFUEHL = {
   treffer: 1.0,       // ?treffer=  Faktor auf den Tempoverlust
   schlingern: 0.9,    //            s Rettungsfenster
   dreher: 1.2,        //            s Kontrollverlust
-  verlustMensch: 0.20, verlustKi: 0.60,
+  verlustMensch: 0.24, verlustKi: 0.60,   // Tempoverlust im Dreher (Mensch behält Schwung, KI verliert mehr)
   neustart: 1,        // ?neustart=0 Neustart-Rhythmus aus
   neustartTipps: 5, neustartTakt: [0.03, 0.13], neustartDauer: 2.0,
   // Stoß, Gummiband, Kamera, Items

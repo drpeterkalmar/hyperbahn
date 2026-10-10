@@ -15,6 +15,13 @@ ES-Module, PWA über GitHub Pages. Plan: Phasen 1–4 als Queue-Jobs (`~/.hermes
 | Barrel-Roll im Sprung (= Turbo) | Leertaste | Taste „⟲ ROLLE“ | A |
 | Nase heben / senken (in der Luft) | ↓ / ↑ | – | linker Stick vor/zurück |
 
+**Drift + Mini-Turbo:** In der Kurve die Luftbremse auf der Innenseite halten = Rutschen. Kurz lösen und wieder ziehen
+(„pumpen“) hebt die Funkenstufe (cyan → magenta → weiß-gold); loslassen ab Stufe 2 gibt einen Turbo-Schub. Zu lange
+halten (> 1,7 s) lässt die Stufe verfallen. **Start-Boost:** Gas genau auf „Grün“ tippen (Fenster 0,25 s; Touch: Finger auf
+den Bildschirm) – wer schon lange vorher Vollgas gibt, überdreht. **Treffer** (ab Phase 2): beide Luftbremsen ziehen fängt
+den Gleiter ab; im Dreher 5× schnell Gas tippen = Neustart-Schub. **Gleiter-Klassen:** Leicht (spritzig), Mittel, Schwer
+(oben stark, rammt). Fahrgefühl inspiriert von klassischen Fun-Racern der 90er.
+
 Luftbremsen machen Kurven enger (auf der Kurveninnenseite ziehen). Boost-Pads am Boden stapeln sich (Kette = immer
 schneller, gedeckelt), Boost-Ringe in der Luft geben Extra-Schub. In Magnet-Abschnitten (violett/cyan pulsierende Streifen)
 hält der Gleiter auch langsam kopfüber. Vor jedem Riesensprung zeigt das HUD „SPEED OK“ bzw. „MEHR TEMPO!“.
@@ -30,13 +37,17 @@ die Kontrolle weg: deutliches Lenken blendet sie in 0,25 s aus.
 der Luft · `?slowmo=0` Absprung-Zeitlupe aus · `?action=0|1|2` · `?blitze=0` Blitze reduzieren · `?horizont=1` ·
 `?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=3` · `?look=0|1|2` Grafikstufe ·
 `?kl=-bloom` Kino-Look-Stufen · `?online=1` (Test: Zeit-Logik wie online, nur Schein-Zeitlupe).
+Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle gleich) · `?kurve=0.01` · `?lenk=1` ·
+`?drift=1` (Mini-Turbo-Schub) · `?mtzeit=0.3` · `?hupf=0` · `?startfenster=0.25` · `?rand=0.3` (Störfeld am Rand) ·
+`?landebonus=0.1` · `?treffer=1` · `?neustart=0` · `?stoss=0.85` · `?gummiband=0|1|2` · `?fov=62` · `?fovboost=12` ·
+`?items=hb|ref` (Phase 2).
 Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Start), `?autopilot=1`, `?nosw`.
 
 ## Tests (ohne Browser)
 `npm run test:node` bzw. `node --test tests/node/test_*.mjs` – Strecke (geschlossen, stetig, Pflicht-Passagen),
 Schwebe-Physik (Magnethaftung kopfüber, Looping bei 25 m/s und 800 km/h, Boost, Sprünge, Wand), KI-Gate (8 Gleiter ×
 10 Runden ohne Abflug), Zeit-Logik/Action-Momente, Fahrhilfe, Kamera, Geometrie, Modul-Rauchtest.
-Werkzeuge: `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
+Werkzeuge: `node tools/gefuehl_mess.mjs` (14 Fahrgefühl-Messgrößen als Tabelle), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
 `node tools/strecke_schliessen.mjs` (Runde schließen nach Änderungen an Strecke 1).
 
 ## Recht

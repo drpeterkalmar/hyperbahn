@@ -15,9 +15,9 @@ import { clamp } from '../core/util.js';
 import { GEFUEHL } from '../physics/fahrgefuehl.js';
 
 export const KAM = {
-  abstand: 9.5, hoehe: 2.6, blickVor: 9, fovTempo: 4,
+  abstand: 9.5, hoehe: 2.6, blickVor: 9, fovTempo: 0,   // Sichtfeld hängt nicht am Tempo (nur Boost/Sprung/Treffer)
   panoramaAbstand: 16, panoramaHoehe: 6, panoramaZeit: 0.8, glatt: 0.09, ruck: 0.35,
-  tauWaag: 0.039, tauSenk: 0.103, nachlauf: 0.3,   // s: Tempo-Glättung (0,35 bzw. 0,15 je 1/60 s) und Versatz-Faktor
+  tauWaag: 0.039, tauSenk: 0.103, nachlauf: 0.55,   // s: Tempo-Glättung (0,35 bzw. 0,15 je 1/60 s) und Versatz-Faktor
 };
 
 const WELT_OBEN = v3(0, 1, 0);
