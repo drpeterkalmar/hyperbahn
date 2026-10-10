@@ -4,6 +4,7 @@
 // Lücken (Sprünge) bekommen keine Fahrbahn – die Bänder werden dort unterbrochen.
 // Alle Zahlen sind Startwerte (TODO Heavy-Job: am Bild abstimmen).
 import { F_LUECKE, F_ROEHRE, F_MAGNET, F_LANDEZONE } from '../track/bahn.js';
+import { GEFUEHL } from '../physics/fahrgefuehl.js';
 
 export const GEO = {
   spalten: 6,          // Querteilung der Fahrbahn
@@ -80,7 +81,7 @@ function band(b, bahn, i0, i1, profilFn, { schritt = GEO.schritt, geschlossen = 
 }
 
 export function baueBahnGeometrie(bahn) {
-  const teile = { fahrbahn: puffer(), deck: puffer(), wand: puffer(), kante: puffer(), magnet: puffer(), roehre: puffer(), pads: puffer() };
+  const teile = { fahrbahn: puffer(), deck: puffer(), wand: puffer(), kante: puffer(), magnet: puffer(), roehre: puffer(), pads: puffer(), stoerfeld: puffer() };
   const C = GEO.spalten;
   const fahrbar = bereiche(bahn, (i) => !(bahn.flags[i] & F_LUECKE));
   for (const [i0, i1] of fahrbar) {
@@ -105,6 +106,15 @@ export function baueBahnGeometrie(bahn) {
         const hw = bahn.hw[k];
         return sg > 0 ? [[hw - GEO.kanteB, GEO.wandH], [hw + 0.05, GEO.wandH]] : [[-hw - 0.05, GEO.wandH], [-hw + GEO.kanteB, GEO.wandH]];
       }, { schritt: 1 });
+    }
+  }
+  // Störfeld am Bahnrand (Fahrgefühl: dort −30 % Schub, Abkürzen lohnt nicht): Warnstreifen innen an der Begrenzung
+  for (const [i0, i1] of fahrbar) {
+    for (const sg of [1, -1]) {
+      band(teile.stoerfeld, bahn, i0, i1, (k) => {
+        const hw = bahn.hw[k], a = hw - GEFUEHL.randBreite;
+        return sg > 0 ? [[a, 0.03], [hw - 0.05, 0.03]] : [[-hw + 0.05, 0.03], [-a, 0.03]];
+      });
     }
   }
   // Magnet-Streifen

@@ -135,6 +135,8 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
       for (const fl of flammen) { fl.scale.set(1, len * (0.9 + 0.2 * Math.random()), 1); }
       const lenk = ein ? ein.lenk : 0;
       koerper.rotation.z += ((-lenk * 0.22) - koerper.rotation.z) * Math.min(1, dt * 6);
+      // Treffer-Dreher: Modell dreht sich um die Hochachse (die Physik behält die Fahrtrichtung)
+      koerper.rotation.y = g.drehWinkel || 0;
       // Spur weiterschieben
       if (!spurGefuellt) { for (let k = 0; k < SPUR_N; k++) schreibeSpur(k, g); spurGefuellt = true; }
       spurPos.copyWithin(6, 0, (SPUR_N - 1) * 6);

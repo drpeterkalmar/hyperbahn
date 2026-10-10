@@ -6,7 +6,7 @@
 // Mess-/Abnahme-Regler: ?autostart=1 (Menü überspringen), ?at=<Abschnittsname oder s in m> (Feld dort aufstellen, fliegender
 // Start), ?autopilot=1 (Spieler fährt per KI – Screenshots/Mess-Gate), ?nosw (ohne Service-Worker), ?look=, ?kl=.
 import * as THREE from 'three';
-import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER } from './config.js';
+import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST } from './config.js';
 import { strecke1, SPRUNG_MINDEST } from './track/strecke1.js';
 import { F_MAGNET } from './track/bahn.js';
 import { bauePlan, Pilot, PROFILE } from './ai/pilot.js';
@@ -242,7 +242,7 @@ function bild() {
     wendeAn(camera, rig);
     hud.update({
       tempo: g.tempo, platz: spielerT.platz, von: rennen.alle.length, runde: spielerT.runde, runden: rennen.runden,
-      zeit: rennen.zeit - spielerT.rundenStart, beste: spielerT.beste, schild: g.schild, boost: g.boost / 0.7,
+      zeit: rennen.zeit - spielerT.rundenStart, beste: spielerT.beste, schild: g.schild, boost: Math.min(1, (g.boost + g.mt) / BOOST.deckel),
       magnet: !!(g.q.flags & F_MAGNET), speedOk: speedOk(g), countdown: rennen.countdown,
     }, praes);
     if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });

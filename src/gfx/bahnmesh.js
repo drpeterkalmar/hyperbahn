@@ -110,6 +110,19 @@ export function baueBahnMesh(bahn, opt = {}) {
     }`);
   gruppe.add(new THREE.Mesh(geo(teile.magnet), magMat));
 
+  // Störfeld am Rand: schräge, leicht flackernde Warnstreifen (additiv, dezent)
+  const stoerMat = leuchtMaterial(`
+    void main() {
+      float st = step(0.5, fract(vWeg * 0.25 + vUv.x * 1.5));
+      float flacker = 0.75 + 0.25 * sin(uZeit * 9.0 + vWeg * 0.05) * uStrobo;
+      vec3 c = vec3(1.0, 0.28, 0.06) * (0.12 + 0.55 * st) * flacker * smoothstep(0.0, 0.25, vUv.x);
+      gl_FragColor = vec4(c, 1.0);
+      ${ENDE}
+    }`);
+  stoerMat.transparent = true; stoerMat.blending = THREE.AdditiveBlending; stoerMat.depthWrite = false;
+  stoerMat.polygonOffset = true; stoerMat.polygonOffsetFactor = -1;
+  gruppe.add(new THREE.Mesh(geo(teile.stoerfeld), stoerMat));
+
   // Röhren: dunkles Glas (Stadt scheint durch) + Lichtringe
   const r = LOOK.roehre;
   const roehreMat = new THREE.MeshStandardMaterial({ color: r.glas, roughness: 0.08, metalness: 0.3, transparent: true, opacity: r.deckkraft, side: THREE.DoubleSide, depthWrite: false });

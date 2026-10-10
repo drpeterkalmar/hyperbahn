@@ -1,5 +1,5 @@
 # Schreibt sw.js neu: Precache-Liste aller Spieldateien + Inhalts-Hash als Version (Cache-Busting).
-# Nach jeder Änderung an Spieldateien ausführen: python3 tools/update_sw.py
+# Nach jeder Änderung an Spieldateien ausführen: python3 tools/update_sw.py  (Hyperbahn: aus der Stuntbahn übernommen)
 import hashlib, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 files = ['index.html', 'manifest.webmanifest', 'css/style.css']
@@ -30,6 +30,10 @@ for f in hashed:
     if f == 'src/build.js': continue  # enthält selbst die Version
     h.update(f.encode()); h.update(open(os.path.join(ROOT, f), 'rb').read())
 ver = h.hexdigest()[:10]
+# Hyperbahn-Vorbau: feste Version per Argument (python tools/update_sw.py --version vorbau) – Cache-Busting über den
+# Inhalts-Hash macht der Heavy-Job mit dem normalen Aufruf ohne Argument.
+import sys
+if '--version' in sys.argv: ver = sys.argv[sys.argv.index('--version') + 1]
 tpl = open(os.path.join(ROOT, 'tools', 'sw.template.js')).read()
 out = tpl.replace('__VERSION__', ver).replace('__ASSETS__', ',\n  '.join("'" + f + "'" for f in files))
 open(os.path.join(ROOT, 'sw.js'), 'w').write(out)
