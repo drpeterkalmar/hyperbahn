@@ -5,6 +5,6 @@
   "type": "module",
   "description": "Hyperbahn – Anti-Grav-Racer im Browser (Three.js, PWA, Neon-Noir)",
   "scripts": {
-    "test:node": "node tests/node/run_all.mjs"
+    "test:node": "node --test tests/node/test_*.mjs"
   }
 }
