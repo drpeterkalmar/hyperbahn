@@ -1,0 +1,112 @@
+// Ton (reine WebAudio-Synthese, keine Assets): Antrieb, Boost-Fauchen mit Tonhöhen-Anstieg, Wand-Kratzen, Magnet-Summen,
+// kurze Töne für Landung/Ring/Rolle/Mini-Turbo/Start-Boost. Peters Handy-Regeln: zurückhaltend, Klangkörper im Mittelton
+// (300–700 Hz), kein Dauerfeuer, im Menü still, Lautlos-Schalter respektieren (audioSession 'ambient').
+// Zeitlupe: tonFaktor < 1 senkt die Tonhöhe. Musik (CC0-Synthwave-Loop) ist nur als Platzhalter vorgesehen (musik(url)).
+// Startwerte – TODO Heavy-Job: am Handy-Lautsprecher abhören (Pegel, Tonhöhen).
+export const MISCHUNG = { gesamt: 0.55, antrieb: 0.16, boost: 0.14, wand: 0.18, magnet: 0.05, ereignis: 0.22, musik: 0.35 };
+
+export class Ton {
+  constructor() {
+    this.ctx = null; this.an = false; this.stummAn = false;
+    this.letzt = {};   // Mindestabstand je Ereignis-Art (kein Dauerfeuer)
+  }
+
+  async start() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') await this.ctx.resume(); this.an = true; return; }
+    try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch { /* älterer Browser */ }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const c = this.ctx = new AC();
+    this.master = c.createGain(); this.master.gain.value = this.stummAn ? 0 : MISCHUNG.gesamt;
+    this.master.connect(c.destination);
+    // Antrieb: Sägezahn + Rechteck (Oktave tiefer) → Tiefpass, Tonhöhe nach Tempo
+    this.osc1 = c.createOscillator(); this.osc1.type = 'sawtooth';
+    this.osc2 = c.createOscillator(); this.osc2.type = 'square';
+    this.lp = c.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.frequency.value = 900; this.lp.Q.value = 2;
+    this.antrieb = c.createGain(); this.antrieb.gain.value = 0;
+    const g2 = c.createGain(); g2.gain.value = 0.45;
+    this.osc1.connect(this.lp); this.osc2.connect(g2); g2.connect(this.lp); this.lp.connect(this.antrieb); this.antrieb.connect(this.master);
+    // Rauschen (Boost-Fauchen, Wand-Kratzen)
+    const len = c.sampleRate * 1.5, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    let s = 7; for (let i = 0; i < len; i++) { s = (s * 16807) % 2147483647; d[i] = (s / 2147483647) * 2 - 1; }
+    const rauschen = (typ, f, q) => {
+      const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+      const fl = c.createBiquadFilter(); fl.type = typ; fl.frequency.value = f; fl.Q.value = q;
+      const g = c.createGain(); g.gain.value = 0;
+      src.connect(fl); fl.connect(g); g.connect(this.master); src.start();
+      return { fl, g };
+    };
+    this.boostR = rauschen('bandpass', 600, 1.2);
+    this.wandR = rauschen('highpass', 1800, 0.7);
+    // Magnet-Summen: 110/220 Hz mit Tremolo
+    this.mag1 = c.createOscillator(); this.mag1.frequency.value = 110;
+    this.mag2 = c.createOscillator(); this.mag2.frequency.value = 220.5;
+    this.magG = c.createGain(); this.magG.gain.value = 0;
+    this.trem = c.createOscillator(); this.trem.frequency.value = 7;
+    const tremG = c.createGain(); tremG.gain.value = 0.3;
+    this.trem.connect(tremG); tremG.connect(this.magG.gain);
+    this.mag1.connect(this.magG); this.mag2.connect(this.magG); this.magG.connect(this.master);
+    for (const o of [this.osc1, this.osc2, this.mag1, this.mag2, this.trem]) o.start();
+    this.an = true;
+  }
+
+  stumm(an) {
+    this.stummAn = !!an;
+    if (this.master) this.master.gain.setTargetAtTime(this.stummAn ? 0 : MISCHUNG.gesamt, this.ctx.currentTime, 0.05);
+  }
+
+  // je Bild: tempo (m/s), vmax, boost (0…), magnet (0…1), wand (bool), luft (bool), tonFaktor (Zeitlupe)
+  update({ tempo = 0, vmax = 95, boost = 0, magnet = 0, wand = false, luft = false, tonFaktor = 1 } = {}) {
+    if (!this.ctx || !this.an) return;
+    const t = this.ctx.currentTime, x = Math.min(1.8, tempo / vmax);
+    // Klangkörper 300–700 Hz (Grundton tiefer, Obertöne tragen am Handy-Lautsprecher)
+    const f = (95 + 120 * x + 60 * boost) * tonFaktor;
+    this.osc1.frequency.setTargetAtTime(f * 2, t, 0.05);
+    this.osc2.frequency.setTargetAtTime(f, t, 0.05);
+    this.lp.frequency.setTargetAtTime((500 + 900 * x + (luft ? -200 : 0)) * tonFaktor, t, 0.08);
+    this.antrieb.gain.setTargetAtTime(MISCHUNG.antrieb * (0.35 + 0.65 * Math.min(1, x)), t, 0.1);
+    this.boostR.g.gain.setTargetAtTime(MISCHUNG.boost * Math.min(1, boost * 1.4), t, 0.08);
+    this.boostR.fl.frequency.setTargetAtTime((450 + 500 * Math.min(1, boost)) * tonFaktor, t, 0.1);
+    this.wandR.g.gain.setTargetAtTime(wand ? MISCHUNG.wand : 0, t, 0.03);
+    this.magG.gain.setTargetAtTime(MISCHUNG.magnet * magnet, t, 0.15);
+  }
+
+  // Menü/Pause: alles leise (keine Dauer-Schleifen im Menü)
+  ruhe() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    for (const g of [this.antrieb.gain, this.boostR.g.gain, this.wandR.g.gain, this.magG.gain]) g.setTargetAtTime(0, t, 0.1);
+  }
+
+  // kurze Töne; Mindestabstand je Art 0,12 s
+  ereignis(art, staerke = 1) {
+    if (!this.ctx || !this.an) return;
+    const t = this.ctx.currentTime;
+    if (this.letzt[art] && t - this.letzt[art] < 0.12) return;
+    this.letzt[art] = t;
+    const ton = (f0, f1, dauer, typ = 'triangle', pegel = 1) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = typ; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dauer);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(MISCHUNG.ereignis * pegel, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + dauer);
+      o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dauer + 0.02);
+    };
+    switch (art) {
+      case 'pad': ton(380, 620 + 200 * staerke, 0.18, 'sawtooth', 0.5); break;
+      case 'ring': ton(520, 880, 0.22, 'triangle', 0.7); break;
+      case 'landung': if (staerke > 0.25) ton(220, 110, 0.25, 'square', 0.6 * staerke); break;
+      case 'rolle': ton(440, 990, 0.3, 'triangle', 0.8); break;
+      case 'miniturbo': ton(330, 660 + 120 * staerke, 0.25, 'sawtooth', 0.6); break;
+      case 'driftStufe': ton(500 + 150 * staerke * 3, 520 + 150 * staerke * 3, 0.06, 'square', 0.3); break;
+      case 'driftWarnung': ton(300, 280, 0.12, 'square', 0.4); break;
+      case 'startboost': ton(392, 784, 0.35, 'sawtooth', 0.8); break;
+      case 'stotterer': ton(140, 90, 0.4, 'square', 0.5); break;
+      case 'magnet': ton(300, 450, 0.2, 'sine', 0.5); break;
+      case 'absturz': ton(300, 60, 0.6, 'sawtooth', 0.7); break;
+      case 'stoss': if (staerke > 0.3) ton(180, 120, 0.12, 'square', 0.5 * staerke); break;
+      default: break;
+    }
+  }
+
+  // Platzhalter: CC0-Synthwave-Loop (Heavy-Job: Quelle + Lizenz in LICENSES.md, nur im Rennen, leise)
+  async musik(url) { void url; /* TODO Heavy-Job */ }
+}

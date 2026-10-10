@@ -247,6 +247,7 @@ function bild() {
     }, praes);
     if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {
+    if (ton) ton.ruhe();
     // Menü: langsame Kamerafahrt über die Strecke
     const s = (praes * 40) % bahn.L, i = Math.floor(s / bahn.ds);
     camera.position.set(bahn.px[i] + 60, bahn.py[i] + 40, bahn.pz[i] + 60);
