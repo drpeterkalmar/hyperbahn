@@ -78,6 +78,10 @@ export function strecke1Abschnitte(sch = SCHLUSS) {
   ];
 }
 
+// Mindesttempo an der Sprungkante (m/s, Vollgas, Ringe zählen mit) – gemessen von tests/node/test_gleiter.mjs, der Test
+// prüft, dass die Tabelle zur Physik passt (±4 m/s). Für die HUD-Anzeige „Speed OK“ vor dem Sprung.
+export const SPRUNG_MINDEST = { 'Häuserschlucht': 77, 'Neon-Schlucht': 72 };
+
 export function strecke1(sch = SCHLUSS) {
   const b = baueBahn(strecke1Abschnitte(sch), { start: { p: { x: 0, y: 160, z: 0 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 } } });
   b.name = 'Neon-Megastadt';

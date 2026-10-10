@@ -1,6 +1,6 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
 const VERSION = '__VERSION__';
-const CACHE = 'stuntbahn-' + VERSION;
+const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
   __ASSETS__
@@ -9,7 +9,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('stuntbahn-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('hyperbahn-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;

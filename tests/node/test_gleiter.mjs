@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GLEITER, BOOST, ZEIT, LUFT } from '../../src/config.js';
 import { baueBahn, F_MAGNET, F_LUECKE, F_SPRUNG } from '../../src/track/bahn.js';
-import { strecke1 } from '../../src/track/strecke1.js';
+import { strecke1, SPRUNG_MINDEST } from '../../src/track/strecke1.js';
 import { Gleiter } from '../../src/physics/gleiter.js';
 import { bauePlan, Pilot, PROFILE } from '../../src/ai/pilot.js';
 import { endlich } from '../../src/core/vec.js';
@@ -172,6 +172,7 @@ test('Riesensprünge: Mindesttempo, Flugzeit 4–7,5 s, Weite ≥ 250 m (mit Ket
     }
     console.log(`  ${name}: Mindesttempo am Absprung ${vMin.toFixed(1)} m/s (${(vMin / GLEITER.vmax * 100).toFixed(0)} % vmax), mit Kette ${mit.vAb.toFixed(1)} m/s`);
     assert.ok(vMin < GLEITER.vmax * 0.95, 'ohne Pads mit Vollgas erreichbar');
+    assert.ok(Math.abs(SPRUNG_MINDEST[name] - vMin) <= 4, `Tabelle SPRUNG_MINDEST[${name}] = ${SPRUNG_MINDEST[name]} passt nicht zu ${vMin.toFixed(1)}`);
     assert.ok(mit.vAb > vMin * 1.3, 'Pad-Kette gibt sichere Reserve');
     assert.ok(mit.vAb > ohne.vAb + 15, 'Pad-Kette wirkt');
   }

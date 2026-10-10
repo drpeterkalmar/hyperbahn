@@ -66,6 +66,8 @@ export const GRADES = {
   morgen: { wb: [1.03, 1.0, 0.95], lift: [0.01, 0.006, 0.012], gamma: [0.98, 1.0, 1.03], gain: [1.04, 1.0, 0.94], shadow: [-0.01, 0.0, 0.02], high: [0.03, 0.012, -0.02], split: 1, sat: 1.0, vib: 0.14, contrast: 0.12 },
   abend: { wb: [1.06, 0.99, 0.9], lift: [0.012, 0.004, 0.012], gamma: [0.97, 1.0, 1.04], gain: [1.06, 0.99, 0.88], shadow: [-0.006, -0.004, 0.026], high: [0.04, 0.014, -0.03], split: 1.2, sat: 1.06, vib: 0.18, contrast: 0.2 },
   nacht: { wb: [0.92, 0.98, 1.1], lift: [0.0, 0.004, 0.014], gamma: [1.04, 1.02, 0.98], gain: [0.96, 1.0, 1.06], shadow: [-0.01, 0.0, 0.03], high: [0.0, 0.006, 0.01], split: 0.8, sat: 0.9, vib: 0.06, contrast: 0.14 },
+  // Hyperbahn: Neon-Noir – kühle Cyan-Schatten, Magenta-Lichter, hoher Kontrast (Startwerte, TODO Heavy-Job: am Bild abstimmen)
+  neonnoir: { wb: [0.94, 0.98, 1.08], lift: [0.0, 0.004, 0.018], gamma: [1.02, 1.0, 0.97], gain: [1.04, 0.98, 1.06], shadow: [-0.012, 0.01, 0.035], high: [0.03, -0.004, 0.02], split: 1.3, sat: 1.15, vib: 0.22, contrast: 0.3 },
   neutral: { wb: [1, 1, 1], lift: [0, 0, 0], gamma: [1, 1, 1], gain: [1, 1, 1], shadow: [0, 0, 0], high: [0, 0, 0], split: 0, sat: 1, vib: 0, contrast: 0 },
   // Kulissen (n20): je Landschafts-Thema (gfx/themes.js)
   wueste: { wb: [1.04, 1.0, 0.93], lift: [0.012, 0.006, 0.006], gamma: [0.99, 1.0, 1.03], gain: [1.05, 1.0, 0.94], shadow: [-0.004, -0.004, 0.018], high: [0.026, 0.01, -0.02], split: 1.1, sat: 1.06, vib: 0.12, contrast: 0.26 },
