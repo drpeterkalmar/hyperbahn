@@ -50,3 +50,14 @@ test('index.html und Manifest: Importmap, Hoch+Quer, Icons vorhanden', () => {
   assert.equal(man.orientation, 'any');
   for (const i of man.icons) assert.ok(fs.existsSync(path.join(root, i.src)), `${i.src} fehlt`);
 });
+
+test('Gleiter-Modelle: je Material zusammengefasst (≤ 6 Meshes + Spur), alle Bauformen bauen, Update ohne Fehler', async () => {
+  const { baueGleiter, BAUFORM_LISTE } = await import(pathToFileURL(path.join(SRC, 'gfx/gleitermesh.js')).href);
+  const g = { p: { x: 0, y: 0, z: 0 }, v: { x: 0, y: 0, z: -90 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 }, oben: { x: 0, y: 1, z: 0 }, tempo: 90, boost: 0.5, drehWinkel: 0 };
+  for (const b of BAUFORM_LISTE) {
+    const m = baueGleiter(0x00e5ff, b);
+    let n = 0; m.gruppe.traverse((o) => { if (o.isMesh) n++; });
+    assert.ok(n <= 6, `${b}: ${n} Meshes`);
+    m.setzeLage(g); m.update(1 / 60, g, { gas: 1, lenk: 0.3 });
+  }
+});

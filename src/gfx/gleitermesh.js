@@ -3,7 +3,9 @@
 // Modell-Raum: +z = vor (Nase), +y = oben, +x = links → Weltmatrix aus (links, oben, vor) des Physik-Gleiters.
 // Sketchfab-Modelle (CC0/CC-BY per Token) kann der Heavy-Job später als glTF einsetzen: Schnittstelle bleibt
 // { gruppe, setzeLage(g, alpha), update(dt, zustand) }.
+// Handy-Budget: Die Teile werden je Material zu einem Mesh zusammengefasst (5 Draw-Calls + Flammen + Spur je Gleiter).
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const BAUFORMEN = {
   pfeil: { name: 'Pfeil', laenge: 4.6, breite: 2.3, hoehe: 0.75, nase: 1.9, fluegel: 1.1, flosse: 0.9, duesen: 2 },
@@ -78,22 +80,24 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
   kanzel.position.set(0, f.hoehe * 0.75, f.laenge / 2 - f.nase - 0.1);
   koerper.add(kanzel);
 
-  // Düsen + Flammen (additiv, Länge nach Schub/Boost)
-  const duesen = [], flammen = [];
+  // Düsen + Flammen (additiv, Länge nach Schub/Boost). Flammen aller Düsen in EINEM Mesh, das in z skaliert wird.
+  const dueseMat = new THREE.MeshBasicMaterial({ color: team.clone().multiplyScalar(5) });
   const flammeMat = new THREE.MeshBasicMaterial({ color: team.clone().lerp(new THREE.Color(1, 1, 1), 0.5).multiplyScalar(4), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+  const flammenGeo = [];
   for (let k = 0; k < f.duesen; k++) {
     const x = (k - (f.duesen - 1) / 2) * 0.75;
-    const d = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.4, 14), new THREE.MeshBasicMaterial({ color: team.clone().multiplyScalar(5) }));
+    const d = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.4, 14), dueseMat);
     d.rotation.x = Math.PI / 2;
     d.position.set(x, f.hoehe * 0.45, -f.laenge / 2 - 0.1);
-    koerper.add(d); duesen.push(d);
+    koerper.add(d);
     const fg = new THREE.ConeGeometry(0.24, 1, 12, 1, true);
-    fg.translate(0, -0.5, 0);
-    const fl = new THREE.Mesh(fg, flammeMat);
-    fl.rotation.x = Math.PI / 2;
-    fl.position.set(x, f.hoehe * 0.45, -f.laenge / 2 - 0.25);
-    koerper.add(fl); flammen.push(fl);
+    fg.translate(0, -0.5, 0); fg.rotateX(Math.PI / 2); fg.translate(x, 0, 0);
+    flammenGeo.push(fg);
   }
+  zusammenfassen(koerper);
+  const flammen = new THREE.Mesh(mergeGeometries(flammenGeo), flammeMat);
+  flammen.position.set(0, f.hoehe * 0.45, -f.laenge / 2 - 0.25);
+  koerper.add(flammen);
 
   // Lichtspur: Band aus den letzten SPUR_N Positionen (zwei Kanten je Punkt), Alpha nach Alter
   const spurPos = new Float32Array(SPUR_N * 2 * 3), spurAlpha = new Float32Array(SPUR_N * 2);
@@ -132,7 +136,7 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
     update(dt, g, ein = null) {
       const schub = ein ? ein.gas : 1;
       const len = 0.6 + 1.8 * schub + 4.5 * g.boost;
-      for (const fl of flammen) { fl.scale.set(1, len * (0.9 + 0.2 * Math.random()), 1); }
+      flammen.scale.set(1, 1, len * (0.9 + 0.2 * Math.random()));
       const lenk = ein ? ein.lenk : 0;
       koerper.rotation.z += ((-lenk * 0.22) - koerper.rotation.z) * Math.min(1, dt * 6);
       // Treffer-Dreher: Modell dreht sich um die Hochachse (die Physik behält die Fahrtrichtung)
@@ -152,4 +156,23 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
     const b = f.breite * 0.45;
     spurPos.set([hx + g.links.x * b, hy + g.links.y * b, hz + g.links.z * b, hx - g.links.x * b, hy - g.links.y * b, hz - g.links.z * b], k * 6);
   }
+}
+
+// Alle Kind-Meshes einer Gruppe je Material zu einem Mesh zusammenfassen (Lage eingerechnet, nur Position + Normale)
+export function zusammenfassen(gruppe) {
+  gruppe.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(gruppe.matrixWorld).invert();
+  const jeMat = new Map();
+  for (const m of gruppe.children.slice()) {
+    if (!m.isMesh) continue;
+    let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+    for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal') g.deleteAttribute(n);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld));
+    if (!jeMat.has(m.material)) jeMat.set(m.material, []);
+    jeMat.get(m.material).push(g);
+    gruppe.remove(m);
+  }
+  for (const [mat, liste] of jeMat) gruppe.add(new THREE.Mesh(mergeGeometries(liste), mat));
+  return gruppe;
 }

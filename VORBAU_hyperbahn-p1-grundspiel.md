@@ -6,7 +6,7 @@ alles committet und nach `mac` gepusht, `main` unberührt. **Kein einziger Brows
 
 **Schnellstart für den Heavy-Job**
 1. Vorher-Messung auf `main` (dort liegt nur README – die Messung ist praktisch „leer“; Brief verlangt sie trotzdem).
-2. `git merge vorbau/hyperbahn-p1-grundspiel` (bzw. auf dem Branch weiterarbeiten), `npm run test:node` → **70/70 grün** (~20 s parallel;
+2. `git merge vorbau/hyperbahn-p1-grundspiel` (bzw. auf dem Branch weiterarbeiten), `npm run test:node` → **71/71 grün** (~20 s parallel;
    einzeln je Datei < 15 s, `test_gefuehl.mjs` ~15 s, `test_ki_gate.mjs` ~13 s).
 3. Rauchtest im Browser: `python3 tests/smoke.py`, dann Abnahme-Bilder `python3 tests/p1_shots.py` (hoch + quer),
    Mess-Gate `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand nachher`.
@@ -153,7 +153,7 @@ der Referenz im Repo (geprüft per Suche); Datenblatt liegt nur in Peters Plan-O
 - `src/main.js`: Verdrahtung, Ereignis-Effekte, Vibration nur bei großen Ereignissen (≥ 30 ms, Abstand 1,5 s), einfache
   Qualitäts-Automatik (`kino.adapt(fps)` jede Sekunde).
 **Geprüft:** `test_bahn_geo.mjs` (5: Teile, Wicklung nach außen auch kopfüber, keine Fahrbahn über Lücken, Instanzen, three-Meshes
-bauen in Node), `test_stadt.mjs` (8), `test_kamera.mjs` (3), `test_module.mjs` (3).
+bauen in Node), `test_stadt.mjs` (8), `test_kamera.mjs` (3), `test_module.mjs` (4, inkl. Gleiter-Modelle aller Bauformen).
 **Heavy-Job – konkret abnehmen:**
 1. Boot + Rennen ohne Fehler (`tests/smoke.py`), Menü hoch/quer, Touch-Tasten ≥ 48 px (`small_buttons`).
 2. Shader kompilieren (eigene ShaderMaterials in bahnmesh/himmel/regen/gleitermesh; Fahrbahn-`onBeforeCompile` ersetzt
@@ -162,7 +162,8 @@ bauen in Node), `test_stadt.mjs` (8), `test_kamera.mjs` (3), `test_module.mjs` (
    Nebel `FogExp2 0.00075`, Regen-Dichte, Spiegelungen auf der nassen Fahrbahn (nur Environment, keine SSR), Stadt-Dichte.
 4. Bewegungsunschärfe: `speed: tempo × 0,4` an den Kino-Look (der ist auf 80–190 km/h geeicht) – am Bild nachziehen.
 5. Mess-Gate Mittelklasse-Android (`tests/perf_gate.py`, Szenen in `tests/perf_szenen.json`): Draw-Calls (Bahn ~12 Meshes,
-   Stadt wenige Instanzen, 8 Gleiter à ~15 Teile = ~120 Calls – ggf. Gleiter zusammenführen), Dreiecke, p50/p95, Ladegröße.
+   Stadt wenige Instanzen, 8 Gleiter à 6 Meshes + Lichtspur ≈ 56 Calls – Teile je Material zusammengefasst), Dreiecke, p50/p95,
+   Ladegröße. Shader-Bausteine, die `onBeforeCompile` ersetzt, sind gegen three r186 geprüft (Namen vorhanden).
 6. Screenshots `tests/p1_shots.py` (Start, Pulk, Looping, Röhre, Überkopf, Wandfahrt, Twist, Boost, Sprung 1/2, Blitze
    reduziert, Bullet-Time-Folge) → Vision „modernes Neon-Racing, nicht Flash-Game“.
 **Nicht angefangen (bewusst):** Sketchfab-Gleiter (Token liegt im Mac-Schlüsselbund, aus SSH nicht nutzbar), CC0-Synthwave-Loop
