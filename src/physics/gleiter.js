@@ -14,6 +14,7 @@ import { G, GLEITER, MAGNET, BOOST, LUFT, WAND } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
 import { neueAbfrage, padBei, F_MAGNET, F_LUECKE, F_LANDEZONE } from '../track/bahn.js';
 import { clamp } from '../core/util.js';
+import { GEFUEHL, klasse, bandBeschl, lenkFaktor, kurvenFaktor, Drift, miniTurbo, neustartErfuellt } from './fahrgefuehl.js';
 
 // Schwebe-Punkte im Körper-Rahmen (vor, links, oben)
 const PUNKTE = [[1.6, 1.0, -0.2], [1.6, -1.0, -0.2], [-1.6, 1.0, -0.2], [-1.6, -1.0, -0.2]];
@@ -24,12 +25,18 @@ export class Gleiter {
   constructor(bahn, opt = {}) {
     this.bahn = bahn;
     this.id = opt.id || 0;
+    // Gewichtsklasse (Tempo-Bänder, Stoßgewicht, Störfeld-Abzug) und ob eine KI fährt (Treffer kosten die KI mehr)
+    this.klasse = opt.klasse || 'mittel';
+    this.kl = klasse(this.klasse);
+    this.ki = !!opt.ki;
+    this.drift = new Drift();
     this.p = v3(); this.v = v3(); this.w = v3();
     this.vor = v3(0, 0, -1); this.links = v3(-1, 0, 0); this.oben = v3(0, 1, 0);
     this.q = neueAbfrage(); this.qp = [neueAbfrage(), neueAbfrage(), neueAbfrage(), neueAbfrage()];
     this.hint = 0;
     this.ereignisse = [];
-    this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [] };
+    this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
+      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0 };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 
@@ -57,6 +64,10 @@ export class Gleiter {
     this.zeit = this.zeit || 0;
     this.tempo = v0;
     this.ringeLetzt = q.s;
+    this.drift.reset(); this.mt = 0; this.mtStufe = 0; this.mtT = 0;
+    this.treff = null; this.drehWinkel = 0; this.stotter = 0; this.neustartBonus = 0; this.neustartFenster = 0;
+    this.tipps = []; this.gasAlt = false; this.imRand = false; this.randImmun = this.randImmun || false;
+    this.boostAbbau = 0;
   }
 
   get kmh() { return this.tempo * 3.6; }
@@ -126,35 +137,72 @@ export class Gleiter {
     a.y -= gw;
     addSk(a, a, q.Us, -MAGNET.g * G * this.magnet);
 
-    // Antrieb: Schub entlang der Nase (am Boden in die Fahrfläche projiziert), Luftwiderstand quadratisch
-    const vmax = GLEITER.vmax;
-    const bst = 1 + this.boost;
-    let gas = clamp(ein.gas || 0, 0, 1);
-    setze(_d, this.vor.x, this.vor.y, this.vor.z);
-    if (amBoden) { addSk(_d, _d, q.Us, -dot(_d, q.Us)); norm(_d, _d); }
-    const schub = GLEITER.schub * bst * bst * gas * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
-    addSk(a, a, _d, schub);
+    // --- Treffer (Schlingern → Dreher), Neustart-Rhythmus, Drift ---
     const tempo = Math.sqrt(dot(this.v, this.v));
     this.tempo = tempo;
+    const vmaxK = GLEITER.vmax * this.kl.top;
+    let gas = clamp(ein.gas || 0, 0, 1);
+    let lenk = clamp(ein.lenk || 0, -1, 1);
+    let bl = clamp(ein.bremseL || 0, 0, 1), br = clamp(ein.bremseR || 0, 0, 1);
+    this.neustartTakt(dt, gas);
+    let steuerlos = false;
+    if (this.treff) {
+      const tr = this.treff; tr.t += dt;
+      if (tr.phase === 'schlingern') {
+        // Rettung: beide Luftbremsen ziehen („Abfangen“); Lenken, Luft oder Ablauf → Dreher
+        if (bl >= 0.5 && br >= 0.5) { this.treff = null; addSk(this.v, this.v, this.v, -0.03); this.statistik.abgefangen++; this.ereignis('abgefangen', 1); }
+        else if (Math.abs(lenk) > 0.5 || !amBoden || tr.t >= GEFUEHL.schlingern) { tr.phase = 'dreher'; tr.t = 0; this.statistik.dreher++; this.ereignis('dreher', tr.st); }
+        else lenk = Math.sin(tr.t / GEFUEHL.schlingern * 5 * Math.PI) * 0.55 * tr.st;
+      }
+      if (this.treff && this.treff.phase === 'dreher') {
+        steuerlos = true;
+        const verlust = (this.ki ? GEFUEHL.verlustKi : GEFUEHL.verlustMensch) * GEFUEHL.treffer * tr.st;
+        addSk(this.v, this.v, this.v, -(1 - Math.pow(1 - Math.min(0.95, verlust), dt / GEFUEHL.dreher)));
+        this.drehWinkel += 4 * Math.PI * dt / GEFUEHL.dreher;
+        if (tr.t >= GEFUEHL.dreher) { this.treff = null; this.drehWinkel = 0; this.neustartFenster = 0.6; this.ereignis('dreherEnde', 1); }
+      }
+    }
+    if (steuerlos) { gas = 0; lenk = 0; bl = 0; br = 0; }
+    const dr = this.drift.schritt(dt, { boden: amBoden, x: tempo / vmaxK, lenk, bremseL: bl, bremseR: br, magnet: this.magnet > 0.5 });
+    if (dr.hupf) addSk(this.v, this.v, q.Us, Math.sqrt(2 * G * GEFUEHL.hupfHoehe));
+    if (dr.neueStufe) { this.statistik.driftStufen[dr.neueStufe]++; this.ereignis('driftStufe', dr.neueStufe / 3, { stufe: dr.neueStufe }); }
+    if (dr.zuLang) this.ereignis('driftWarnung', 1);
+    if (dr.turbo) { this.mtStufe = dr.turbo; this.mtT = 0; this.statistik.miniturbos++; this.ereignis('miniturbo', dr.turbo / 3, { stufe: dr.turbo }); }
+    if (this.mtStufe) { this.mtT += dt; this.mt = miniTurbo(this.mtStufe, this.mtT); if (this.mt < 0.002) { this.mt = 0; this.mtStufe = 0; } }
+
+    // --- Antrieb: Beschleunigung aus Tempo-Bändern der Klasse bis zum Ziel-Höchsttempo vz; Luftwiderstand quadratisch ---
+    // vz = Klassen-Höchsttempo × (1 + Boost + Mini-Turbo) × Kurven-Abzug × Störfeld-Abzug. Boost = „Sollwert sofort voll“
+    // (Gas wirkt voll) und schaltet den Kurven-Abzug ab, den Störfeld-Abzug nur zur Hälfte.
+    const vmax = GLEITER.vmax;
+    let vz = vmaxK * (1 + this.boost + this.mt);
+    if (this.boost <= 0) vz *= kurvenFaktor(lenk, dr.aktiv);
+    this.imRand = aufBahn && amBoden && Math.abs(q.u) > q.hw - GEFUEHL.randBreite;
+    if (this.imRand && !this.randImmun) vz *= 1 - GEFUEHL.rand * (this.kl.rand / 0.30) * (this.boost > 0 ? 0.5 : 1);
+    if (this.boost > 0 && !steuerlos) gas = 1;
+    if (this.stotter > 0) { this.stotter -= dt; gas *= 0.05; }
+    if (this.neustartBonus > 0) this.neustartBonus -= dt;
+    setze(_d, this.vor.x, this.vor.y, this.vor.z);
+    if (amBoden) { addSk(_d, _d, q.Us, -dot(_d, q.Us)); norm(_d, _d); }
+    const zugBei = (v) => GLEITER.schub * (v / vmax) ** 2;
+    const band = bandBeschl(this.kl, tempo / vz) * (this.neustartBonus > 0 ? this.kl.neustart : 1);
+    const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
+    addSk(a, a, _d, schub);
     if (tempo > 1e-6) {
-      const bl = clamp(ein.bremseL || 0, 0, 1), br = clamp(ein.bremseR || 0, 0, 1);
-      const zug = GLEITER.schub * (tempo / vmax) ** 2 + (amBoden ? GLEITER.luftbremseZug * (bl + br) * 0.5 : 0);
+      const zug = zugBei(tempo) + (amBoden ? GLEITER.luftbremseZug * (bl + br) * 0.5 : 0);
       addSk(a, a, this.v, -zug / tempo);
     }
 
-    // Seitenhaftung (am Boden): Querrutschen in der Fahrfläche abbauen
+    // Seitenhaftung (am Boden): Querrutschen in der Fahrfläche abbauen (im Drift deutlich weniger → Rutschen)
     if (kontakte > 0) {
       setze(_l, this.links.x, this.links.y, this.links.z);
       addSk(_l, _l, q.Us, -dot(_l, q.Us)); norm(_l, _l);
       const vq = dot(this.v, _l);
-      const bl = clamp(ein.bremseL || 0, 0, 1), br = clamp(ein.bremseR || 0, 0, 1);
-      addSk(a, a, _l, -vq * GLEITER.grip * gripAnteil * (1 + 0.4 * (bl + br)));
+      const grip = GLEITER.grip * (dr.aktiv ? GEFUEHL.driftGrip : 1) * (steuerlos ? 0.3 : 1);
+      addSk(a, a, _l, -vq * grip * gripAnteil * (1 + 0.4 * (bl + br)));
     }
 
     // --- Drehung ---
-    const lenk = clamp(ein.lenk || 0, -1, 1);
-    const bl = clamp(ein.bremseL || 0, 0, 1), br = clamp(ein.bremseR || 0, 0, 1);
-    const kappe = Math.min(GLEITER.gierMax, GLEITER.querMax / Math.max(tempo, 1));
+    const kappe = Math.min(GLEITER.gierMax, GLEITER.querMax / Math.max(tempo, 1)) * lenkFaktor(tempo / vmaxK);
     const innen = lenk > 0 ? bl : lenk < 0 ? br : 0;
     let gierZiel = (lenk + 0.35 * (bl - br)) * kappe * (1 + GLEITER.luftbremseGier * innen);
     if (!amBoden) gierZiel *= GLEITER.luftGier;
@@ -189,16 +237,16 @@ export class Gleiter {
     if ((amBoden || q.h < 3) && aufBahn) {
       const kp = padBei(b, q.s, q.u);
       if (kp >= 0 && kp !== this.letztesPad) {
-        this.boost = Math.min(BOOST.deckel, this.boost + BOOST.gewinn);
-        this.boostZeit = BOOST.dauer;
+        this.padBoost();
         this.statistik.pads++;
         this.ereignis('pad', this.boost / BOOST.deckel);
       }
       this.letztesPad = kp;
     }
     this.ringe(sAlt, q);
-    if (this.boostZeit > 0) this.boostZeit -= dt;
-    else if (this.boost > 0) this.boost = Math.max(0, this.boost - dt * 1.0);
+    // Boost: volle Dauer, dann Abklingen in BOOST.abklingen
+    if (this.boostZeit > 0) { this.boostZeit -= dt; if (this.boostZeit <= 0) this.boostAbbau = this.boost / BOOST.abklingen; }
+    else if (this.boost > 0) this.boost = Math.max(0, this.boost - dt * Math.max(this.boostAbbau, 0.5));
 
     // --- Boden/Luft-Buchhaltung, Sprünge, Absturz ---
     if (amBoden) {
@@ -277,6 +325,10 @@ export class Gleiter {
     this.statistik.sprungLandungen += sp && this.luftZeit > 1.5 ? 1 : 0;
     const weite = sp ? Math.hypot(this.p.x - sp.x, this.p.z - sp.z, this.p.y - sp.y) : 0;
     if (sp && this.luftZeit > 1.5) this.statistik.sprunge.push({ s: sp.s, luft: this.luftZeit, weite, v: sp.v, landeS: q.s });
+    // Landung in der markierten Landezone nach einem Riesensprung = Tempo-Bonus (statt Lande-Malus)
+    if (sp && this.luftZeit > 1.5 && (q.flags & F_LANDEZONE) && GEFUEHL.landebonus > 0) {
+      addSk(this.v, this.v, this.v, GEFUEHL.landebonus); this.statistik.landebonus++;
+    }
     this.ereignis('landung', clamp(this.luftZeit / 5, 0, 1), { luft: this.luftZeit, weite, landezone: !!(q.flags & F_LANDEZONE) });
   }
 
@@ -294,6 +346,7 @@ export class Gleiter {
       addSk(this.v, this.v, this.v, -WAND.verlust * anteil);
       this.schild = Math.max(0, this.schild - WAND.schild * clamp(vi / 20, 0.15, 1.5));
       if (this.wandKontakt === 0 || vi > 4) { this.statistik.wandTreffer++; this.ereignis('wand', anteil, { seite: sgn }); }
+      if (vi > 3) this.drift.abbrechen();
       // Nase von der Wand weg drehen
       addSk(this.w, this.w, this.oben, -sgn * 0.8 * anteil);
     }
@@ -316,6 +369,37 @@ export class Gleiter {
         this.ereignis('ring', 1);
       }
     }
+  }
+
+  // Boost-Pad / Start-Boost / Item (Phase 2): stapelt bis BOOST.deckel, volle Dauer neu
+  padBoost(gewinn = BOOST.gewinn) {
+    this.boost = Math.min(BOOST.deckel, this.boost + gewinn);
+    this.boostZeit = BOOST.dauer;
+  }
+
+  // Treffer (Phase 2: Waffen; P1: Schnittstelle + Test). staerke 0…1
+  treffer(staerke = 1) {
+    if (this.treff || this.zustand !== 'fahrt') return;
+    this.treff = { phase: 'schlingern', t: 0, st: clamp(staerke, 0, 1) };
+    this.drift.abbrechen();
+    this.ereignis('treffer', staerke);
+  }
+
+  // Neustart-Rhythmus: Gas-Tipper (steigende Flanken) während des Drehers bzw. kurz danach / nach dem Respawn zählen
+  neustartTakt(dt, gas) {
+    const an = gas > 0.5;
+    const offen = (this.treff && this.treff.phase === 'dreher') || this.neustartFenster > 0;
+    if (this.neustartFenster > 0) this.neustartFenster -= dt;
+    if (an && !this.gasAlt && offen) {
+      this.tipps.push(this.zeit);
+      if (this.tipps.length > 8) this.tipps.shift();
+      if (neustartErfuellt(this.tipps)) {
+        this.neustartBonus = GEFUEHL.neustartDauer; this.tipps.length = 0; this.statistik.neustarts++;
+        this.ereignis('neustart', 1);
+      }
+    }
+    if (!offen) this.tipps.length = 0;
+    this.gasAlt = an;
   }
 
   reibung(dt, k) { addSk(this.v, this.v, this.v, -Math.min(0.5, k * dt)); }
@@ -347,6 +431,7 @@ export class Gleiter {
     }
     this.setzeAuf(s, 0, GLEITER.vmax * 0.45);
     this.respawns = (this.respawns || 0) + 1;
+    this.neustartFenster = 1.5;   // Neustart-Rhythmus auch nach einem Abflug
     this.ereignis('respawn', 1);
   }
 }

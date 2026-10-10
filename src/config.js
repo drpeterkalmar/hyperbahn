@@ -51,8 +51,9 @@ export const MAGNET = {
 
 export const BOOST = {
   gewinn: 0.5,       // +50 % Höchsttempo und Schub je Pad (?boost=)
-  dauer: 1.5,        // s je Pad
-  deckel: 0.7,       // höchstens +70 % gestapelt (Kette = immer schneller, gedeckelt)
+  dauer: 1.3,        // s je Pad (Datenblatt Fahrgefühl: 1,3 s, dann Abklingen)
+  abklingen: 0.3,    // s Abklingen nach der vollen Dauer
+  deckel: 0.8,       // höchstens +80 % gestapelt (Kette = immer schneller, gedeckelt)
   ring: 0.35,        // Boost-Ring in der Luft
   rolle: 0.4,        // Barrel-Roll im Sprung = Turbo
 };
