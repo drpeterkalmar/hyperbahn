@@ -22,8 +22,10 @@ import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
 import { Hud } from './ui/hud.js';
+import { leseGefuehl, GEFUEHL, KLASSEN_LISTE } from './physics/fahrgefuehl.js';
 
 const q = leseRegler(location.search);
+leseGefuehl(location.search);
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -98,8 +100,8 @@ function starte(e) {
   const anzahl = q.has('gegner') ? SPIEL.gegner : e.gegner;
   const ki = q.has('ki') ? SPIEL.ki : e.ki;
   const stufe = q.has('hilfe') ? SPIEL.hilfe : e.hilfe;
-  const teil = [{ ...TEAMS[0], name: 'DU' }];
-  for (let k = 1; k <= anzahl; k++) teil.push({ ...TEAMS[k], pilot: new Pilot(bahn, plan, PROFILE[ki], 100 + k * 13) });
+  const teil = [{ ...TEAMS[0], name: 'DU', klasse: q.get('klasse') || e.klasse || 'mittel' }];
+  for (let k = 1; k <= anzahl; k++) teil.push({ ...TEAMS[k], klasse: KLASSEN_LISTE[k % 3], pilot: new Pilot(bahn, plan, PROFILE[ki], 100 + k * 13) });
   const at = startStelle();
   rennen = new Rennen(bahn, teil, { runden: q.has('runden') ? SPIEL.runden : e.runden, ohneCountdown: at !== null });
   spielerT = rennen.spieler;
@@ -160,11 +162,32 @@ function ereignisse() {
         case 'runde': hud.meldung(`RUNDE ${Math.min(e.runde + 1, rennen.runden)}`, praes, 1.2); break;
         case 'ziel': hud.meldung(`ZIEL · PLATZ ${e.platz}`, praes, 2.5); vibriere(60); break;
         case 'stoss': rig.stoss(0.3 * e.staerke); break;
+        case 'driftStufe': hud.meldung(['', 'DRIFT', 'DRIFT ✦✦', 'DRIFT ✦✦✦'][e.stufe], praes, 0.6); break;
+        case 'driftWarnung': hud.meldung('ZU LANG!', praes, 0.6); break;
+        case 'miniturbo': blitz(0.35 + 0.15 * e.stufe, DRIFT_FARBEN[e.stufe]); hud.meldung(e.stufe >= 3 ? 'ULTRA-TURBO' : 'MINI-TURBO', praes, 0.9); rig.stoss(0.2); break;
+        case 'startboost': blitz(0.6, [0.3, 1, 1]); hud.meldung('START-BOOST!', praes, 1.2); break;
+        case 'stotterer': hud.meldung('ÜBERDREHT', praes, 1.2); break;
+        case 'treffer': blitz(0.5, [1, 0.2, 0.2]); rig.stoss(0.8); vibriere(40); break;
+        case 'abgefangen': hud.meldung('ABGEFANGEN', praes, 1); break;
+        case 'neustart': hud.meldung('NEUSTART!', praes, 1); blitz(0.4, [0.3, 1, 0.5]); break;
       }
       if (ton) ton.ereignis(e.art, e.staerke);
     }
   }
   for (const t of rennen.alle) t.g.ereignisse.length = 0;
+}
+
+// Drift-Funken je Stufe: cyan → magenta → weiß-gold (HDR für Bloom)
+const DRIFT_FARBEN = [[0.6, 2.2, 2.6], [0.6, 2.2, 2.6], [2.6, 0.5, 2.2], [3.2, 2.6, 1.2]];
+const startEin = { gas: 0 };
+function driftFunken() {
+  for (const t of rennen.alle) {
+    const g = t.g;
+    if (!g.drift.aktiv) continue;
+    const s = g.drift.seite, c = DRIFT_FARBEN[g.drift.stufe];
+    const p = { x: g.p.x - g.vor.x * 2 - g.links.x * s * 1.2, y: g.p.y - g.vor.y * 2 - g.links.y * s * 1.2 - g.oben.y * 0.6, z: g.p.z - g.vor.z * 2 - g.links.z * s * 1.2 };
+    funken.spruehe(p, g.v, t === spielerT ? 3 : 1, 6, c);
+  }
 }
 
 // „Speed OK“: nächster Absprung in ≤ 900 m voraus → Tempo gegen Mindesttempo × 1,15
@@ -198,12 +221,19 @@ function bild() {
     const g = spielerT.g;
     for (let i = 0; i < n; i++) {
       const roh = eingabe.lesen(ZEIT.schritt, !g.boden);
-      const ein = autopilot ? autopilot.steuer(g, ZEIT.schritt, rennen.gleiter) : hilfe.anwenden(g, roh, ZEIT.schritt, rennen.gleiter);
+      let ein = autopilot ? autopilot.steuer(g, ZEIT.schritt, rennen.gleiter) : hilfe.anwenden(g, roh, ZEIT.schritt, rennen.gleiter);
+      // Countdown/Start-Fenster: Start-Boost per Tipp (Taste ↑, Gamepad RT, Touch irgendwo) – kein Auto-Gas, sonst Überdrehen
+      if (rennen.phase === 'countdown' || rennen.zeit < GEFUEHL.startfenster) {
+        const startGas = autopilot ? autopilot.startGas(rennen.phase === 'countdown' ? -rennen.countdown : rennen.zeit) : (eingabe.startGas() ? 1 : 0);
+        startEin.gas = startGas;
+        if (rennen.phase === 'countdown') ein = { ...ein, gas: startGas };
+      }
       spielerT.ein = ein;
-      rennen.schritt(ZEIT.schritt, ein);
+      rennen.schritt(ZEIT.schritt, ein, startEin);
       waechter.pruefe(g, rennen, praes);
       ereignisse();
     }
+    driftFunken();
     if (rennen.phase === 'ziel' && laeuft) { laeuft = false; setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k), 1500); }
     rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
     rig.update(dt, g, fx);

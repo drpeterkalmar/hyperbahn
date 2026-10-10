@@ -7,18 +7,22 @@
 //     verrechnet; Sprung-Anläufe immer Vollgas.
 //  3. Lenken: Pure Pursuit auf einen Vorschaupunkt der Linie; Luftbremse innen, wenn die Lenkung nicht reicht.
 //  4. Stärke-Profile mit menschlichen Fehlern (Linienrauschen, Tempofaktor, Wackler), deterministisch per Seed.
+//  5. Fahrgefühl (Datenblatt): Drift mit Pump-Rhythmus in langen Kurven (Mini-Turbo), Start-Tipp im Countdown,
+//     Gummiband-Modus (`gummi` von ai/gummiband.js: Tempo raus bzw. „schnell“ = volles Profil, kein Störfeld-Abzug).
 import { GLEITER } from '../config.js';
 import { clamp, rng } from '../core/util.js';
 import { v3, setze, dot } from '../core/vec.js';
-import { F_LUECKE, F_SPRUNG, rahmenBei, neueAbfrage } from '../track/bahn.js';
+import { F_LUECKE, F_SPRUNG, F_MAGNET, rahmenBei, neueAbfrage } from '../track/bahn.js';
+import { lenkFaktor } from '../physics/fahrgefuehl.js';
 
 export const PROFILE = {
-  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15 },
-  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0 },
-  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95 },
+  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15 },
+  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4 },
+  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7 },
 };
 
 const RAND = 3.2;   // m Abstand der Linie zur Bahnkante
+export let DRIFT_RADIUS = 1000;   // m: Kurven enger als das (≥ 160 m lang) fährt die KI im Drift
 
 // Ideallinie + Tempoplan für eine Bahn (einmal je Strecke, ~50 ms)
 export function bauePlan(bahn, opt = {}) {
@@ -56,15 +60,16 @@ export function bauePlan(bahn, opt = {}) {
     }
   }
   // Krümmung der Linie in der Fahrfläche (quer) → Grenztempo
-  const vLim = new Float64Array(N), kQuer = new Float64Array(N);
+  const vLim = new Float64Array(N), kQuer = new Float64Array(N), kSign = new Float64Array(N);
   const quer = opt.quer || GLEITER.querMax * 0.8;
   const vmaxPlan = opt.vmaxPlan || GLEITER.vmax * 2.2;
   for (let i = 0; i < N; i++) {
     const a = (i - 3 + N) % N, c = (i + 3) % N;
     const h = 3 * ds;
     const dx = (Q[c * 3] - 2 * Q[i * 3] + Q[a * 3]) / (h * h), dy = (Q[c * 3 + 1] - 2 * Q[i * 3 + 1] + Q[a * 3 + 1]) / (h * h), dz = (Q[c * 3 + 2] - 2 * Q[i * 3 + 2] + Q[a * 3 + 2]) / (h * h);
-    const kq = Math.abs(dx * bahn.slx[i] + dy * bahn.sly[i] + dz * bahn.slz[i]);
-    kQuer[i] = kq;
+    const ks = dx * bahn.slx[i] + dy * bahn.sly[i] + dz * bahn.slz[i];
+    const kq = Math.abs(ks);
+    kQuer[i] = kq; kSign[i] = ks;
     vLim[i] = kq > 1e-6 ? Math.min(vmaxPlan, Math.sqrt(quer / kq)) : vmaxPlan;
   }
   // rückwärts: v_i ≤ sqrt(v_{i+1}² + 2·verz·ds) (zweimal um die Runde, damit der Übergang am Ziel stimmt)
@@ -80,7 +85,20 @@ export function bauePlan(bahn, opt = {}) {
     if (bahn.flags[i] & (F_SPRUNG | F_LUECKE)) for (let k = 0; k < 350; k++) voll[(i - k + N) % N] = 1;
   }
   for (let i = 0; i < N; i++) if (voll[i]) vZiel[i] = vmaxPlan;
-  return { u, vZiel, vLim, kQuer, voll };
+  // Drift-Kurven: zusammenhängend Radius < DRIFT_RADIUS (geglättet), ≥ 160 m lang, gleiche Richtung, nicht im Sprung
+  const kurven = [], kurveId = new Int16Array(N).fill(-1);
+  const glatt = new Float64Array(N);
+  for (let i = 0; i < N; i++) { let sum = 0; for (let k = -10; k <= 10; k++) sum += kSign[(i + k + N) % N]; glatt[i] = sum / 21; }
+  let i0 = -1;
+  for (let i = 0; i <= N; i++) {
+    const ok = i < N && Math.abs(glatt[i]) > 1 / DRIFT_RADIUS && !voll[i] && !(bahn.flags[i] & F_LUECKE) && (i0 < 0 || Math.sign(glatt[i]) === Math.sign(glatt[i0]));
+    if (ok && i0 < 0) i0 = i;
+    if (!ok && i0 >= 0) {
+      if ((i - i0) * ds >= 160) { const id = kurven.length; kurven.push({ s0: i0 * ds, s1: i * ds, seite: Math.sign(glatt[i0]) }); for (let k = i0; k < i; k++) kurveId[k] = id; }
+      i0 = ok ? i : -1;
+    }
+  }
+  return { u, vZiel, vLim, kQuer, kSign, voll, kurven, kurveId };
 }
 
 const _d = v3(), _l = v3(), _f = v3();
@@ -95,7 +113,15 @@ export class Pilot {
     this.q = neueAbfrage();
     this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 };
     this.rolleGeplant = false;
+    this.gummi = null;
+    this.driftT = 0; this.driftKurve = -1;
+    // Start-Tipp relativ zu Grün (s): Treffer im Fenster mit Wahrscheinlichkeit profil.start, sonst zu früh/zu spät
+    const rs = this.r();
+    this.startTipp = rs < (profil.start || 0) ? -0.06 + this.r() * 0.1 : (this.r() < 0.5 ? -0.9 - this.r() * 0.4 : 0.2 + this.r() * 0.3);
   }
+
+  // Gas im Countdown/kurz nach Grün (rel = Zeit relativ zu Grün)
+  startGas(rel) { return rel >= this.startTipp ? 1 : 0; }
 
   linieBei(s) {
     const b = this.bahn, N = b.N;
@@ -153,20 +179,25 @@ export class Pilot {
     const ex = _d.x * fx + _d.y * fy + _d.z * fz, ey = _d.x * lx + _d.y * ly + _d.z * lz;
     const alpha = Math.atan2(ey, Math.max(ex, 1));
     const gierSoll = 2 * v * Math.sin(alpha) / Math.max(la, 1);
-    const kappe = Math.min(GLEITER.gierMax, GLEITER.querMax / v);
+    const kappe = Math.min(GLEITER.gierMax, GLEITER.querMax / v) * Math.max(0.2, lenkFaktor(v / GLEITER.vmax));
     // Nase gegenüber Fahrtrichtung (Rutschwinkel) dämpfen
     const rutsch = Math.atan2(dot(g.v, g.links), Math.max(dot(g.v, g.vor), 1));
     let lenk = gierSoll / kappe + rutsch * 0.6 + this.wackel;
+    this._gierSoll = gierSoll; this._kappe = kappe; this._rutsch = rutsch;
     e.lenk = clamp(lenk, -1, 1);
-    // Tempo
-    const vz = this.zielBei(g.s + v * 0.6) * pr.tempo;
+    // Tempo (Gummiband: „schnell“ = volles Profil + kein Störfeld-Abzug, sonst ggf. Tempo-Deckel; nie in Sprung-Anläufen)
+    const gm = this.gummi;
+    g.randImmun = !!(gm && gm.schnell);
+    let vz = this.zielBei(g.s + v * 0.6) * (gm && gm.schnell ? Math.max(pr.tempo, 1) : pr.tempo);
     const voll = this.plan.voll[((Math.round(g.s / b.ds) % b.N) + b.N) % b.N];
+    if (gm && gm.tempo < 1 && !voll) vz = Math.min(vz, GLEITER.vmax * gm.tempo * (1 + g.boost));
     e.gas = voll ? 1 : clamp((vz - v) / 6 + 0.6, 0, 1);
     const zuSchnell = !voll && v > vz + 3;
     const sat = Math.abs(lenk) > 1.05;
     e.bremseL = (zuSchnell || sat) && lenk > 0 ? clamp((v - vz) / 10 + (sat ? 0.6 : 0), 0, 1) : 0;
     e.bremseR = (zuSchnell || sat) && lenk < 0 ? clamp((v - vz) / 10 + (sat ? 0.6 : 0), 0, 1) : 0;
     if (zuSchnell && Math.abs(lenk) < 0.2) { e.bremseL = e.bremseR = clamp((v - vz) / 12, 0, 1); }
+    this.driften(g, dt, e, v, imSprung);
     // Luft: Barrel-Roll, wenn noch genug Flugzeit bleibt (Stärke-abhängig, einmal je Sprung)
     if (!g.boden && g.luftZeit > 0.3 && g.luftZeit < 1.2) {
       if (!this.rolleGeplant) {
@@ -179,5 +210,35 @@ export class Pilot {
     }
     if (g.boden) this.rolleGeplant = false;
     return e;
+  }
+
+  // Drift in langen Kurven: Luftbremse innen halten, im Rhythmus pumpen (0,33 s halten, dann 0,07 s los / 0,17 s halten),
+  // ~0,35 s vor Kurvenende loslassen → Mini-Turbo. Profil.drift = Anteil der Kurven, in denen gedriftet wird.
+  driften(g, dt, e, v, imSprung) {
+    const b = this.bahn, pr = this.profil;
+    const i = ((Math.round(g.s / b.ds) % b.N) + b.N) % b.N;
+    const id = this.plan.kurveId ? this.plan.kurveId[i] : -1;
+    if (id !== this.driftKurve) {
+      this.driftKurve = id; this.driftT = 0;
+      this.driftJa = id >= 0 && this.r() < (pr.drift || 0);
+    }
+    if (id < 0 || !this.driftJa || !g.boden || imSprung || g.treff) { this.driftT = 0; return; }
+    const K = this.plan.kurven[id];
+    let rest = K.s1 - g.s; if (rest < -b.L / 2) rest += b.L;
+    if (rest < v * 0.35) return;                                    // loslassen → Mini-Turbo
+    if (!g.drift.aktiv && Math.sign(e.lenk) !== K.seite) return;    // erst einlenken
+    if (!g.drift.aktiv && Math.abs(e.lenk) < 0.32) e.lenk = K.seite * 0.32;
+    this.driftT += dt;
+    const t = this.driftT;
+    const halten = t < 0.33 || ((t - 0.33) % 0.24) >= 0.07;
+    const bremse = halten ? 1 : 0;
+    if (K.seite > 0) { e.bremseL = bremse; e.bremseR = 0; } else { e.bremseR = bremse; e.bremseL = 0; }
+    // Lenkung neu rechnen: die innere Luftbremse dreht selbst mit (Physik: (lenk + 0,35·Bremse) · Kappe · (1 + 0,75·Bremse))
+    if (g.drift.aktiv) {
+      const f = 1 + GLEITER.luftbremseGier * bremse;
+      const l = this._gierSoll / (this._kappe * f) - 0.35 * bremse * K.seite + this._rutsch * 0.6;
+      e.lenk = clamp(l, K.seite > 0 ? -0.35 : -1, K.seite > 0 ? 1 : 0.35);
+    }
+    void F_MAGNET;
   }
 }

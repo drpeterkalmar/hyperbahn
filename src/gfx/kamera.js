@@ -5,13 +5,19 @@
 //  • Tempo/Boost weiten das Sichtfeld, Riesensprung: Kamera zieht für das Panorama zurück, Landung: kurzer Ruck
 //  • Action-Momente: Zoom-Punch (fx.fov/zoom), Bullet-Time-Halbkreis (fx.orbit), Shake (fx.shake)
 // Versatz und Oben-Vektor werden im Gleiter-Rahmen geglättet (nicht die Weltlage) → kein Hinterherhinken bei 800 km/h.
+// Fahrgefühl (Datenblatt): Sichtfeld-Grundwert 62° (?fov=), Boost +12° (?fovboost=), Sprung von der Pad-Kette +18°,
+// Treffer +10°, Änderung höchstens 40°/s hinauf und 24°/s zurück („atmendes“ Sichtfeld). Nachlauf wie ein lockerer
+// Verfolger: geglättetes Tempo (waagrecht τ ≈ 0,04 s, senkrecht τ ≈ 0,1 s) → die Kamera fällt nur beim Beschleunigen
+// kurz zurück (Boost-Start: wenige Prozent der Folgedistanz) und schwingt in ~0,3 s wieder ein.
 import { KAMERA, GLEITER } from '../config.js';
 import { v3, setze, dot, norm, kreuz, addSk, drehe } from '../core/vec.js';
 import { clamp } from '../core/util.js';
+import { GEFUEHL } from '../physics/fahrgefuehl.js';
 
 export const KAM = {
-  abstand: 9.5, hoehe: 2.6, blickVor: 9, fov: 70, fovTempo: 14, fovBoost: 10,
+  abstand: 9.5, hoehe: 2.6, blickVor: 9, fovTempo: 4,
   panoramaAbstand: 16, panoramaHoehe: 6, panoramaZeit: 0.8, glatt: 0.09, ruck: 0.35,
+  tauWaag: 0.039, tauSenk: 0.103, nachlauf: 0.3,   // s: Tempo-Glättung (0,35 bzw. 0,15 je 1/60 s) und Versatz-Faktor
 };
 
 const WELT_OBEN = v3(0, 1, 0);
@@ -19,7 +25,8 @@ const WELT_OBEN = v3(0, 1, 0);
 export class KameraRig {
   constructor() {
     this.pos = v3(); this.ziel = v3(); this.oben = v3(0, 1, 0);
-    this.fov = KAM.fov;
+    this.fov = GEFUEHL.fov; this.fovBasis = GEFUEHL.fov;
+    this.vGlatt = v3(); this.versatz = v3(); this.sprungBoost = false; this.trefferT = 0;
     this.dist = KAM.abstand; this.hoch = KAM.hoehe;
     this.richt = v3(0, 0, -1);
     this.ruck = 0; this.t = 0;
@@ -62,6 +69,16 @@ export class KameraRig {
     setze(this.ziel, g.p.x, g.p.y, g.p.z);
     addSk(this.ziel, this.ziel, this.richt, KAM.blickVor);
     addSk(this.ziel, this.ziel, this.oben, 1.0);
+    // Nachlauf: geglättetes Tempo, getrennt waagrecht/senkrecht (bezogen auf das Kamera-Oben); Versatz = −(v − vGlatt)·T
+    if (!this.init) setze(this.vGlatt, g.v.x, g.v.y, g.v.z);
+    const dvx = g.v.x - this.vGlatt.x, dvy = g.v.y - this.vGlatt.y, dvz = g.v.z - this.vGlatt.z;
+    const dSenk = dvx * this.oben.x + dvy * this.oben.y + dvz * this.oben.z;
+    const aW = 1 - Math.exp(-dt / KAM.tauWaag), aS = 1 - Math.exp(-dt / KAM.tauSenk);
+    this.vGlatt.x += (dvx - this.oben.x * dSenk) * aW + this.oben.x * dSenk * aS;
+    this.vGlatt.y += (dvy - this.oben.y * dSenk) * aW + this.oben.y * dSenk * aS;
+    this.vGlatt.z += (dvz - this.oben.z * dSenk) * aW + this.oben.z * dSenk * aS;
+    setze(this.versatz, -(g.v.x - this.vGlatt.x) * KAM.nachlauf, -(g.v.y - this.vGlatt.y) * KAM.nachlauf, -(g.v.z - this.vGlatt.z) * KAM.nachlauf);
+    addSk(this.pos, this.pos, this.versatz, 1);
     // Bullet-Time: Halbkreis um den Gleiter (um das Kamera-Oben)
     if (fx && fx.orbitAn) {
       setze(_c, this.pos.x - g.p.x, this.pos.y - g.p.y, this.pos.z - g.p.z);
@@ -77,9 +94,15 @@ export class KameraRig {
       addSk(this.pos, this.pos, _c, Math.sin(this.t * 71) * sh);
       addSk(this.pos, this.pos, this.oben, Math.sin(this.t * 53 + 1) * sh * 0.6);
     }
-    // Sichtfeld: Tempo + Boost weiten, Zoom-Punch/Zeitlupe verengen
+    // Sichtfeld: Grundwert + Boost/Sprung/Treffer, mit begrenzter Änderungsrate; Zoom-Punch/Zeitlupe kommen ungebremst dazu
+    if (g.boden) this.sprungBoost = false; else if (g.luftZeit < 0.1 && g.boost > 0.3) this.sprungBoost = true;
+    if (g.treff) this.trefferT = 0.6; else this.trefferT = Math.max(0, this.trefferT - dt);
     const tempoAnteil = clamp(v / (GLEITER.vmax * 1.7), 0, 1);
-    this.fov = KAM.fov + KAM.fovTempo * tempoAnteil + KAM.fovBoost * clamp(g.boost, 0, 1) + (fx ? fx.fov : 0);
+    const ziel = GEFUEHL.fov + KAM.fovTempo * tempoAnteil + (g.boost > 0.05 || g.mt > 0.05 ? GEFUEHL.fovBoost : 0)
+      + (this.sprungBoost && !g.boden ? GEFUEHL.fovSprung : 0) + (this.trefferT > 0 ? GEFUEHL.fovTreffer : 0);
+    const d = ziel - this.fovBasis;
+    this.fovBasis += this.init ? clamp(d, -GEFUEHL.fovZurueck * dt, GEFUEHL.fovRate * dt) : d;
+    this.fov = this.fovBasis + (fx ? fx.fov : 0);
     if (fx && fx.zoom > 1) this.fov /= fx.zoom;
     this.init = true;
     return this;

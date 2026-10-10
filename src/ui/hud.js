@@ -6,7 +6,7 @@ import { fmtTime } from '../core/util.js';
 import { ANZEIGE } from '../config.js';
 
 const SPEICHER = 'hyperbahn-einstellungen';
-export const STANDARD = { hilfe: 'leicht', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, runden: 3 };
+export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, runden: 3 };
 
 export function ladeEinstellungen() {
   try { return { ...STANDARD, ...JSON.parse(localStorage.getItem(SPEICHER) || '{}') }; } catch { return { ...STANDARD }; }
@@ -62,6 +62,7 @@ export class Hud {
       <button class="start">RENNEN STARTEN</button>
       <div class="einst">
         <label>Fahrhilfe</label>${wahl('hilfe', [['leicht', 'Leicht'], ['mittel', 'Mittel'], ['profi', 'Profi']])}
+        <label>Gleiter-Klasse</label>${wahl('klasse', [['leicht', 'Leicht (spritzig)'], ['mittel', 'Mittel'], ['schwer', 'Schwer (rammt)']])}
         <label>Gegner</label>${wahl('gegner', [[0, '0'], [3, '3'], [7, '7']])}
         <label>KI-Stärke</label>${wahl('ki', [['leicht', 'Leicht'], ['mittel', 'Mittel'], ['profi', 'Profi']])}
         <label>🎬 Action-Momente</label>${wahl('action', [[0, 'Aus'], [1, 'Selten'], [2, 'Oft']])}
@@ -69,7 +70,7 @@ export class Hud {
         <label>Horizont halten</label>${wahl('horizont', [[false, 'Aus'], [true, 'An']])}
         <label>Ton</label>${wahl('ton', [[true, 'An'], [false, 'Aus']])}
       </div>
-      <div class="steuerung">← → lenken · ↑ Gas · Q/E Luftbremsen · Leertaste Barrel-Roll im Sprung (= Turbo) · ↑/↓ in der Luft Nase</div>`;
+      <div class="steuerung">← → lenken · ↑ Gas (beim Countdown auf „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste Barrel-Roll im Sprung (= Turbo) · ↑/↓ in der Luft Nase</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
     this.menue.querySelectorAll('[data-wahl]').forEach((w) => {
       w.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {

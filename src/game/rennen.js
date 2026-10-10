@@ -2,13 +2,16 @@
 // Die Physik läuft für alle Teilnehmer im selben festen Schritt; KI-Teilnehmer holen ihre Eingaben vom Pilot, der Spieler
 // liefert sie von außen (Eingabe + Fahrhilfe). Fortschritt = gefahrene Bogenlänge (Rückwärtsfahren zählt negativ),
 // daher kein Abkürzen über den Start/Ziel-Strich.
+// Fahrgefühl (Datenblatt): Start-Boost im Fenster um Grün (Überdrehen = Stotterer), Stöße nach Stoßgewicht der Klasse,
+// Gummiband gegen den besten Menschen (ai/gummiband.js).
 import { Gleiter } from '../physics/gleiter.js';
-import { dot } from '../core/vec.js';
+import { GEFUEHL, startWertung } from '../physics/fahrgefuehl.js';
+import { gummiband } from '../ai/gummiband.js';
 
 export const START = { reihe: 22, quer: 5.5, vorStrich: 12, countdown: 3 };
 
 export class Rennen {
-  // teilnehmer: [{ name, pilot (oder null = Spieler), farbe }]
+  // teilnehmer: [{ name, pilot (oder null = Spieler), farbe, klasse, spieler (true = Mensch, auch wenn ein Autopilot fährt) }]
   constructor(bahn, teilnehmer, opt = {}) {
     this.bahn = bahn;
     this.runden = opt.runden || 3;
@@ -16,15 +19,17 @@ export class Rennen {
     this.phase = opt.ohneCountdown ? 'rennen' : 'countdown';
     this.countdown = opt.ohneCountdown ? 0 : START.countdown;
     this.zielReihenfolge = [];
+    this.gummiStaerke = opt.gummiband ?? GEFUEHL.gummiband;
     this.alle = teilnehmer.map((t, k) => {
       const reihe = Math.floor(k / 2), seite = k % 2 ? -1 : 1;
       const abstand = START.vorStrich + reihe * START.reihe;
       const s = bahn.L - abstand;
-      const g = new Gleiter(bahn, { id: k, s, u: seite * START.quer, v0: 0 });
+      const spieler = t.spieler ?? !t.pilot;
+      const g = new Gleiter(bahn, { id: k, s, u: seite * START.quer, v0: 0, klasse: t.klasse, ki: !spieler });
       return {
-        k, name: t.name || `Fahrer ${k + 1}`, farbe: t.farbe, pilot: t.pilot || null, spieler: !t.pilot,
+        k, name: t.name || `Fahrer ${k + 1}`, farbe: t.farbe, pilot: t.pilot || null, spieler, klasse: g.klasse,
         g, fortschritt: -abstand, sAlt: g.s, runde: 0, rundenStart: 0, rundenZeiten: [], beste: Infinity,
-        ziel: null, platz: k + 1,
+        ziel: null, platz: k + 1, start: { dauer: 0, tipp: null, alt: false, gewertet: false },
       };
     });
     this.gleiter = this.alle.map((t) => t.g);
@@ -33,22 +38,50 @@ export class Rennen {
   get spieler() { return this.alle.find((t) => t.spieler) || null; }
 
   // ein fester Physik-Schritt; einSpieler = Eingabe des Spielers (nach Fahrhilfe)
-  schritt(dt, einSpieler) {
+  // startSpieler (optional): Gas des Spielers nur für die Start-Wertung (z. B. ohne Auto-Gas der Fahrhilfe)
+  schritt(dt, einSpieler, startSpieler = null) {
     if (this.phase === 'countdown') {
       this.countdown -= dt;
-      if (this.countdown <= 0) { this.phase = 'rennen'; this.countdown = 0; }
+      this.startGas(dt, -Math.max(0, this.countdown), startSpieler || einSpieler);
+      if (this.countdown <= 0) {
+        this.phase = 'rennen'; this.countdown = 0;
+        // Überdrehen: zu langes Dauergas vor Grün → Triebwerks-Stotterer
+        for (const t of this.alle) if (startWertung(null, t.start.dauer) === 'stotterer') { t.g.stotter = GEFUEHL.stotterer; t.start.gewertet = true; t.g.ereignis('stotterer', 1); }
+      }
       return;
     }
     this.zeit += dt;
+    if (this.zeit <= GEFUEHL.startfenster / 2 + 1e-9) this.startGas(dt, this.zeit, startSpieler || einSpieler);
+    else this.startBoost();
+    if (this.gummiStaerke > 0) gummiband(this, this.gummiStaerke);
     for (const t of this.alle) {
       let ein;
-      if (t.ziel && t.spieler && !einSpieler) ein = AUS;
-      else if (t.pilot) ein = t.pilot.steuer(t.g, dt, this.gleiter);
+      if (t.ziel && t.spieler && !einSpieler && !t.pilot) ein = AUS;
+      else if (t.pilot && !(t.spieler && einSpieler)) ein = t.pilot.steuer(t.g, dt, this.gleiter);
       else ein = einSpieler || AUS;
       t.g.schritt(dt, ein);
     }
     this.stoesse();
     this.fortschritt();
+  }
+
+  // Start-Boost: Gas-Flanken um Grün mitschreiben (Spieler = Eingabe, KI/Autopilot = Start-Tipp des Piloten)
+  startGas(dt, rel, einSpieler) {
+    for (const t of this.alle) {
+      const an = t.pilot && !(t.spieler && einSpieler) ? t.pilot.startGas(rel) > 0.5 : !!(einSpieler && einSpieler.gas > 0.5);
+      const st = t.start;
+      if (an && !st.alt) st.tipp = rel;
+      st.dauer = an && rel <= 0 ? st.dauer + dt : (rel <= 0 ? 0 : st.dauer);
+      st.alt = an;
+    }
+  }
+  startBoost() {
+    for (const t of this.alle) {
+      const st = t.start;
+      if (st.gewertet) continue;
+      st.gewertet = true;
+      if (startWertung(st.tipp, 0) === 'boost') { t.g.padBoost(); t.g.statistik.startboost++; t.g.ereignis('startboost', 1); }
+    }
   }
 
   fortschritt() {
@@ -112,15 +145,19 @@ export class Rennen {
         gj.p.x += nx * tief / 2; gj.p.y += ny * tief / 2; gj.p.z += nz * tief / 2;
         const rel = (gj.v.x - gi.v.x) * nx + (gj.v.y - gi.v.y) * ny + (gj.v.z - gi.v.z) * nz;
         if (rel < 0) {
-          const imp = -rel * 0.75;   // halbelastisch
-          gi.v.x -= nx * imp; gi.v.y -= ny * imp; gi.v.z -= nz * imp;
-          gj.v.x += nx * imp; gj.v.y += ny * imp; gj.v.z += nz * imp;
+          // Impuls je Gleiter = stoss × Relativtempo × (Gewicht des anderen / eigenes), gedeckelt → Leichte fliegen weiter
+          const wi = gi.kl.stoss, wj = gj.kl.stoss, D = GEFUEHL.stossDeckel;
+          const ki = GEFUEHL.stoss * -rel * Math.min(D, wj / wi), kj = GEFUEHL.stoss * -rel * Math.min(D, wi / wj);
+          gi.v.x -= nx * ki; gi.v.y -= ny * ki; gi.v.z -= nz * ki;
+          gj.v.x += nx * kj; gj.v.y += ny * kj; gj.v.z += nz * kj;
+          gi.schild = Math.max(0, gi.schild - 0.02 * Math.min(D, wj / wi) * Math.min(1, -rel / 20));
+          gj.schild = Math.max(0, gj.schild - 0.02 * Math.min(D, wi / wj) * Math.min(1, -rel / 20));
           const st = Math.min(1, -rel / 15);
           gi.ereignis('stoss', st, { mit: gj.id }); gj.ereignis('stoss', st, { mit: gi.id });
+          gi.drift.abbrechen(); gj.drift.abbrechen();
         }
       }
     }
-    void dot;
   }
 
   // Beinahe-Kollision/knappes Überholen erkennen (für Action-Momente): Paare mit kleinem Abstand und hoher Relativfahrt

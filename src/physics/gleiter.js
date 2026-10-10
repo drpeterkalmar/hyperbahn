@@ -188,7 +188,7 @@ export class Gleiter {
     const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
     addSk(a, a, _d, schub);
     if (tempo > 1e-6) {
-      const zug = zugBei(tempo) + (amBoden ? GLEITER.luftbremseZug * (bl + br) * 0.5 : 0);
+      const zug = zugBei(tempo) + (amBoden ? GLEITER.luftbremseZug * (bl + br) * 0.5 * (dr.aktiv ? GEFUEHL.driftZug : 1) : 0);
       addSk(a, a, this.v, -zug / tempo);
     }
 

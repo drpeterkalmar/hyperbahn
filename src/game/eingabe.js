@@ -53,6 +53,14 @@ export class Eingabe {
     knopf(bremseL, 'bremseL'); knopf(bremseR, 'bremseR'); knopf(rolle, 'rolle');
   }
 
+  // Gas für den Start-Boost (Countdown): ↑/W, Gamepad RT oder ein Finger auf dem Bildschirm
+  startGas() {
+    const t = this.tasten;
+    if (t.has('ArrowUp') || t.has('KeyW') || this.touch.aktiv) return true;
+    const gp = typeof navigator !== 'undefined' && navigator.getGamepads ? [...navigator.getGamepads()].find((p) => p && p.connected) : null;
+    return !!(gp && gp.buttons[7] && gp.buttons[7].value > 0.5);
+  }
+
   lesen(dt, inLuft = false) {
     const t = this.tasten, r = this.roh;
     const links = t.has('ArrowLeft') || t.has('KeyA'), rechts = t.has('ArrowRight') || t.has('KeyD');

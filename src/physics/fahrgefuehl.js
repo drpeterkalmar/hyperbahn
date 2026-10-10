@@ -35,7 +35,8 @@ export const GEFUEHL = {
   mtZuLang: 1.7,      //            s zu lange gehalten → Stufe verfällt
   driftPause: 0.25,   //            s Loslassen länger als das = Drift endet
   driftMinTempo: 0.35,//            Anteil Höchsttempo
-  driftGrip: 0.35,    //            Seitenhaftung im Drift (Anteil)
+  driftGrip: 0.45,    //            Seitenhaftung im Drift (Anteil)
+  driftZug: 0.2,      //            Luftbremsen-Widerstand im Drift (Anteil): Drift ist Rutschen, nicht Bremsen
   mtGewinn: [0, 0, 0.18, 0.25], // Tempo-Anteil je Stufe
   mtAktiv: 0.6,       //            s voller Schub
   mtHalb: 1.0,        //            s Halbwertszeit des Ausklingens
@@ -126,7 +127,8 @@ export class Drift {
     } else {
       // Abbruch: zu langsam, zu lange in der Luft, Lenkung lange los
       this.luft = e.boden ? 0 : this.luft + dt;
-      this.lenkLos = Math.abs(e.lenk) < 0.15 || Math.sign(e.lenk) === -this.seite ? this.lenkLos + dt : 0;
+      // Gegenlenken (deutlich gegen die Drift-Seite) beendet den Drift; kleines Nachlenken ist erlaubt
+      this.lenkLos = e.lenk * this.seite < -0.4 ? this.lenkLos + dt : 0;
       if (e.x < GEFUEHL.driftMinTempo * 0.85 || this.luft > 0.4) { this.reset(); o.ende = 'abbruch'; }
       else {
         const druck = bremse(this.seite);
@@ -144,7 +146,7 @@ export class Drift {
           }
           this.pause += dt;
         }
-        if (this.pause > GEFUEHL.driftPause || this.lenkLos > 0.25) {
+        if (this.pause > GEFUEHL.driftPause || this.lenkLos > 0.3) {
           const st = this.stufe;
           this.reset();
           o.ende = 'los';
