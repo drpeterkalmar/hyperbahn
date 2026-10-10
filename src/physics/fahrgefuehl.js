@@ -1,5 +1,5 @@
 // Fahrgefühl nach dem Clean-Room-Datenblatt (Peter 10.10.: „Spielgefühl eines klassischen 90er-Fun-Racers“,
-// ~/.hermes/plans/hyperbahn-mk64-feel.md, Abschnitt 3). Nur Mechanik und Größenordnungen, eigene Zahlen und Namen.
+// Fahrgefühl-Datenblatt aus Peters Plan-Ordner, Nachtrag 10.10., Abschnitt 3). Nur Mechanik und Größenordnungen, eigene Zahlen und Namen.
 // Rein (ohne three.js), Node-testbar. Die Gleiter-Physik (gleiter.js) und das Rennen (rennen.js) nutzen es.
 //
 //  • Gewichtsklassen leicht/mittel/schwer mit Beschleunigung in 10 Tempo-Bändern (je 10 % Höchsttempo):

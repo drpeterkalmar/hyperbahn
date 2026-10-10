@@ -142,7 +142,7 @@ test('#13/#14 Kamera: +12° in ≤ 0,3 s, zurück ≤ 0,55 s, Grundwert 62°, Na
 test('URL-Regler werden gelesen (?gummiband=0|1|2, ?items=, ?drift=)', () => {
   const alt = { ...GEFUEHL };
   try {
-    leseGefuehl('?gummiband=2&items=mk&drift=1.5&fov=70');
+    leseGefuehl('?gummiband=2&items=ref&drift=1.5&fov=70');
     assert.equal(GEFUEHL.gummiband, 1); assert.equal(GEFUEHL.items, 'ref'); assert.equal(GEFUEHL.drift, 1.5); assert.equal(GEFUEHL.fov, 70);
     leseGefuehl('?gummiband=0'); assert.equal(GEFUEHL.gummiband, 0);
   } finally { Object.assign(GEFUEHL, alt); }
