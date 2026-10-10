@@ -3,6 +3,8 @@
 // Ablauf je Bild: Präsentations-Uhr (Echtzeit) → Sim-Uhr liefert n feste Physik-Schritte (Zeitlupe nur offline) →
 // Ereignisse der Gleiter → Effekte (Blitze über die Blitz-Bremse) → Kamera → Kino-Look → HUD.
 // VORBAU (ohne Browser geschrieben): Abnahme, Feinabstimmung am Bild und Mess-Gate macht der Heavy-Job.
+// Mess-/Abnahme-Regler: ?autostart=1 (Menü überspringen), ?at=<Abschnittsname oder s in m> (Feld dort aufstellen, fliegender
+// Start), ?autopilot=1 (Spieler fährt per KI – Screenshots/Mess-Gate), ?nosw (ohne Service-Worker), ?look=, ?kl=.
 import * as THREE from 'three';
 import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER } from './config.js';
 import { strecke1, SPRUNG_MINDEST } from './track/strecke1.js';
@@ -61,7 +63,15 @@ import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => consol
 const eingabe = new Eingabe(window);
 const rig = new KameraRig();
 let rennen = null, hilfe = null, waechter = null, regie = null, uhr = null, meshes = [], spielerT = null;
-let laeuft = false, praes = 0, vibLetzt = -9;
+let laeuft = false, praes = 0, vibLetzt = -9, autopilot = null;
+// ?at=Großer Looping | ?at=1600 → Bogenlänge oder null
+function startStelle() {
+  if (!q.has('at')) return null;
+  const v = q.get('at');
+  if (/^-?\d+(\.\d+)?$/.test(v)) return ((+v % bahn.L) + bahn.L) % bahn.L;
+  const k = bahn.abschnitte.findIndex((a) => a.name.toLowerCase() === v.toLowerCase());
+  return k >= 0 ? Math.max(0, bahn.segStart[k] - 120) : null;
+}
 
 const hud = new Hud(document.getElementById('ui'), {
   onStart: (e) => starte(e),
@@ -90,8 +100,14 @@ function starte(e) {
   const stufe = q.has('hilfe') ? SPIEL.hilfe : e.hilfe;
   const teil = [{ ...TEAMS[0], name: 'DU' }];
   for (let k = 1; k <= anzahl; k++) teil.push({ ...TEAMS[k], pilot: new Pilot(bahn, plan, PROFILE[ki], 100 + k * 13) });
-  rennen = new Rennen(bahn, teil, { runden: q.has('runden') ? SPIEL.runden : e.runden });
+  const at = startStelle();
+  rennen = new Rennen(bahn, teil, { runden: q.has('runden') ? SPIEL.runden : e.runden, ohneCountdown: at !== null });
   spielerT = rennen.spieler;
+  if (at !== null) {
+    // fliegender Start an einer Stelle (Abnahme/Screenshots): Feld versetzt dahinter, mit 85 % Höchsttempo
+    rennen.alle.forEach((t, k) => { t.g.setzeAuf(at - k * 14, (k % 2 ? -1 : 1) * 4, GLEITER.vmax * 0.85); t.sAlt = t.g.s; });
+  }
+  autopilot = q.get('autopilot') === '1' ? new Pilot(bahn, plan, PROFILE.profi, 1) : null;
   hilfe = new Fahrhilfe(bahn, plan, stufe);
   waechter = new MomentWaechter(bahn, plan);
   uhr = new Uhr({ online: SPIEL.online });
@@ -160,8 +176,10 @@ function speedOk(g) {
 
 // --- Hauptschleife ---
 let tAlt = performance.now() / 1000;
+window.__app = { ready: true, frames: 0 };   // wie Stuntbahn: tests/util.py wartet auf ready + frames
 function bild() {
   requestAnimationFrame(bild);
+  window.__app.frames++;
   const tJetzt = performance.now() / 1000;
   const dt = Math.min(0.1, tJetzt - tAlt); tAlt = tJetzt;
   praes += dt;
@@ -177,7 +195,7 @@ function bild() {
     const g = spielerT.g;
     for (let i = 0; i < n; i++) {
       const roh = eingabe.lesen(ZEIT.schritt, !g.boden);
-      const ein = hilfe.anwenden(g, roh, ZEIT.schritt, rennen.gleiter);
+      const ein = autopilot ? autopilot.steuer(g, ZEIT.schritt, rennen.gleiter) : hilfe.anwenden(g, roh, ZEIT.schritt, rennen.gleiter);
       spielerT.ein = ein;
       rennen.schritt(ZEIT.schritt, ein);
       waechter.pruefe(g, rennen, praes);
@@ -217,6 +235,30 @@ function bild() {
   });
 }
 requestAnimationFrame(bild);
+if (q.get('autostart') === '1') starte(hud.einst);
 
-// für Mess-/Abnahme-Skripte des Heavy-Jobs
-window.__hb = { bahn, plan, get rennen() { return rennen; }, kino, renderer, starte: () => starte(hud.einst), regie: () => regie, blitze };
+// Qualitäts-Automatik (einfach): Bildrate je Sekunde → Kino-Look passt die Renderskala an. TODO Heavy-Job: Grafik-
+// Autopilot aus der Stuntbahn (kern/autopilot.js) übernehmen, sobald das Mess-Gate läuft.
+let fpsN = 0, fpsT = 0;
+(function fpsMessen() {
+  requestAnimationFrame(fpsMessen);
+  fpsN++;
+  const t = performance.now() / 1000;
+  if (!fpsT) fpsT = t;
+  if (t - fpsT >= 1) { const fps = fpsN / (t - fpsT); fpsN = 0; fpsT = t; if (laeuft && !q.has('look')) kino.adapt(fps); window.__hb.fps = fps; }
+})();
+
+// für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
+window.__hb = {
+  bahn, plan, kino, renderer, blitze, fps: 0,
+  get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
+  starte: () => starte(hud.einst), regie: () => regie,
+  // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'
+  moment: (art = 'sprungScheitel') => { if (!regie) return null; regie.letzt = -Infinity; const g = spielerT.g; return regie.melde(art, 1, { x: g.p.x, y: g.p.y, z: g.p.z }, {}, praes); },
+  // Spieler an eine Stelle setzen (s in m oder Abschnittsname), Tempo v (m/s)
+  setze: (wo, v = GLEITER.vmax) => {
+    const k = typeof wo === 'string' ? bahn.abschnitte.findIndex((a) => a.name === wo) : -1;
+    const s = k >= 0 ? bahn.segStart[k] : +wo;
+    spielerT.g.setzeAuf(s, 0, v); spielerT.sAlt = spielerT.g.s; rig.init = false;
+  },
+};

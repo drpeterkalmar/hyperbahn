@@ -1,0 +1,21 @@
+{
+ "_kommentar": "Hyperbahn-Szenen für tests/perf_gate.py (Kopie aus der Stuntbahn, n30). VORBAU: ungetestet – der Heavy-Job prüft Bedingungen/Zeiten. Stufe fest per ?look= (0 Einfach, 1 Standard, 2 Kino), Spieler per ?autopilot=1, Feld per ?at=<Abschnitt> fliegend aufgestellt (ohne Countdown).",
+ "bereit": "window.__app && window.__app.ready && window.__app.frames > 3 && window.__hb",
+ "info": "() => { const i = __hb.renderer.info; return { calls: i.render.calls, tris: i.render.triangles, tex: i.memory.textures, gpu: null }; }",
+ "zusatz": "() => ({ fps: __hb.fps, kino: __hb.kino.describe(), tempo: __hb.spieler ? __hb.spieler.tempo : null })",
+ "ladeQuery": "?nosw",
+ "ladeNachlauf": 4,
+ "szenen": [
+  { "name": "menu_standard", "query": "?nosw&look=1", "schritte": [ { "warte": 2 } ] },
+  { "name": "start_standard", "query": "?nosw&look=1&autostart=1&autopilot=1", "schritte": [ { "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'", "max": 20 }, { "warte": 2 } ] },
+  { "name": "start_kino", "query": "?nosw&look=2&autostart=1&autopilot=1", "schritte": [ { "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'", "max": 20 }, { "warte": 2 } ] },
+  { "name": "pulk_standard", "query": "?nosw&look=1&autostart=1&autopilot=1&at=Start-Ziel", "schritte": [ { "warte": 1 } ] },
+  { "name": "looping_standard", "query": "?nosw&look=1&autostart=1&autopilot=1&at=Gro%C3%9Fer%20Looping",
+    "schritte": [ { "bis": "__hb.spieler && __hb.spieler.oben.y < -0.5", "max": 30 } ] },
+  { "name": "roehre_standard", "query": "?nosw&look=1&autostart=1&autopilot=1&at=Korkenzieher-R%C3%B6hre", "schritte": [ { "warte": 2.5 } ] },
+  { "name": "sprung_standard", "query": "?nosw&look=1&autostart=1&autopilot=1&at=H%C3%A4userschlucht%20Anlauf",
+    "schritte": [ { "bis": "__hb.spieler && !__hb.spieler.boden && __hb.spieler.luftZeit > 1", "max": 40 } ] },
+  { "name": "sprung_einfach", "query": "?nosw&look=0&autostart=1&autopilot=1&at=H%C3%A4userschlucht%20Anlauf",
+    "schritte": [ { "bis": "__hb.spieler && !__hb.spieler.boden && __hb.spieler.luftZeit > 1", "max": 40 } ] }
+ ]
+}
