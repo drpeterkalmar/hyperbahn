@@ -86,6 +86,8 @@ Bei „Oft“ kamen vorher 57 von 83 Momenten aus den Magnet-Abschnitten → Gew
   Blitze reduziert – je hoch + quer, 0 Fehler; Bildfolgen mit je 14 Bildern für Bullet-Time, Speed-Ramp, Zoom-Punch.
 - `tests/test_eingabe_zeitlupe.py`: **OK** – während der Bullet-Time (Zeitfaktor 0,04) kommt die Lenk-Eingabe an; sie wirkt
   wie gewollt in Sim-Zeit (gleiche Antwort je Physik-Schritt wie ohne Zeitlupe, also fair), danach Zeitfaktor wieder 1.
+- **Live-Prüfung** gegen https://drpeterkalmar.github.io/hyperbahn/ (Build `6ca41467d0` = lokal), hoch + quer: Boot,
+  Rennen, alle 8 Gleiter-Modelle geladen, Minikarte an, Service-Worker aktiv, 0 Fehler.
 - Pause → WEITER: Rennzeit steht während der Pause, läuft danach weiter; Musik stoppt im Menü und kommt mit WEITER zurück.
 
 **Bild-Selbstprüfung** (ich habe die Screenshots selbst angesehen – ein eigenes `vision_analyze`-Werkzeug gab es in diesem
