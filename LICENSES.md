@@ -4,7 +4,7 @@
 |---|---|---|
 | three.js (`lib/three.*.min.js`, `lib/addons/…`) | three.js r18x, kopiert aus dem Stuntbahn-Repo | MIT (`lib/THREE_LICENSE.txt`) |
 | Kino-Look + TAAU (`src/gfx/kinolook.js`, `src/gfx/kern/taau*.js`), Mess-Gate (`tests/perf_gate.py`, `tests/util.py`, `tests/collage.py`) | Stuntbahn (Peters eigener Code) | eigener Code |
-| Strecke, Physik, KI, Zeit-Logik, HUD, Minikarte, Stadt, Himmel, Ton (Synthese), Leucht-Teile der Gleiter | eigene Arbeit | eigener Code |
+| Strecke, Physik, KI, Zeit-Logik, HUD, Minikarte, Stadt, Himmel, Klänge (Synthese), Leucht-Teile der Gleiter | eigene Arbeit | eigener Code |
 | Icons (`icons/`) | prozedural erzeugt (`tools/make_icons.py`) | eigene Arbeit |
 
 ## Gleiter-Modelle (`assets/gleiter/*.glb`)
@@ -23,5 +23,11 @@ http://creativecommons.org/licenses/by/4.0/). Bearbeitet: ausgerichtet, skaliert
 Im Spiel genannt unter Menü → „Credits“. Bewusst nicht genommen: Modelle, die Fahrzeuge aus WipEout, F-Zero, Star Wars oder
 Hot Wheels nachbauen (Marken), auch wenn sie als CC-BY markiert sind.
 
-Namen der Teams/Schriftzüge sind Fantasienamen. Keine fremden Schriften oder Klänge (Ton und Musik werden im Browser
-synthetisiert).
+## Musik (`assets/musik/cyber_runner.m4a`)
+
+„Cyber Runner“ von ansimuz, https://opengameart.org/content/cyber-runner-music – Lizenz laut Seite **CC0**
+(https://creativecommons.org/publicdomain/zero/1.0/, Seite am 20.10.2026 abgerufen und lokal gesichert).
+Bearbeitet: Pegel auf −16 LUFS (−4,5 dB + Limiter), AAC 80 kbit/s. Namensnennung freiwillig, steht trotzdem in den Credits.
+
+Namen der Teams/Schriftzüge sind Fantasienamen. Keine fremden Schriften. Antrieb, Boost, Wand und Ereignis-Töne werden im
+Browser synthetisiert (`src/audio/ton.js`).

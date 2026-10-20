@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = '6eeb7e7a9c';
+const VERSION = '3eb3971d95';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -7,6 +7,7 @@ const ASSETS = [
   'assets/gleiter/klinge.glb',
   'assets/gleiter/pfeil.glb',
   'assets/gleiter/stachel.glb',
+  'assets/musik/cyber_runner.m4a',
   'css/style.css',
   'icons/apple-touch-icon.png',
   'icons/icon-192.png',

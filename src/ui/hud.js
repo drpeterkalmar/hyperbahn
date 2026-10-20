@@ -16,8 +16,8 @@ export function speichereEinstellungen(e) { try { localStorage.setItem(SPEICHER,
 const el = (tag, cls, html = '') => { const e = document.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };
 
 export class Hud {
-  constructor(root, { onStart, onEinstellung } = {}) {
-    this.root = root; this.onStart = onStart; this.onEinstellung = onEinstellung;
+  constructor(root, { onStart, onEinstellung, onWeiter } = {}) {
+    this.root = root; this.onStart = onStart; this.onEinstellung = onEinstellung; this.onWeiter = onWeiter;
     this.einst = ladeEinstellungen();
     root.innerHTML = '';
     // Spiel-HUD
@@ -60,6 +60,7 @@ export class Hud {
     this.menue.innerHTML = `
       <h1 class="titel">HYPER<span>BAHN</span></h1>
       <div class="unter">Neon-Megastadt · Runde ${e.runden}</div>
+      <button class="weiter">WEITER</button>
       <button class="start">RENNEN STARTEN</button>
       <div class="einst">
         <label>Fahrhilfe</label>${wahl('hilfe', [['leicht', 'Leicht'], ['mittel', 'Mittel'], ['profi', 'Profi']])}
@@ -76,6 +77,7 @@ export class Hud {
       <button class="credits-knopf">Credits</button>
       <div class="steuerung">← → lenken · ↑ Gas (beim Countdown auf „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste Barrel-Roll im Sprung (= Turbo) · ↑/↓ in der Luft Nase</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
+    this.menue.querySelector('.weiter').addEventListener('click', () => this.onWeiter && this.onWeiter());
     this.menue.querySelector('.credits-knopf').addEventListener('click', () => this.zeigeCredits());
     this.menue.querySelectorAll('[data-wahl]').forEach((w) => {
       w.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
@@ -97,13 +99,18 @@ export class Hud {
       <p>Gleiter-Modelle von Sketchfab, Lizenz CC BY 4.0 (bearbeitet: ausgerichtet, verkleinert, umgefärbt):</p>
       <ul><li>„Racing spaceship“ – Nikcore</li><li>„Blue Demon (Space Racer)“ – Mattdude</li>
       <li>„Racing ship“ – pedrolopezgarcia</li><li>„The Arrow“ – totidoki</li></ul>
-      <p>three.js (MIT). Strecke, Stadt, Physik, KI, Musik und Klänge: eigene Arbeit.</p>
+      <p>Musik: „Cyber Runner“ – ansimuz (OpenGameArt, CC0).</p>
+      <p>three.js (MIT). Strecke, Stadt, Physik, KI und Klänge: eigene Arbeit.</p>
       <button class="zu">Schließen</button>`;
     c.querySelector('.zu').addEventListener('click', () => c.remove());
     this.menue.appendChild(c);
   }
 
-  zeigeMenue(an = true) { document.body.dataset.mode = an ? 'menu' : 'rennen'; this.menue.style.display = an ? '' : 'none'; }
+  zeigeMenue(an = true, pause = false) {
+    document.body.dataset.mode = an ? 'menu' : 'rennen'; this.menue.style.display = an ? '' : 'none';
+    this.menue.classList.toggle('pause', an && pause);
+    const st = this.menue.querySelector('.start'); if (st && st.textContent !== 'NOCHMAL') st.textContent = an && pause ? 'NEU STARTEN' : 'RENNEN STARTEN';
+  }
 
   // z = { tempo (m/s), platz, von, runde, runden, zeit, beste, schild, boost, magnet, speedOk (null|true|false), countdown }
   update(z, t) {

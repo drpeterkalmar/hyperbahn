@@ -81,6 +81,7 @@ function startStelle() {
 const modelle = ladeGleiterModelle().catch((e) => console.warn('Gleiter-Modelle', e));
 const hud = new Hud(document.getElementById('ui'), {
   onStart: (e) => modelle.then(() => starte(e)),
+  onWeiter: () => { if (rennen && rennen.phase !== 'ziel') { laeuft = true; hud.zeigeMenue(false); if (ton && hud.einst.ton) ton.musik('assets/musik/cyber_runner.m4a'); } },
   onEinstellung: (key, v) => {
     if (key === 'blitzeReduziert') blitze.reduziert = v;
     if (key === 'horizont') KAMERA.horizontHalten = v;
@@ -112,7 +113,7 @@ function karteRechteck() {
 hud.k.karte.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); hud.k.karte.classList.toggle('gross'); karteRechteck(); });
 addEventListener('resize', () => setTimeout(karteRechteck, 50));
 eingabe.bindeTouch(canvas, { bremseL: hud.k.bremseL, bremseR: hud.k.bremseR, rolle: hud.k.rolle });
-hud.k.pause.addEventListener('click', () => { laeuft = false; hud.zeigeMenue(true); });
+hud.k.pause.addEventListener('click', () => { laeuft = false; hud.zeigeMenue(true, true); });
 hud.zeigeMenue(true);
 
 function starte(e) {
@@ -146,7 +147,7 @@ function starte(e) {
   });
   kino.setCarBox(new THREE.Box3(new THREE.Vector3(-1.6, -0.6, -2.8), new THREE.Vector3(1.6, 1.4, 2.8)));
   rig.init = false;
-  if (ton && e.ton) ton.start().catch(() => {});
+  if (ton && e.ton) ton.start().then(() => ton.musik('assets/musik/cyber_runner.m4a')).catch(() => {});
   if (ton) ton.stumm(!e.ton);
   hud.zeigeMenue(false);
   laeuft = true;
@@ -314,7 +315,7 @@ let fpsN = 0, fpsT = 0;
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
-  bahn, plan, kino, renderer, blitze, karte, fps: 0, get meshes() { return meshes; },
+  bahn, plan, kino, renderer, blitze, karte, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'

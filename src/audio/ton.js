@@ -1,7 +1,8 @@
 // Ton (reine WebAudio-Synthese, keine Assets): Antrieb, Boost-Fauchen mit Tonhöhen-Anstieg, Wand-Kratzen, Magnet-Summen,
 // kurze Töne für Landung/Ring/Rolle/Mini-Turbo/Start-Boost. Peters Handy-Regeln: zurückhaltend, Klangkörper im Mittelton
 // (300–700 Hz), kein Dauerfeuer, im Menü still, Lautlos-Schalter respektieren (audioSession 'ambient').
-// Zeitlupe: tonFaktor < 1 senkt die Tonhöhe. Musik (CC0-Synthwave-Loop) ist nur als Platzhalter vorgesehen (musik(url)).
+// Zeitlupe: tonFaktor < 1 senkt die Tonhöhe. Musik: CC0-Synthwave-Loop „Cyber Runner“ (ansimuz, OpenGameArt, LICENSES.md),
+// nur im Rennen (im Menü still), auf −16 LUFS gebracht (assets/musik/cyber_runner.m4a).
 // Startwerte – TODO Heavy-Job: am Handy-Lautsprecher abhören (Pegel, Tonhöhen).
 export const MISCHUNG = { gesamt: 0.55, antrieb: 0.16, boost: 0.14, wand: 0.18, magnet: 0.05, ereignis: 0.22, musik: 0.35 };
 
@@ -69,6 +70,7 @@ export class Ton {
     this.boostR.fl.frequency.setTargetAtTime((450 + 500 * Math.min(1, boost)) * tonFaktor, t, 0.1);
     this.wandR.g.gain.setTargetAtTime(wand ? MISCHUNG.wand : 0, t, 0.03);
     this.magG.gain.setTargetAtTime(MISCHUNG.magnet * magnet, t, 0.15);
+    if (this.musikSrc) this.musikSrc.playbackRate.setTargetAtTime(Math.max(0.5, tonFaktor), t, 0.05);   // Zeitlupe: Musik tiefer
   }
 
   // Menü/Pause: alles leise (keine Dauer-Schleifen im Menü)
@@ -76,6 +78,7 @@ export class Ton {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     for (const g of [this.antrieb.gain, this.boostR.g.gain, this.wandR.g.gain, this.magG.gain]) g.setTargetAtTime(0, t, 0.1);
+    this.musikStopp();
   }
 
   // kurze Töne; Mindestabstand je Art 0,12 s
@@ -107,6 +110,24 @@ export class Ton {
     }
   }
 
-  // Platzhalter: CC0-Synthwave-Loop (Heavy-Job: Quelle + Lizenz in LICENSES.md, nur im Rennen, leise)
-  async musik(url) { void url; /* TODO Heavy-Job */ }
+  // Musik laden (einmal) und als Schleife einblenden; Stopp in ruhe() (Menü/Pause)
+  async musik(url) {
+    if (!this.ctx) return;
+    if (!this.musikBuf) {
+      if (!this.musikLaden) this.musikLaden = fetch(url).then((r) => r.arrayBuffer()).then((b) => new Promise((ok, err) => this.ctx.decodeAudioData(b, ok, err)));
+      try { this.musikBuf = await this.musikLaden; } catch (e) { console.warn('Musik', e); return; }
+    }
+    if (this.musikSrc || !this.an) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource(); src.buffer = this.musikBuf; src.loop = true;
+    const g = this.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(MISCHUNG.musik, t + 1.5);
+    src.connect(g); g.connect(this.master); src.start();
+    this.musikSrc = src; this.musikG = g;
+  }
+  musikStopp() {
+    if (!this.musikSrc) return;
+    const t = this.ctx.currentTime, src = this.musikSrc;
+    this.musikG.gain.setTargetAtTime(0, t, 0.15); src.stop(t + 0.8);
+    this.musikSrc = null; this.musikG = null;
+  }
 }
