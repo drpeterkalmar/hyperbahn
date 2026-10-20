@@ -50,17 +50,22 @@ def main():
                     print(name, gname, 'FEHLER', str(e)[:200], s.errors[:3])
                 finally:
                     s.close()
-        # Bullet-Time-Bildfolge am Sprung-Scheitel (≥ 12 Bilder, quer) – Action-Moment per __hb.moment() erzwingen
-        if not nur or 'bullet' in nur:
+        # Action-Momente als Bildfolgen (≥ 12 Bilder, quer): Bullet-Time am Sprung-Scheitel, Speed-Ramp beim Überholen,
+        # Zoom-Punch bei Beinahe-Kollision – per __hb.moment() erzwungen; Bilder takten sich über die Screenshot-Dauer
+        MOMENTE = [('bullet', 'sprungScheitel', 'Häuserschlucht Anlauf', "!__hb.spieler.boden && __hb.spieler.luftZeit > 1.2"),
+                   ('ramp', 'ueberholen', 'Start-Ziel', "__hb.spieler.s > 150"),
+                   ('punch', 'beinahe', 'Start-Ziel', "__hb.spieler.s > 150")]
+        for kurz, art, at, bed in MOMENTE:
+            if nur and kurz not in nur: continue
             s = Session(pw, srv.base, device=PIXEL7_LAND)
             try:
-                s.open(url('Häuserschlucht Anlauf', a.look, '&action=2'))
-                s.pg.wait_for_function("__hb.spieler && !__hb.spieler.boden && __hb.spieler.luftZeit > 1.2", timeout=60000)
-                print('Moment', s.ev("__hb.moment('sprungScheitel')"))
+                s.open(url(at, a.look, '&action=2'))
+                s.pg.wait_for_function(f"__hb.rennen && __hb.spieler && ({bed})", timeout=60000)
+                print('Moment', kurz, s.ev(f"(() => {{ const m = __hb.moment('{art}'); return m && m.typ; }})()"))
                 folge = []
                 for k in range(14):
-                    folge.append(s.shot(f'bullet_{k:02d}', 'p1') + '=' + str(round(s.ev('(() => { const r = __hb.regie(); return r.aktiv ? r.t - r.aktiv.start : -1; })()'), 2)) + ' s')
-                subprocess.run([sys.executable, 'tests/collage.py', os.path.join(out, 'collage_bullet.jpg'), '7', '320'] + folge)
+                    folge.append(s.shot(f'{kurz}_{k:02d}', 'p1') + '=' + str(round(s.ev('(() => { const r = __hb.regie(); return r.aktiv ? r.t - r.aktiv.start : -1; })()'), 2)) + ' s')
+                subprocess.run([sys.executable, 'tests/collage.py', os.path.join(out, f'collage_{kurz}.jpg'), '4', '500'] + folge[:12])
             finally:
                 s.close()
     if bilder:

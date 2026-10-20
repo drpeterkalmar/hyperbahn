@@ -70,7 +70,7 @@ import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => consol
 const eingabe = new Eingabe(window);
 const rig = new KameraRig();
 let rennen = null, hilfe = null, waechter = null, regie = null, uhr = null, meshes = [], spielerT = null;
-let galerie = null;
+let galerie = null, fliegend = false;
 let laeuft = false, praes = 0, vibLetzt = -9, autopilot = null, scheinBis = 0;
 // ?at=Großer Looping | ?at=1600 → Bogenlänge oder null
 function startStelle() {
@@ -131,6 +131,7 @@ function starte(e) {
   const platz = Math.max(1, Math.min(anzahl + 1, q.has('startplatz') ? +q.get('startplatz') : Math.min(anzahl + 1, 6)));
   teil.splice(platz - 1, 0, { ...TEAMS[0], name: 'DU', klasse: q.get('klasse') || e.klasse || 'mittel' });
   const at = startStelle();
+  fliegend = at !== null;   // fliegender Start (Abnahme): kein Start-Boost-Fenster
   rennen = new Rennen(bahn, teil, { runden: q.has('runden') ? SPIEL.runden : e.runden, ohneCountdown: at !== null });
   spielerT = rennen.spieler;
   if (at !== null) {
@@ -254,7 +255,7 @@ function bild() {
       const roh = eingabe.lesen(ZEIT.schritt, !g.boden);
       let ein = autopilot ? autopilot.steuer(g, ZEIT.schritt, rennen.gleiter) : hilfe.anwenden(g, roh, ZEIT.schritt, rennen.gleiter);
       // Countdown/Start-Fenster: Start-Boost per Tipp (Taste ↑, Gamepad RT, Touch irgendwo) – kein Auto-Gas, sonst Überdrehen
-      if (rennen.phase === 'countdown' || rennen.zeit < GEFUEHL.startfenster) {
+      if (!fliegend && (rennen.phase === 'countdown' || rennen.zeit < GEFUEHL.startfenster)) {
         const startGas = autopilot ? autopilot.startGas(rennen.phase === 'countdown' ? -rennen.countdown : rennen.zeit) : (eingabe.startGas() ? 1 : 0);
         startEin.gas = startGas;
         if (rennen.phase === 'countdown') ein = { ...ein, gas: startGas };

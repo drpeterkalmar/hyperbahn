@@ -33,6 +33,8 @@ export class Rennen {
       };
     });
     this.gleiter = this.alle.map((t) => t.g);
+    // fliegender Start (Abnahme, ?at=): kein Start-Boost-Fenster, nichts zu werten
+    if (opt.ohneCountdown) for (const t of this.alle) t.start.gewertet = true;
   }
 
   get spieler() { return this.alle.find((t) => t.spieler) || null; }

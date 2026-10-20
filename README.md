@@ -3,7 +3,10 @@
 Futuristischer Anti-Grav-Racer im Browser (Neon-Noir, Handy zuerst, Hoch- und Querformat). three.js ohne Build,
 ES-Module, PWA über GitHub Pages. Plan: Phasen 1–4 als Queue-Jobs (`~/.hermes/plans/antigrav-racer.md`).
 
-**Stand:** Phase 1 im Aufbau (Vorbau auf Branch `vorbau/hyperbahn-p1-grundspiel`, Abnahme im Browser folgt).
+**Spielen:** https://drpeterkalmar.github.io/hyperbahn/ (als App installierbar, offline spielbar)
+
+**Stand:** Phase 1 fertig (Schwebe-Physik mit Magnethaftung, Strecke „Neon-Megastadt“, Neon-Noir-Look, 7 KI-Gegner,
+3D-Minikarte, Musik) – Bericht: `PHASE1_BERICHT.md`. Nächste Phasen: Items/Waffen, Strecken-Generator + Cups, Online.
 
 ## Steuerung
 | Aktion | Tastatur | Touch | Gamepad |
@@ -29,14 +32,21 @@ hält der Gleiter auch langsam kopfüber. Vor jedem Riesensprung zeigt das HUD �
 **Fahrhilfe:** Leicht = Auto-Gas + Lenkzug zur Ideallinie, Mittel = schwacher Lenkzug, Profi = ohne. Hilfen nehmen nie
 die Kontrolle weg: deutliches Lenken blendet sie in 0,25 s aus.
 
-**Optionen im Menü:** Fahrhilfe, Gegner (0/3/7), KI-Stärke, 🎬 Action-Momente (Aus/Selten/Oft), ⚡ Blitze reduzieren
-(≤ 3 Blitze/s, gedämpfte Strobos – für Lichtempfindliche), Horizont halten (gegen Übelkeit), Ton.
+**Optionen im Menü:** Fahrhilfe, Gleiter-Klasse, Gegner (0/3/7), KI-Stärke, 🎬 Action-Momente (Aus/Selten/Oft),
+⚡ Blitze reduzieren (≤ 3 Blitze/s, gedämpfte Strobos – für Lichtempfindliche), Horizont halten (gegen Übelkeit), Ton,
+Minikarte (3D/2D/Aus), Karte mitdrehend oder Norden oben, Credits. **Pause** (❚❚ oben rechts) → WEITER oder NEU STARTEN.
+
+**Minikarte:** oben links die ganze Strecke als Neon-Band mit echten Höhen (Looping, Röhre, Wandfahrt, Sprung-Lücken offen,
+Magnet-Abschnitte pulsieren, Boost-Pads gelb). Eigener Gleiter = gelber Pfeil, Gegner = Punkte in Teamfarbe, Führender mit
+weißem Ring. Antippen = groß/klein.
 
 ## URL-Regler (A/B-Vergleich)
 `?speed=1.2` Höchsttempo · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
 der Luft · `?slowmo=0` Absprung-Zeitlupe aus · `?action=0|1|2` · `?blitze=0` Blitze reduzieren · `?horizont=1` ·
 `?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=3` · `?look=0|1|2` Grafikstufe ·
-`?kl=-bloom` Kino-Look-Stufen · `?online=1` (Test: Zeit-Logik wie online, nur Schein-Zeitlupe).
+`?kl=-bloom` Kino-Look-Stufen · `?streak=1.2` Neon-Linsen-Streifen (0 = aus) · `?blur=0.3` Bewegungsunschärfe ·
+`?tacho=1.9` Anzeige-Faktor km/h · `?karte=3d|2d|aus` · `?kartenord=1` · `?startplatz=1…8` (Standard 6) ·
+`?online=1` (Test: Zeit-Logik wie online, nur Schein-Zeitlupe) · `?gpu=1` GPU-Zeit messen (Mess-Gate).
 Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle gleich) · `?kurve=0.01` · `?lenk=1` ·
 `?drift=1` (Mini-Turbo-Schub) · `?mtzeit=0.3` · `?hupf=0` · `?startfenster=0.25` · `?rand=0.3` (Störfeld am Rand) ·
 `?landebonus=0.1` · `?treffer=1` · `?neustart=0` · `?stoss=0.85` · `?gummiband=0|1|2` · `?fov=62` · `?fovboost=12` ·
@@ -50,6 +60,14 @@ Schwebe-Physik (Magnethaftung kopfüber, Looping bei 25 m/s und 800 km/h, Boost,
 Werkzeuge: `node tools/gefuehl_mess.mjs` (14 Fahrgefühl-Messgrößen als Tabelle), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
 `node tools/strecke_schliessen.mjs` (Runde schließen nach Änderungen an Strecke 1).
 
+## Tests im Browser (ein Browser, stumm)
+`python3 tests/smoke.py` (Laden, Rennen, 0 Fehler) · `python3 tests/p1_shots.py [--nur looping,sprung1]` (Abnahme-Bilder
+hoch + quer aller Passagen, Bullet-Time-Bildfolge, Collagen) · `python3 tests/test_eingabe_zeitlupe.py` (Lenken wirkt in der
+Bullet-Time) · `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand <name>` (Mess-Gate Mittelklasse-Android).
+Konsole: `__hb.galerie()` zeigt alle Gleiter nebeneinander, `__hb.moment('sprungScheitel')` erzwingt eine Bullet-Time.
+`node tools/action_mess.mjs` misst die Häufigkeit der Action-Momente je Rennen.
+
 ## Recht
-Eigener Name, eigene Teams und Gleiter-Designs; nur Spielmechaniken des Genres. three.js: MIT (`lib/THREE_LICENSE.txt`).
-Siehe `LICENSES.md`.
+Eigener Name, eigene Teams; nur Spielmechaniken des Genres. Gleiter-Modelle von Sketchfab (CC BY 4.0: Nikcore, Mattdude,
+pedrolopezgarcia, totidoki), Musik „Cyber Runner“ von ansimuz (CC0). three.js: MIT. Einzelheiten in `LICENSES.md`, im Spiel
+unter „Credits“.
