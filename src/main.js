@@ -293,9 +293,12 @@ function bild() {
   const g = rennen ? spielerT.g : null;
   kino.render(scene, camera, {
     dt, run: !!(rennen && laeuft),
-    speed: g ? g.tempo * KAMERA.unschaerfe : 0,   // Kino-Look ist auf 80–190 km/h geeicht → Tempo skaliert (?blur=)
+    // Kino-Look ist auf 80–190 km/h geeicht → Tempo skaliert (?blur=); im Bullet-Time-Halbkreis keine Bewegungsunschärfe
+    // (Zeit steht, nur die Kamera fährt – die Unschärfe würde sonst die ganze Stadt verschmieren)
+    speed: g && !(fx && fx.orbitAn) ? g.tempo * KAMERA.unschaerfe * (g.boden ? 1 : 0.8) : 0,
     boost: g ? Math.min(1, g.boost) : 0, car: meshes[0] ? meshes[0].gruppe : null,
     flash: { k: blitzK, col: blitzFarbe }, white: weiss,
+    action: fx ? { sat: fx.saettigung, vig: fx.vignette, ca: fx.ca, radial: fx.radial } : null,
   });
   if (rennen && laeuft) karte.render(praes, rennen.alle, spielerT.k);
 }

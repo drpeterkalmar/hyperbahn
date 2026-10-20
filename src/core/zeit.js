@@ -91,7 +91,7 @@ export const ARTEN = {
   beinahe: { gewicht: 0.8, plan: 'punch' },
   ringKette: { gewicht: 0.7, plan: 'ramp' },
   zielSieg: { gewicht: 1.0, plan: 'bullet' },
-  magnetTempo: { gewicht: 0.65, plan: 'ramp' },
+  magnetTempo: { gewicht: 0.58, plan: 'ramp' },   // P1-Messung: 0,65 → bei „Oft“ 57 von 83 Momenten Magnet
   explosion: { gewicht: 1.0, plan: 'bullet' },   // Phase 2
   treffer: { gewicht: 0.85, plan: 'punch' },     // Phase 2
 };

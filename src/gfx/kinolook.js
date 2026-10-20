@@ -265,7 +265,7 @@ const SUNVIS_FS = `
 const COMP_FS = `
   uniform sampler2D tColor, tDepth, tAO, tBloom, tBlur, tSunVis, tDof, tTaa, tStreak; uniform float uStreak; uniform vec3 uStreakCol;
   uniform vec2 uSrcTexel, uRes, uAOTexel, uTaaTexel, uJitUv;
-  uniform float uTime, uSharp, uAOStr, uBloomStr, uVig, uBlurOn, uDither;
+  uniform float uTime, uSharp, uAOStr, uBloomStr, uVig, uBlurOn, uDither; uniform vec4 uAction;
   uniform mat4 uInvProj; uniform mat3 uCamRot; uniform vec3 uCamPos;
   uniform vec3 uSunDir, uSunCol, uHazeCol; uniform vec4 uAerial;
   uniform vec3 uSunScr; uniform float uFlare;
@@ -383,6 +383,15 @@ const COMP_FS = `
     }
   #endif
     vec3 col = kinoSR( uv );
+  #ifdef ACTION_CA
+    // Hyperbahn Bullet-Time: leichte chromatische Aberration (Rot nach außen, Blau nach innen)
+    { vec2 dc = ( uv - 0.5 ) * uAction.z; col.r = texture2D( tColor, uv + dc ).r; col.b = texture2D( tColor, uv - dc ).b; }
+  #endif
+  #ifdef ACTION_RADIAL
+    // Hyperbahn Zoom-Punch: Radial-Unschärfe zur Bildmitte (Speed-Lines), stärker am Rand
+    { vec3 a = vec3( 0.0 ); for ( int i = 0; i < 10; i++ ) a += texture2D( tColor, mix( uv, vec2( 0.5 ), float( i ) / 9.0 * uAction.w ) ).rgb;
+      col = mix( col, a / 10.0, smoothstep( 0.05, 0.45, length( uv - 0.5 ) ) ); }
+  #endif
   #ifdef WHIP
     // Reißschwenk (n27, Kino-Replay): Bewegungsunschärfe entlang der Schwenkrichtung, 12 Abtastungen
     { vec2 wd = vec2( cos( uFx.w ), sin( uFx.w ) * uRes.x / uRes.y ) * uFx.z; vec3 a = vec3( 0.0 );
@@ -490,7 +499,7 @@ export class KinoLook {
       tColor: { value: null }, tDepth: { value: null }, tSunVis: { value: null }, tAO: { value: null }, tBloom: { value: null }, tBlur: { value: null }, tSrc: { value: null }, tDof: { value: null }, tTaa: { value: null }, uTaaTexel: V2(), uJitUv: V2(),
       uDofF: F(10), uDofR: F(0.012), uDofNear: F(0.6), uDofFar: F(1.5), uDofK: F(0),
       uSrcTexel: V2(), uRes: V2(), uAOTexel: V2(), uTexel: V2(), uProj: V2(), uDepthSize: V2(),
-      uTime: F(), uSharp: F(0.3), uAOStr: F(0.6), uBloomStr: F(0.4), uVig: F(0.2), uBlurOn: F(0), uDither: F(1),
+      uAction: { value: new THREE.Vector4() }, uTime: F(), uSharp: F(0.3), uAOStr: F(0.6), uBloomStr: F(0.4), uVig: F(0.2), uBlurOn: F(0), uDither: F(1),
       uInvProj: M4(), uCamRot: { value: new THREE.Matrix3() }, uCamPos: V3(),
       uSunDir: V3(0, 1, 0), uSunCol: { value: new THREE.Vector3() }, uHazeCol: { value: new THREE.Vector3() }, uAerial: { value: new THREE.Vector4() },
       uSunScr: V3(), uFlare: F(1), tStreak: { value: null }, uStreak: F(0), uStreakCol: V3(0.45, 0.75, 1.3),
@@ -785,11 +794,20 @@ export class KinoLook {
       haze = this.hazeSetup(camera, o.heat);
     }
     if (st.grade) this.applyGrade();
+    // Hyperbahn Action-Momente: o.action = { sat (×), vig (+), ca (0…1), radial (0…1) }
+    const act = o.action || null;
+    if (act) {
+      U.uSat.value *= act.sat ?? 1; U.uVig.value += act.vig || 0;
+      U.uAction.value.set(act.sat ?? 1, act.vig || 0, 0.006 * (act.ca || 0), 0.07 * (act.radial || 0));
+    } else U.uAction.value.set(1, 0, 0, 0);
     // n27: Lichtblitz (Feuerwerk), Weißblitz-Übergang, Reißschwenk (o.whip = { len Anteil der Bildbreite, ang rad })
     U.uFx.value.set(o.flash ? o.flash.k : 0, o.white || 0, o.whip ? o.whip.len : 0, o.whip ? o.whip.ang : 0);
     if (o.flash && o.flash.col) U.uFlashCol.value.fromArray(o.flash.col);
     const defs = {};
     if (o.whip && o.whip.len > 0.002) defs.WHIP = 1;
+    if (act && act.ca > 0.01) defs.ACTION_CA = 1;
+    if (act && act.radial > 0.01) defs.ACTION_RADIAL = 1;
+    if (act && act.vig > 0.01) defs.VIGNETTE = 1;
     if (taa === 'taa') defs.TAA = 1;                                       // n31: History statt Renderskala, nur CAS
     else if (taa === 'fxaa' || st.aa && sc < 0.999 || st.aa && this.msaa() === 0) defs.AA = 1;   // Rückfall: FXAA-Art
     if (st.sharpen) defs.SHARP = 1;

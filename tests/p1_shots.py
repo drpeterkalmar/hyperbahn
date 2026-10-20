@@ -25,7 +25,7 @@ SZENEN = {
 }
 
 def url(at, look, extra):
-    q = f'?nosw&look={look}&autostart=1&autopilot=1&action=0' + extra
+    q = f'?nosw&look={look}&autostart=1&autopilot=1' + ('' if 'action=' in extra else '&action=0') + extra
     if at: q += '&at=' + urllib.parse.quote(at)
     return q
 
@@ -56,10 +56,10 @@ def main():
             try:
                 s.open(url('Häuserschlucht Anlauf', a.look, '&action=2'))
                 s.pg.wait_for_function("__hb.spieler && !__hb.spieler.boden && __hb.spieler.luftZeit > 1.2", timeout=60000)
-                s.ev("__hb.moment('sprungScheitel')")
+                print('Moment', s.ev("__hb.moment('sprungScheitel')"))
                 folge = []
                 for k in range(14):
-                    folge.append(s.shot(f'bullet_{k:02d}', 'p1')); time.sleep(0.11)
+                    folge.append(s.shot(f'bullet_{k:02d}', 'p1') + '=' + str(round(s.ev('(() => { const r = __hb.regie(); return r.aktiv ? r.t - r.aktiv.start : -1; })()'), 2)) + ' s')
                 subprocess.run([sys.executable, 'tests/collage.py', os.path.join(out, 'collage_bullet.jpg'), '7', '320'] + folge)
             finally:
                 s.close()

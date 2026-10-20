@@ -17,6 +17,7 @@ import { GEFUEHL } from '../physics/fahrgefuehl.js';
 export const KAM = {
   abstand: 9.5, hoehe: 2.6, blickVor: 9, fovTempo: 0,   // Sichtfeld hängt nicht am Tempo (nur Boost/Sprung/Treffer)
   panoramaAbstand: 16, panoramaHoehe: 6, panoramaZeit: 0.8, glatt: 0.09, ruck: 0.35,
+  orbitRadius: 7.5, orbitHoehe: 1.8,   // Bullet-Time-Halbkreis
   tauWaag: 0.039, tauSenk: 0.103, nachlauf: 0.55,   // s: Tempo-Glättung (0,35 bzw. 0,15 je 1/60 s) und Versatz-Faktor
 };
 
@@ -81,7 +82,8 @@ export class KameraRig {
     addSk(this.pos, this.pos, this.versatz, 1);
     // Bullet-Time: Halbkreis um den Gleiter (um das Kamera-Oben)
     if (fx && fx.orbitAn) {
-      setze(_c, this.pos.x - g.p.x, this.pos.y - g.p.y, this.pos.z - g.p.z);
+      // nah heran (Matrix-Halbkreis): fester Radius statt der Verfolger-/Panorama-Distanz
+      setze(_c, 0, 0, 0); addSk(_c, _c, this.richt, -KAM.orbitRadius); addSk(_c, _c, this.oben, KAM.orbitHoehe);
       drehe(_c, _c, this.oben, fx.orbit);
       setze(this.pos, g.p.x + _c.x, g.p.y + _c.y, g.p.z + _c.z);
       setze(this.ziel, g.p.x, g.p.y, g.p.z);
