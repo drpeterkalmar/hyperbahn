@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = 'vorbau';
+const VERSION = '09e336c861';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -17,6 +17,7 @@ const ASSETS = [
   'src/ai/gummiband.js',
   'src/ai/pilot.js',
   'src/audio/ton.js',
+  'src/build.js',
   'src/config.js',
   'src/core/util.js',
   'src/core/vec.js',
