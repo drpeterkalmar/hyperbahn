@@ -22,6 +22,7 @@ import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
 import { Hud } from './ui/hud.js';
+import { Minikarte } from './gfx/minikarte.js';
 import { leseGefuehl, GEFUEHL, KLASSEN_LISTE } from './physics/fahrgefuehl.js';
 
 const q = leseRegler(location.search);
@@ -84,6 +85,9 @@ const hud = new Hud(document.getElementById('ui'), {
     if (key === 'horizont') KAMERA.horizontHalten = v;
     if (key === 'action' && regie) regie.stufe = v;
     if (key === 'ton' && ton) ton.stumm(!v);
+    if (key === 'karte') { karte.modus = v; karteRechteck(); }
+    if (key === 'karteNord') karte.nord = v;
+    if (key === 'blitzeReduziert') karte.reduziert = v;
   },
 });
 // Einstellungen aus dem Menü übernehmen, URL-Regler haben Vorrang
@@ -93,6 +97,19 @@ const hud = new Hud(document.getElementById('ui'), {
   if (!q.has('horizont')) KAMERA.horizontHalten = e.horizont;
   if (!q.has('action')) ACTION.stufe = e.action;
 }
+// 3D-Minikarte (?karte=3d|2d|aus, ?kartenord=1); Tippen = groß/klein
+const karte = new Minikarte(renderer, bahn, {
+  modus: q.get('karte') || hud.einst.karte || '3d', nord: q.has('kartenord') ? q.get('kartenord') === '1' : hud.einst.karteNord,
+});
+karte.reduziert = blitze.reduziert;
+function karteRechteck() {
+  const e = hud.k.karte;
+  e.classList.toggle('aus', karte.modus === 'aus');
+  const r = e.getBoundingClientRect();
+  karte.setzeRechteck({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+}
+hud.k.karte.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); hud.k.karte.classList.toggle('gross'); karteRechteck(); });
+addEventListener('resize', () => setTimeout(karteRechteck, 50));
 eingabe.bindeTouch(canvas, { bremseL: hud.k.bremseL, bremseR: hud.k.bremseR, rolle: hud.k.rolle });
 hud.k.pause.addEventListener('click', () => { laeuft = false; hud.zeigeMenue(true); });
 hud.zeigeMenue(true);
@@ -132,6 +149,7 @@ function starte(e) {
   if (ton) ton.stumm(!e.ton);
   hud.zeigeMenue(false);
   laeuft = true;
+  karteRechteck();
 }
 
 // --- Effekte aus Gleiter-Ereignissen (nur Spieler bekommt Blitze/Kamera; alle bekommen Funken) ---
@@ -274,6 +292,7 @@ function bild() {
     boost: g ? Math.min(1, g.boost) : 0, car: meshes[0] ? meshes[0].gruppe : null,
     flash: { k: blitzK, col: blitzFarbe }, white: weiss,
   });
+  if (rennen && laeuft) karte.render(praes, rennen.alle, spielerT.k);
 }
 requestAnimationFrame(bild);
 if (q.get('autostart') === '1') modelle.then(() => starte(hud.einst));
@@ -291,7 +310,7 @@ let fpsN = 0, fpsT = 0;
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
-  bahn, plan, kino, renderer, blitze, fps: 0,
+  bahn, plan, kino, renderer, blitze, karte, fps: 0,
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'

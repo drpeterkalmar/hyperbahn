@@ -87,3 +87,17 @@ body[data-mode="menu"] .hud { display: none; }
   .steuerung { display: none; }
 }
 @media (orientation: portrait) { .einst { grid-template-columns: 1fr; } .einst label { text-align: left; margin-top: 4px; } }
+
+/* 3D-Minikarte: Rahmen + Tippfläche (das Bild selbst zeichnet WebGL per Scissor genau in dieses Rechteck) */
+.karte { position: absolute; pointer-events: auto; left: max(12px, env(safe-area-inset-left)); top: calc(max(10px, env(safe-area-inset-top)) + 62px);
+  width: 176px; height: 124px; border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 10px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.18); }
+.karte.gross { width: 340px; height: 230px; }
+.karte.aus { display: none; }
+@media (orientation: portrait) {
+  .karte { width: 150px; height: 118px; }
+  .karte.gross { width: 250px; height: 290px; }
+}
+.credits-knopf { background: transparent; color: #9fe; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 8px 16px; font: 600 12px var(--schrift); min-height: 48px; }
+.credits { position: fixed; inset: 8%; z-index: 5; background: rgba(5, 6, 14, 0.96); border: 1px solid var(--cyan); border-radius: 12px; padding: 18px 24px; overflow: auto; font-size: 13px; line-height: 1.5; }
+.credits h2 { margin: 0 0 8px; color: var(--cyan); }
+.credits .zu { min-height: 48px; padding: 8px 20px; background: var(--glas); color: #fff; border: 1px solid var(--cyan); border-radius: 8px; }

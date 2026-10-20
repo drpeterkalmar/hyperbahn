@@ -6,7 +6,7 @@ import { fmtTime } from '../core/util.js';
 import { ANZEIGE } from '../config.js';
 
 const SPEICHER = 'hyperbahn-einstellungen';
-export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, runden: 3 };
+export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, runden: 3, karte: '3d', karteNord: false };
 
 export function ladeEinstellungen() {
   try { return { ...STANDARD, ...JSON.parse(localStorage.getItem(SPEICHER) || '{}') }; } catch { return { ...STANDARD }; }
@@ -42,7 +42,8 @@ export class Hud {
         <button class="tk rolle" data-k="rolle">⟲ ROLLE</button>
         <button class="tk bremse-r" data-k="bremseR">BREMSE ▶︎</button>
       </div>
-      <button class="pause" data-k="pause" aria-label="Pause">❚❚</button>`;
+      <button class="pause" data-k="pause" aria-label="Pause">❚❚</button>
+      <div class="karte" data-k="karte" title="Minikarte: tippen = groß/klein"></div>`;
     root.appendChild(this.hud);
     this.k = {};
     this.hud.querySelectorAll('[data-k]').forEach((e) => { this.k[e.dataset.k] = e; });
@@ -69,9 +70,13 @@ export class Hud {
         <label>⚡ Blitze reduzieren</label>${wahl('blitzeReduziert', [[false, 'Aus'], [true, 'An']])}
         <label>Horizont halten</label>${wahl('horizont', [[false, 'Aus'], [true, 'An']])}
         <label>Ton</label>${wahl('ton', [[true, 'An'], [false, 'Aus']])}
+        <label>Minikarte</label>${wahl('karte', [['3d', '3D'], ['2d', '2D'], ['aus', 'Aus']])}
+        <label>Karte dreht</label>${wahl('karteNord', [[false, 'Mit'], [true, 'Norden oben']])}
       </div>
+      <button class="credits-knopf">Credits</button>
       <div class="steuerung">← → lenken · ↑ Gas (beim Countdown auf „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste Barrel-Roll im Sprung (= Turbo) · ↑/↓ in der Luft Nase</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
+    this.menue.querySelector('.credits-knopf').addEventListener('click', () => this.zeigeCredits());
     this.menue.querySelectorAll('[data-wahl]').forEach((w) => {
       w.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
         const key = w.dataset.wahl;
@@ -83,6 +88,19 @@ export class Hud {
         this.onEinstellung && this.onEinstellung(key, v, this.einst);
       }));
     });
+  }
+
+  // Credits (CC-BY verlangt Namensnennung im Spiel; Liste wie LICENSES.md)
+  zeigeCredits() {
+    const c = el('div', 'credits');
+    c.innerHTML = `<h2>Credits</h2>
+      <p>Gleiter-Modelle von Sketchfab, Lizenz CC BY 4.0 (bearbeitet: ausgerichtet, verkleinert, umgefärbt):</p>
+      <ul><li>„Racing spaceship“ – Nikcore</li><li>„Blue Demon (Space Racer)“ – Mattdude</li>
+      <li>„Racing ship“ – pedrolopezgarcia</li><li>„The Arrow“ – totidoki</li></ul>
+      <p>three.js (MIT). Strecke, Stadt, Physik, KI, Musik und Klänge: eigene Arbeit.</p>
+      <button class="zu">Schließen</button>`;
+    c.querySelector('.zu').addEventListener('click', () => c.remove());
+    this.menue.appendChild(c);
   }
 
   zeigeMenue(an = true) { document.body.dataset.mode = an ? 'menu' : 'rennen'; this.menue.style.display = an ? '' : 'none'; }
