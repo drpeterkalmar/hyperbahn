@@ -10,7 +10,7 @@ export const LOOK = {
   fahrbahn: { farbe: 0x07090d, rau: 0.2, metall: 0.4, linie: [0.0, 0.9, 1.0], linieStaerke: 1.6 },
   kante: { links: [0.0, 0.95, 1.0], rechts: [1.0, 0.15, 0.8], staerke: 3.2, lauf: 38, abstand: 24, strobo: 1.5 },
   magnet: { a: [0.62, 0.2, 1.0], b: [0.0, 0.9, 1.0], staerke: 3.0, puls: 7 },
-  pad: { farbe: [0.2, 1.0, 1.0], staerke: 3.0, lauf: 2.6, grund: 0.07 },   // P1-Abnahme: Grund 0,25 → Pad-Ketten überstrahlten weiß
+  pad: { farbe: [0.2, 1.0, 1.0], staerke: 2.0, lauf: 2.6, grund: 0.07 },   // P1-Abnahme: Grund 0,25 → Pad-Ketten überstrahlten weiß
   ring: { farbe: 0xff2bd6, staerke: 3.5 },
   licht: { farbe: [1.0, 0.55, 0.1], staerke: 5.0, lauf: 9 },
   roehre: { glas: 0x0b1a2e, deckkraft: 0.22, ring: 0x00e5ff },

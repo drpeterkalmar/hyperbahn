@@ -176,7 +176,7 @@ function ereignisse() {
       if (e.art === 'wand' || e.art === 'aufsetzer') funken.spruehe(g.p, g.v, ich ? 40 : 15, 16);
       if (!ich) continue;
       switch (e.art) {
-        case 'pad': blitz(0.35 + 0.3 * e.staerke, [0.3, 1, 1]); rig.stoss(0.15); break;
+        case 'pad': blitz(0.2 + 0.15 * e.staerke, [0.3, 1, 1]); rig.stoss(0.15); break;   // P1-Abnahme: 0,35+0,3 überstrahlte Pad-Ketten
         case 'ring': blitz(0.6, [1, 0.3, 0.9]); hud.meldung('BOOST-RING', praes, 0.8); break;
         case 'wand': blitz(0.4 * e.staerke, [1, 0.25, 0.1]); rig.stoss(0.5 * e.staerke); break;
         case 'landung': if (e.luft > 1.5) { blitz(0.5, [1, 0.9, 0.7]); rig.stoss(0.7); funken.spruehe(g.p, g.v, 60, 20); hud.meldung(`${e.luft.toFixed(1)} s · ${Math.round(e.weite)} m`, praes, 1.4); } break;
