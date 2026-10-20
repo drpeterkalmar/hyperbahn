@@ -94,6 +94,7 @@ body[data-mode="menu"] .hud { display: none; }
 .karte.gross { width: 340px; height: 230px; }
 .karte.aus { display: none; }
 @media (orientation: portrait) {
+  .magnet { top: 23%; } .speed { top: 27%; }   /* unter der Minikarte */
   .karte { width: 150px; height: 118px; }
   .karte.gross { width: 250px; height: 290px; }
 }
