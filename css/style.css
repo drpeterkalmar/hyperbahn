@@ -34,9 +34,11 @@ body[data-mode="menu"] .hud { display: none; }
 .boost i { background: linear-gradient(90deg, var(--magenta), var(--gelb)); box-shadow: var(--glow-m); }
 .hinweis { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 800; letter-spacing: 0.25em; font-size: clamp(14px, 3.2vmin, 22px); opacity: 0; transition: opacity 0.2s; }
 .hinweis.an { opacity: 1; }
-.magnet { top: 18%; color: var(--violett); text-shadow: 0 0 8px var(--violett), 0 0 22px rgba(155, 92, 255, 0.7); animation: puls 0.6s infinite alternate; }
+.magnet { top: 18%; color: var(--violett); text-shadow: 0 0 8px var(--violett), 0 0 22px rgba(155, 92, 255, 0.7); }
+.magnet.an { animation: puls 0.6s infinite alternate; }
 .speed { top: 24%; color: #6dff9a; text-shadow: 0 0 8px #3dff7a; }
-.speed.schlecht { color: var(--rot); text-shadow: 0 0 8px var(--rot); animation: puls 0.25s infinite alternate; }
+.speed.schlecht { color: var(--rot); text-shadow: 0 0 8px var(--rot); }
+.speed.schlecht.an { animation: puls 0.25s infinite alternate; }
 .countdown { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: clamp(80px, 26vmin, 200px); font-weight: 900; font-style: italic; color: #fff; text-shadow: var(--glow-m); }
 .meldung { position: absolute; left: 50%; top: 32%; transform: translate(-50%, -50%) scale(0.9); font-weight: 900; font-style: italic; letter-spacing: 0.12em; font-size: clamp(22px, 6vmin, 46px); color: var(--gelb); text-shadow: 0 0 10px var(--gelb); opacity: 0; transition: opacity 0.15s, transform 0.15s; white-space: nowrap; }
 .meldung.an { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -50,7 +52,7 @@ body[data-mode="menu"] .hud { display: none; }
 .tk.an { background: rgba(0, 229, 255, 0.35); box-shadow: var(--glow-c); }
 .tk.rolle { border-color: rgba(255, 43, 214, 0.7); }
 .tk.rolle.an { background: rgba(255, 43, 214, 0.35); box-shadow: var(--glow-m); }
-.pause { pointer-events: auto; position: absolute; top: calc(max(10px, env(safe-area-inset-top)) + 64px); right: max(12px, env(safe-area-inset-right)); background: var(--glas); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 14px; }
+.pause { pointer-events: auto; position: absolute; top: calc(max(10px, env(safe-area-inset-top)) + 64px); right: max(12px, env(safe-area-inset-right)); background: var(--glas); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 16px; min-width: 48px; min-height: 48px; }
 
 /* Hochformat: Tempo unten mittig, Tasten größer, Platz/Runde kompakter */
 @media (orientation: portrait) {
@@ -60,7 +62,7 @@ body[data-mode="menu"] .hud { display: none; }
 }
 
 /* --- Menü --- */
-.menue { position: absolute; inset: 0; pointer-events: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; background: radial-gradient(ellipse at 50% 30%, rgba(155, 92, 255, 0.18), rgba(5, 6, 10, 0.88) 60%); overflow-y: auto; }
+.menue { position: absolute; inset: 0; pointer-events: auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 14px; padding: 24px; background: radial-gradient(ellipse at 50% 30%, rgba(155, 92, 255, 0.18), rgba(5, 6, 10, 0.88) 60%); overflow-y: auto; }
 .titel { margin: 0; font-size: clamp(44px, 13vmin, 110px); font-weight: 900; font-style: italic; letter-spacing: 0.06em; color: #fff; text-shadow: var(--glow-c); }
 .titel span { color: var(--magenta); text-shadow: var(--glow-m); }
 .unter { letter-spacing: 0.3em; font-size: 12px; color: var(--cyan); opacity: 0.85; }
@@ -74,4 +76,14 @@ body[data-mode="menu"] .hud { display: none; }
 .rang { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
 .rang td, .rang th { padding: 4px 10px; text-align: left; }
 .rang tr.ich { color: var(--gelb); text-shadow: 0 0 6px var(--gelb); }
+/* Menü mittig, ohne dass der Titel bei Überlänge oben abgeschnitten wird (justify-content: center schneidet ab) */
+.menue > :first-child { margin-top: auto; } .menue > :last-child { margin-bottom: auto; }
+.wahl button { min-height: 48px; min-width: 48px; }
+/* Querformat-Handy (≤ 540 px hoch): Titel kleiner, Einstellungen in zwei Spalten-Paaren */
+@media (orientation: landscape) and (max-height: 540px) {
+  .menue { gap: 8px; padding: 12px 18px; }
+  .titel { font-size: clamp(34px, 11vmin, 64px); }
+  .einst { grid-template-columns: auto auto auto auto; max-width: 900px; gap: 6px 12px; }
+  .steuerung { display: none; }
+}
 @media (orientation: portrait) { .einst { grid-template-columns: 1fr; } .einst label { text-align: left; margin-top: 4px; } }

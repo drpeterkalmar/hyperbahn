@@ -19,8 +19,8 @@ export const LOOK_STADT = {
   // TODO Heavy-Job: am Bild abstimmen
   turm: { rau: 0.42, metall: 0.55, glasRau: 0.1, glasDunkel: 0.35 },
   fenster: {
-    raster: [3.4, 3.8],                  // m Fensterraster (waagrecht, Geschosshöhe)
-    anteil: [0.34, 0.2, 0.42, 0.5],      // Anteil leuchtender Fenster je Art (glas, beton, band, schlucht)
+    raster: [1.7, 3.6],                  // m Fensterraster (waagrecht, Geschosshöhe) – P1-Abnahme: 3,4 m wirkte klotzig
+    anteil: [0.26, 0.16, 0.34, 0.36],      // Anteil leuchtender Fenster je Art (glas, beton, band, schlucht)
     weiss: [0.82, 0.9, 1.0], cyan: [0.2, 0.85, 1.0], magenta: [1.0, 0.25, 0.8],
     pWeiss: 0.64, pCyan: 0.86,           // Anteile Farben (Rest Magenta)
     staerke: 1.5,                        // emissiv (linear)
@@ -287,7 +287,7 @@ function turmMaterial() {
       vec2 hbT = normalize(vec2(-hbN.z, hbN.x) + vec2(1e-5));
       int hbArt = int(vHb.x + 0.5);
       vec2 hbRast = vec2(${Fe.raster[0].toFixed(2)}, ${Fe.raster[1].toFixed(2)});
-      vec2 hbRahmen = vec2(0.1, 0.16); float hbAnteil = ${Fe.anteil[0].toFixed(3)};
+      vec2 hbRahmen = vec2(0.12, 0.2); float hbAnteil = ${Fe.anteil[0].toFixed(3)};
       if (hbArt == 1) { hbRast.x *= 1.5; hbRahmen = vec2(0.28, 0.3); hbAnteil = ${Fe.anteil[1].toFixed(3)}; }
       else if (hbArt == 2) { hbRast.x *= 4.0; hbRahmen = vec2(0.0, 0.34); hbAnteil = ${Fe.anteil[2].toFixed(3)}; }
       else if (hbArt == 3) { hbRahmen = vec2(0.08, 0.14); hbAnteil = ${Fe.anteil[3].toFixed(3)}; }
@@ -298,13 +298,16 @@ function turmMaterial() {
         * step(4.0, vHbWelt.y) * step(vHbWelt.y, vHb.z - 3.0);   // kein Fenster im Erdgeschoss / an der Dachkante
       vec2 hbK = hbZelle + vec2(vHb.y * 113.0) + hbN.xz * 17.0;
       float hbZ = hbHash(hbK);
-      float hbAn = step(hbZ, hbAnteil);
+      // ganze Geschosse/Fensterreihen dunkel bzw. hell (Büros, Wohnungen) statt reinem Pixel-Rauschen
+      float hbEtage = hbHash(vec2(hbZelle.y, vHb.y * 71.0) + hbN.xz * 5.0);
+      float hbBlock = hbHash(vec2(floor(hbZelle.x / 6.0), floor(hbZelle.y / 3.0)) + vHb.y * 29.0 + hbN.xz * 3.0);
+      float hbAn = step(hbZ, hbAnteil * (0.25 + 1.5 * hbBlock) * (hbEtage < 0.18 ? 0.0 : 1.0));
       // einige Fenster wechseln langsam (Leben in der Stadt, kein Blitz)
       float hbSlot = floor(uZeit / ${Fe.wechselZeit.toFixed(1)} + hbZ * 7.0);
       if (hbHash(hbK + 3.1) < ${Fe.wechsel.toFixed(3)}) hbAn = step(0.5, hbHash(hbK + hbSlot));
       float hbC = hbHash(hbK + 7.7);
       vec3 hbFarbe = hbC < ${Fe.pWeiss.toFixed(3)} ? ${v3s(Fe.weiss)} : hbC < ${Fe.pCyan.toFixed(3)} ? ${v3s(Fe.cyan)} : ${v3s(Fe.magenta)};
-      hbFarbe *= mix(0.35, 1.0, hbHash(hbK + 5.3));
+      hbFarbe *= mix(0.25, 1.0, pow(hbHash(hbK + 5.3), 1.5));
       // Ferne: Raster unter Pixelgröße → Mittelwert (kein Moiré)
       float hbFern = smoothstep(${Fe.ferneAb[0].toFixed(2)}, ${Fe.ferneAb[1].toFixed(2)}, max(hbFw.x, hbFw.y));
       vec3 hbMittel = ${v3s(Fe.weiss)} * hbAnteil * 0.45 * hbSeite;

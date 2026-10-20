@@ -42,7 +42,7 @@ def main():
                 s = Session(pw, srv.base, device=geraet)
                 try:
                     s.open(url(at, a.look, extra))
-                    s.pg.wait_for_function(bed, timeout=60000)
+                    s.pg.wait_for_function(f"__hb.rennen && __hb.spieler && ({bed})", timeout=60000)
                     s.frames(2)
                     p = s.shot(f'{name}_{gname}', 'p1'); bilder.append(p)
                     print(name, gname, 'ok', s.ev("({ fps: __hb.fps, tempo: __hb.spieler && __hb.spieler.tempo })"), s.errors[:3])
@@ -55,7 +55,7 @@ def main():
             s = Session(pw, srv.base, device=PIXEL7_LAND)
             try:
                 s.open(url('Häuserschlucht Anlauf', a.look, '&action=2'))
-                s.pg.wait_for_function("!__hb.spieler.boden && __hb.spieler.luftZeit > 1.2", timeout=60000)
+                s.pg.wait_for_function("__hb.spieler && !__hb.spieler.boden && __hb.spieler.luftZeit > 1.2", timeout=60000)
                 s.ev("__hb.moment('sprungScheitel')")
                 folge = []
                 for k in range(14):

@@ -16,7 +16,7 @@ import { Eingabe } from './game/eingabe.js';
 import { MomentWaechter } from './game/momente.js';
 import { Uhr, ActionRegie, BlitzBremse, bus } from './core/zeit.js';
 import { baueBahnMesh } from './gfx/bahnmesh.js';
-import { baueGleiter, BAUFORM_LISTE } from './gfx/gleitermesh.js';
+import { baueGleiter, BAUFORM_LISTE, ladeGleiterModelle } from './gfx/gleitermesh.js';
 import { KameraRig, wendeAn } from './gfx/kamera.js';
 import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
@@ -75,8 +75,10 @@ function startStelle() {
   return k >= 0 ? Math.max(0, bahn.segStart[k] - 120) : null;
 }
 
+// Gleiter-Modelle (GLB) laden; das Rennen startet erst danach (Rückfall-Keil, falls das Laden scheitert)
+const modelle = ladeGleiterModelle().catch((e) => console.warn('Gleiter-Modelle', e));
 const hud = new Hud(document.getElementById('ui'), {
-  onStart: (e) => starte(e),
+  onStart: (e) => modelle.then(() => starte(e)),
   onEinstellung: (key, v) => {
     if (key === 'blitzeReduziert') blitze.reduziert = v;
     if (key === 'horizont') KAMERA.horizontHalten = v;
@@ -100,8 +102,11 @@ function starte(e) {
   const anzahl = q.has('gegner') ? SPIEL.gegner : e.gegner;
   const ki = q.has('ki') ? SPIEL.ki : e.ki;
   const stufe = q.has('hilfe') ? SPIEL.hilfe : e.hilfe;
-  const teil = [{ ...TEAMS[0], name: 'DU', klasse: q.get('klasse') || e.klasse || 'mittel' }];
+  const teil = [];
   for (let k = 1; k <= anzahl; k++) teil.push({ ...TEAMS[k], klasse: KLASSEN_LISTE[k % 3], pilot: new Pilot(bahn, plan, PROFILE[ki], 100 + k * 13) });
+  // Startplatz des Spielers: hinten im Feld (Standard 6 von 8 → Überholen von Anfang an), ?startplatz=1…8
+  const platz = Math.max(1, Math.min(anzahl + 1, q.has('startplatz') ? +q.get('startplatz') : Math.min(anzahl + 1, 6)));
+  teil.splice(platz - 1, 0, { ...TEAMS[0], name: 'DU', klasse: q.get('klasse') || e.klasse || 'mittel' });
   const at = startStelle();
   rennen = new Rennen(bahn, teil, { runden: q.has('runden') ? SPIEL.runden : e.runden, ohneCountdown: at !== null });
   spielerT = rennen.spieler;
@@ -271,7 +276,7 @@ function bild() {
   });
 }
 requestAnimationFrame(bild);
-if (q.get('autostart') === '1') starte(hud.einst);
+if (q.get('autostart') === '1') modelle.then(() => starte(hud.einst));
 
 // Qualitäts-Automatik (einfach): Bildrate je Sekunde → Kino-Look passt die Renderskala an. TODO Heavy-Job: Grafik-
 // Autopilot aus der Stuntbahn (kern/autopilot.js) übernehmen, sobald das Mess-Gate läuft.
@@ -288,7 +293,7 @@ let fpsN = 0, fpsT = 0;
 window.__hb = {
   bahn, plan, kino, renderer, blitze, fps: 0,
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
-  starte: () => starte(hud.einst), regie: () => regie,
+  starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'
   moment: (art = 'sprungScheitel') => { if (!regie) return null; regie.letzt = -Infinity; const g = spielerT.g; return regie.melde(art, 1, { x: g.p.x, y: g.p.y, z: g.p.z }, {}, praes); },
   // Spieler an eine Stelle setzen (s in m oder Abschnittsname), Tempo v (m/s)

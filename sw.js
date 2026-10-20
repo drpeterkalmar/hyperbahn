@@ -1,8 +1,12 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = '09e336c861';
+const VERSION = '8eb12787b7';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
+  'assets/gleiter/hammer.glb',
+  'assets/gleiter/klinge.glb',
+  'assets/gleiter/pfeil.glb',
+  'assets/gleiter/stachel.glb',
   'css/style.css',
   'icons/apple-touch-icon.png',
   'icons/icon-192.png',
@@ -11,6 +15,7 @@ const ASSETS = [
   'index.html',
   'lib/addons/loaders/GLTFLoader.js',
   'lib/addons/utils/BufferGeometryUtils.js',
+  'lib/addons/utils/SkeletonUtils.js',
   'lib/three.core.min.js',
   'lib/three.module.min.js',
   'manifest.webmanifest',
