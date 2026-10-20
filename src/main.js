@@ -46,7 +46,7 @@ const himmel = baueHimmel();
 scene.add(himmel);
 
 const lookStufe = q.has('look') ? +q.get('look') : 1;
-const kino = new KinoLook(renderer, { level: lookStufe, grade: 'neonnoir', stages: q.get('kl') || '' });
+const kino = new KinoLook(renderer, { level: lookStufe, grade: 'neonnoir', stages: q.get('kl') || '', streak: q.has('streak') ? +q.get('streak') : 1.2 });
 
 // --- Strecke, Plan, Grafik der Bahn ---
 const bahn = strecke1();
@@ -66,6 +66,7 @@ import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => consol
 const eingabe = new Eingabe(window);
 const rig = new KameraRig();
 let rennen = null, hilfe = null, waechter = null, regie = null, uhr = null, meshes = [], spielerT = null;
+let galerie = null;
 let laeuft = false, praes = 0, vibLetzt = -9, autopilot = null, scheinBis = 0;
 // ?at=Großer Looping | ?at=1600 → Bogenlänge oder null
 function startStelle() {
@@ -271,11 +272,14 @@ function bild() {
     if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {
     if (ton) ton.ruhe();
-    // Menü: langsame Kamerafahrt über die Strecke
+    // Menü: langsame Kamerafahrt über die Strecke (oder feste Galerie-Kamera, __hb.galerie())
+    if (galerie) { camera.position.copy(galerie.pos); camera.up.set(0, 1, 0); camera.lookAt(galerie.ziel); camera.fov = 40; camera.updateProjectionMatrix(); }
     const s = (praes * 40) % bahn.L, i = Math.floor(s / bahn.ds);
-    camera.position.set(bahn.px[i] + 60, bahn.py[i] + 40, bahn.pz[i] + 60);
-    camera.up.set(0, 1, 0);
-    camera.lookAt(bahn.px[i], bahn.py[i], bahn.pz[i]);
+    if (!galerie) {
+      camera.position.set(bahn.px[i] + 60, bahn.py[i] + 40, bahn.pz[i] + 60);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(bahn.px[i], bahn.py[i], bahn.pz[i]);
+    }
   }
   himmel.update(praes, camera.position);
   bahnMesh.update(praes, { blitze, boost: rennen && laeuft ? Math.min(1, spielerT.g.boost) : 0 });
@@ -288,7 +292,7 @@ function bild() {
   const g = rennen ? spielerT.g : null;
   kino.render(scene, camera, {
     dt, run: !!(rennen && laeuft),
-    speed: g ? g.tempo * 0.4 : 0,              // TODO Heavy-Job: Unschärfe-Skala (Kino-Look ist auf 80–190 km/h geeicht)
+    speed: g ? g.tempo * KAMERA.unschaerfe : 0,   // Kino-Look ist auf 80–190 km/h geeicht → Tempo skaliert (?blur=)
     boost: g ? Math.min(1, g.boost) : 0, car: meshes[0] ? meshes[0].gruppe : null,
     flash: { k: blitzK, col: blitzFarbe }, white: weiss,
   });
@@ -310,11 +314,26 @@ let fpsN = 0, fpsT = 0;
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
-  bahn, plan, kino, renderer, blitze, karte, fps: 0,
+  bahn, plan, kino, renderer, blitze, karte, fps: 0, get meshes() { return meshes; },
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'
   moment: (art = 'sprungScheitel') => { if (!regie) return null; regie.letzt = -Infinity; const g = spielerT.g; return regie.melde(art, 1, { x: g.p.x, y: g.p.y, z: g.p.z }, {}, praes); },
+  // Gleiter-Galerie (Abnahme-Bild): alle Bauformen in Teamfarben nebeneinander auf der Start-Geraden, Kamera schräg vorn
+  galerie: (farben = [0x00e5ff, 0xff2bd6, 0xffd400, 0xff3b3b], s0 = 300) => {
+    laeuft = false; hud.zeigeMenue(false); document.querySelector('.hud').style.display = 'none';
+    for (const m of meshes) { scene.remove(m.gruppe); scene.remove(m.spur); }
+    const R = new Rennen(bahn, [{ name: 'a' }], { ohneCountdown: true });
+    meshes = BAUFORM_LISTE.map((b, k) => {
+      const m = baueGleiter(farben[k % farben.length], b); const g = R.alle[0].g;
+      g.setzeAuf(s0, -9 + k * 6, 0); m.setzeLage(g); m.update(1 / 60, { ...g, boost: 0.3, tempo: 0, p: g.p }, { gas: 0.6, lenk: 0 });
+      scene.add(m.gruppe); return m;
+    });
+    const i = Math.round((s0 + 16) / bahn.ds);
+    galerie = { pos: new THREE.Vector3(bahn.px[i] + bahn.lx[i] * 6 + bahn.ux[i] * 4, bahn.py[i] + bahn.uy[i] * 4, bahn.pz[i] + bahn.lz[i] * 6),
+      ziel: (() => { const z = bahn.punkt(s0, 0, 1); return new THREE.Vector3(z.x, z.y, z.z); })() };
+    return BAUFORM_LISTE;
+  },
   // Spieler an eine Stelle setzen (s in m oder Abschnittsname), Tempo v (m/s)
   setze: (wo, v = GLEITER.vmax) => {
     const k = typeof wo === 'string' ? bahn.abschnitte.findIndex((a) => a.name === wo) : -1;

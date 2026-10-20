@@ -228,6 +228,15 @@ const BLOOM_DOWN_FS = `
       + texture2D( tSrc, vUv + vec2( -t.x, t.y ) ).rgb + texture2D( tSrc, vUv + vec2( t.x, t.y ) ).rgb;
     gl_FragColor = vec4( c / 8.0, 1.0 );
   }`;
+// Hyperbahn: anamorphe Linsen-Streifen (Neon-Flares) – waagrechte, sehr breite Unschärfe der Bloom-Stufe 1/8 in drei
+// Durchgängen mit wachsender Schrittweite (1,5 → 6 → 24 Texel), im Endbild bläulich zum Bloom addiert. opts.streak = Stärke.
+const STREAK_FS = `
+  uniform sampler2D tSrc; uniform vec2 uTexel; uniform float uK; varying vec2 vUv;
+  void main() {
+    vec3 c = vec3( 0.0 ); float ws = 0.0;
+    for ( int i = -6; i <= 6; i++ ) { float w = exp( -abs( float( i ) ) / 2.5 ); c += texture2D( tSrc, vUv + vec2( float( i ) * uTexel.x, 0.0 ) ).rgb * w; ws += w; }
+    gl_FragColor = vec4( c / ws * uK, 1.0 );
+  }`;
 const BLOOM_UP_FS = `
   uniform sampler2D tSrc; uniform vec2 uTexel; uniform float uK; varying vec2 vUv;
   void main() {
@@ -254,7 +263,7 @@ const SUNVIS_FS = `
 
 // Endbild
 const COMP_FS = `
-  uniform sampler2D tColor, tDepth, tAO, tBloom, tBlur, tSunVis, tDof, tTaa;
+  uniform sampler2D tColor, tDepth, tAO, tBloom, tBlur, tSunVis, tDof, tTaa, tStreak; uniform float uStreak; uniform vec3 uStreakCol;
   uniform vec2 uSrcTexel, uRes, uAOTexel, uTaaTexel, uJitUv;
   uniform float uTime, uSharp, uAOStr, uBloomStr, uVig, uBlurOn, uDither;
   uniform mat4 uInvProj; uniform mat3 uCamRot; uniform vec3 uCamPos;
@@ -413,7 +422,11 @@ const COMP_FS = `
     }
   #endif
   #ifdef BLOOM
-    { vec3 b = texture2D( tBloom, vUv ).rgb * uBloomStr; col = 1.0 - ( 1.0 - col ) * ( 1.0 - min( b, 1.0 ) ); }
+    { vec3 b = texture2D( tBloom, vUv ).rgb * uBloomStr;
+    #ifdef STREAK
+      b += texture2D( tStreak, vUv ).rgb * uStreakCol * uStreak;
+    #endif
+      col = 1.0 - ( 1.0 - col ) * ( 1.0 - min( b, 1.0 ) ); }
   #endif
   #ifdef FLARE
     col += kFlare( vUv );
@@ -442,6 +455,7 @@ export class KinoLook {
     this.r = renderer;
     this.supported = !!renderer.capabilities.isWebGL2;
     this.grade = opts.grade || 'mittag';
+    this.streak = opts.streak ?? 0;   // Hyperbahn: anamorphe Neon-Streifen (0 = aus)
     this.overrides = {};
     for (const s of String(opts.stages || '').split(',').map((x) => x.trim()).filter(Boolean)) {
       const on = s[0] !== '-', k = s.replace(/^[-+]/, '');
@@ -479,7 +493,7 @@ export class KinoLook {
       uTime: F(), uSharp: F(0.3), uAOStr: F(0.6), uBloomStr: F(0.4), uVig: F(0.2), uBlurOn: F(0), uDither: F(1),
       uInvProj: M4(), uCamRot: { value: new THREE.Matrix3() }, uCamPos: V3(),
       uSunDir: V3(0, 1, 0), uSunCol: { value: new THREE.Vector3() }, uHazeCol: { value: new THREE.Vector3() }, uAerial: { value: new THREE.Vector4() },
-      uSunScr: V3(), uFlare: F(1),
+      uSunScr: V3(), uFlare: F(1), tStreak: { value: null }, uStreak: F(0), uStreakCol: V3(0.45, 0.75, 1.3),
       uHaze0: { value: new THREE.Vector4() }, uHaze1: { value: new THREE.Vector4() }, uHazeR: V2(), uHazeK: F(0),
       uWB: V3(1, 1, 1), uLift: V3(), uGamma: V3(1, 1, 1), uGain: V3(1, 1, 1), uShTint: V3(), uHiTint: V3(), uSplit: F(0), uSat: F(1), uVib: F(0), uContrast: F(0),
       uReproj: M4(), uInvVP: M4(), uCarInv: M4(),
@@ -607,6 +621,11 @@ export class KinoLook {
       }
       for (let i = L; i < this.bloomRT.length; i++) { if (this.bloomRT[i]) this.bloomRT[i].dispose(); }
       this.bloomRT.length = L;
+      if (this.streak > 0) {
+        const q = this.bloomRT[Math.min(1, L - 1)];
+        this.streakRT = this.streakRT || [];
+        for (let i = 0; i < 2; i++) if (need(this.streakRT[i], q.width, q.height)) { if (this.streakRT[i]) this.streakRT[i].dispose(); this.streakRT[i] = new THREE.WebGLRenderTarget(q.width, q.height, rtOpts()); }
+      }
     }
   }
   blurNeedsHalf() { return this.stages.blur && this.preset.blurHalf; }
@@ -713,6 +732,17 @@ export class KinoLook {
         this.pass(up, this.bloomRT[i - 1], false);
       }
       U.tBloom.value = this.bloomRT[0].texture;
+      if (this.streak > 0 && this.streakRT) {
+        const q = this.bloomRT[Math.min(1, L - 1)], sm = this.mat('streak', {}, STREAK_FS);
+        let src = q;
+        [1.5, 6, 24].forEach((step, j) => {
+          const dst = this.streakRT[j % 2];
+          U.tSrc.value = src.texture; U.uTexel.value.set(step / q.width, 0); U.uK.value = 1;
+          this.pass(sm, dst); src = dst;
+        });
+        U.tStreak.value = src.texture;
+        U.uStreak.value = this.streak * (1 + 1.5 * (o.flash ? o.flash.k : 0));
+      }
     }
     // 4b. Tiefenschärfe (halbe Auflösung)
     if (dof) {
@@ -765,6 +795,7 @@ export class KinoLook {
     if (st.sharpen) defs.SHARP = 1;
     if (st.ssao) defs.AO = 1;
     if (st.bloom) defs.BLOOM = 1;
+    if (st.bloom && this.streak > 0 && this.streakRT) defs.STREAK = 1;
     if (st.flare && sun) defs.FLARE = 1;
     if (st.aerial) defs.AERIAL = 1;
     if (st.grade) defs.GRADE = 1;
@@ -815,8 +846,8 @@ export class KinoLook {
   }
 
   dispose() {
-    for (const t of [this.rt, this.aoRT, this.blurRT, this.sunRT, this.dofRT, ...this.bloomRT]) if (t) { if (t.depthTexture) t.depthTexture.dispose(); t.dispose(); }
-    this.rt = this.aoRT = this.blurRT = this.dofRT = null; this.bloomRT = [];
+    for (const t of [this.rt, this.aoRT, this.blurRT, this.sunRT, this.dofRT, ...this.bloomRT, ...(this.streakRT || [])]) if (t) { if (t.depthTexture) t.depthTexture.dispose(); t.dispose(); }
+    this.rt = this.aoRT = this.blurRT = this.dofRT = null; this.bloomRT = []; this.streakRT = null;
     if (this.taau) { this.taau.dispose(); this.taau = null; }
     for (const m of this.mats.values()) m.dispose();
     this.mats.clear();

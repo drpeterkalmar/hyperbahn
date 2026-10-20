@@ -87,7 +87,8 @@ export const ACTION = {
 };
 
 export const BLITZE = { reduziert: false, maxProSek: 3, strobeDaempfung: 0.35 };
-export const KAMERA = { horizontHalten: false, rollFolge: 0.85, rollTraeg: 0.18 };
+// unschaerfe: Tempo (m/s) → Kino-Look-Bewegungsunschärfe (P1-Abnahme: 0,4 verschmierte Sprünge/Boost zu stark) – ?blur=
+export const KAMERA = { horizontHalten: false, rollFolge: 0.85, rollTraeg: 0.18, unschaerfe: 0.3 };
 export const SPIEL = { hilfe: 'leicht', gegner: 7, ki: 'mittel', runden: 3, online: false };
 
 // URL-Overrides anwenden (Browser: location.search; Node-Tests können eigene Strings übergeben)
@@ -106,6 +107,8 @@ export function leseRegler(search) {
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';
   KAMERA.horizontHalten = q.get('horizont') === '1';
+  KAMERA.unschaerfe = zahl('blur', KAMERA.unschaerfe);
+  ANZEIGE.faktor = zahl('tacho', ANZEIGE.faktor);
   if (['leicht', 'mittel', 'profi'].includes(q.get('hilfe'))) SPIEL.hilfe = q.get('hilfe');
   if (['leicht', 'mittel', 'profi'].includes(q.get('ki'))) SPIEL.ki = q.get('ki');
   SPIEL.gegner = Math.max(0, Math.min(7, Math.round(zahl('gegner', SPIEL.gegner))));

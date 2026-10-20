@@ -10,7 +10,7 @@ export const LOOK = {
   fahrbahn: { farbe: 0x07090d, rau: 0.2, metall: 0.4, linie: [0.0, 0.9, 1.0], linieStaerke: 1.6 },
   kante: { links: [0.0, 0.95, 1.0], rechts: [1.0, 0.15, 0.8], staerke: 3.2, lauf: 38, abstand: 24, strobo: 1.5 },
   magnet: { a: [0.62, 0.2, 1.0], b: [0.0, 0.9, 1.0], staerke: 3.0, puls: 7 },
-  pad: { farbe: [0.2, 1.0, 1.0], staerke: 4.0, lauf: 2.6 },
+  pad: { farbe: [0.2, 1.0, 1.0], staerke: 3.0, lauf: 2.6, grund: 0.07 },   // P1-Abnahme: Grund 0,25 → Pad-Ketten überstrahlten weiß
   ring: { farbe: 0xff2bd6, staerke: 3.5 },
   licht: { farbe: [1.0, 0.55, 0.1], staerke: 5.0, lauf: 9 },
   roehre: { glas: 0x0b1a2e, deckkraft: 0.22, ring: 0x00e5ff },
@@ -72,9 +72,9 @@ export function baueBahnMesh(bahn, opt = {}) {
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       // Spurlinien (Ränder + zwei Trennlinien), leicht pulsierend
       float q = vBahnUv.x;
-      float lin = smoothstep(0.012, 0.0, abs(q - 0.02)) + smoothstep(0.012, 0.0, abs(q - 0.98))
-        + 0.5 * smoothstep(0.006, 0.0, abs(q - 0.3333)) * step(0.5, fract(vBahnUv.y * 4.0))
-        + 0.5 * smoothstep(0.006, 0.0, abs(q - 0.6667)) * step(0.5, fract(vBahnUv.y * 4.0));
+      float lin = (1.0 - smoothstep(0.0, 0.012, abs(q - 0.02))) + (1.0 - smoothstep(0.0, 0.012, abs(q - 0.98)))
+        + 0.5 * (1.0 - smoothstep(0.0, 0.006, abs(q - 0.3333))) * step(0.5, fract(vBahnUv.y * 4.0))
+        + 0.5 * (1.0 - smoothstep(0.0, 0.006, abs(q - 0.6667))) * step(0.5, fract(vBahnUv.y * 4.0));
       totalEmissiveRadiance += vec3(${fb.linie.join(', ')}) * lin * ${fb.linieStaerke.toFixed(2)};`);
   };
   gruppe.add(new THREE.Mesh(geo(teile.fahrbahn), fahrMat));
@@ -104,7 +104,7 @@ export function baueBahnMesh(bahn, opt = {}) {
     void main() {
       float w = 0.5 + 0.5 * sin(vWeg * 0.25 - uZeit * ${m.puls.toFixed(1)});
       vec3 c = mix(vec3(${m.a.join(', ')}), vec3(${m.b.join(', ')}), w);
-      float kern = smoothstep(0.0, 0.35, vUv.x) * smoothstep(1.0, 0.65, vUv.x);
+      float kern = smoothstep(0.0, 0.35, vUv.x) * (1.0 - smoothstep(0.65, 1.0, vUv.x));
       gl_FragColor = vec4(c * (0.6 + 1.4 * w) * kern * ${m.staerke.toFixed(2)}, 1.0);
       ${ENDE}
     }`);
@@ -145,10 +145,10 @@ export function baueBahnMesh(bahn, opt = {}) {
   const padMat = leuchtMaterial(`
     void main() {
       float chev = fract(vUv.y * 4.0 - uZeit * ${p.lauf.toFixed(2)} - abs(vUv.x - 0.5) * 1.4);
-      float pfeil = smoothstep(0.0, 0.08, chev) * smoothstep(0.5, 0.38, chev);
-      float rand = smoothstep(0.06, 0.0, min(vUv.x, 1.0 - vUv.x));
+      float pfeil = smoothstep(0.0, 0.08, chev) * (1.0 - smoothstep(0.38, 0.5, chev));
+      float rand = (1.0 - smoothstep(0.0, 0.06, min(vUv.x, 1.0 - vUv.x)));
       vec3 c = vec3(${p.farbe.join(', ')});
-      gl_FragColor = vec4(c * (0.25 + pfeil * 1.2 + rand) * ${p.staerke.toFixed(2)}, 1.0);
+      gl_FragColor = vec4(c * (${p.grund.toFixed(2)} + pfeil * 1.1 + rand * 0.7) * ${p.staerke.toFixed(2)}, 1.0);
       ${ENDE}
     }`);
   padMat.polygonOffset = true; padMat.polygonOffsetFactor = -2;

@@ -33,19 +33,25 @@ export async function ladeGleiterModelle(basis = 'assets/gleiter/') {
 }
 
 // Farbton-Maske: Pixel mit dem Lack-Farbton (± Breite) und genug Sättigung bekommen den Teamfarbton, Helligkeit bleibt
+// (farbton < 0 = keine Maske). Dazu ein Neon-Rand (Fresnel) in Teamfarbe – Gleiter lesen sich so auch vor dunkler Stadt.
+export const GLEITER_LOOK = { rand: 0.65, randExp: 2.6, env: 2.0 };
 function teamMaske(mat, team, farbton) {
   const hsl = {}; team.getHSL(hsl);
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uTeamH = { value: hsl.h }; sh.uniforms.uLackH = { value: farbton };
-    sh.fragmentShader = sh.fragmentShader.replace('void main() {', `uniform float uTeamH, uLackH;
+    sh.uniforms.uTeam = { value: team.clone() }; sh.uniforms.uRand = { value: GLEITER_LOOK.rand };
+    sh.fragmentShader = sh.fragmentShader.replace('void main() {', `uniform float uTeamH, uLackH, uRand; uniform vec3 uTeam;
       vec3 hb_rgb2hsv(vec3 c) { vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0); vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
         vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r)); float d = q.x - min(q.w, q.y);
         return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-6)), d / (q.x + 1e-6), q.x); }
       vec3 hb_hsv2rgb(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
       void main() {`).replace('#include <color_fragment>', `#include <color_fragment>
-      { vec3 hsv = hb_rgb2hsv(diffuseColor.rgb); float dh = abs(fract(hsv.x - uLackH + 0.5) - 0.5);
-        float w = smoothstep(0.11, 0.05, dh) * smoothstep(0.2, 0.4, hsv.y);
-        diffuseColor.rgb = mix(diffuseColor.rgb, hb_hsv2rgb(vec3(uTeamH, max(hsv.y, 0.75), hsv.z)), w); }`);
+      if (uLackH >= 0.0) { vec3 hsv = hb_rgb2hsv(diffuseColor.rgb); float dh = abs(fract(hsv.x - uLackH + 0.5) - 0.5);
+        float w = (1.0 - smoothstep(0.05, 0.11, dh)) * smoothstep(0.2, 0.4, hsv.y);   // smoothstep(a > b) ist in GLSL undefiniert
+        diffuseColor.rgb = mix(diffuseColor.rgb, hb_hsv2rgb(vec3(uTeamH, max(hsv.y, 0.75), hsv.z)), w); }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      { float hbRim = pow(1.0 - abs(dot(normalize(normal), normalize(vViewPosition))), ${GLEITER_LOOK.randExp.toFixed(2)});
+        totalEmissiveRadiance += uTeam * hbRim * uRand; }`);
   };
   mat.customProgramCacheKey = () => 'hbTeam';
 }
@@ -61,7 +67,7 @@ function ausVorlage(f, vorlage, team) {
     const g = o.geometry.clone().applyMatrix4(o.matrixWorld);
     if (mat.map) {
       const m = mat.clone(); teamMaske(m, team, f.farbton ?? -1);
-      m.envMapIntensity = 1.4;
+      m.envMapIntensity = GLEITER_LOOK.env;
       aus.push(new THREE.Mesh(g, m));
       continue;
     }
@@ -75,7 +81,11 @@ function ausVorlage(f, vorlage, team) {
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     ziel.push(g.index ? g.toNonIndexed() : g);
   }
-  if (fest.length) aus.push(new THREE.Mesh(mergeGeometries(fest), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.7, envMapIntensity: 1.4 })));
+  if (fest.length) {
+    const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.7, envMapIntensity: GLEITER_LOOK.env });
+    teamMaske(m, team, -1);
+    aus.push(new THREE.Mesh(mergeGeometries(fest), m));
+  }
   if (leucht.length) aus.push(new THREE.Mesh(mergeGeometries(leucht), new THREE.MeshBasicMaterial({ color: team.clone().multiplyScalar(4) })));
   return aus;
 }
