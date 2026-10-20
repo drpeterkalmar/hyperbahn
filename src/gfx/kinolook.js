@@ -263,7 +263,7 @@ const SUNVIS_FS = `
 
 // Endbild
 const COMP_FS = `
-  uniform sampler2D tColor, tDepth, tAO, tBloom, tBlur, tSunVis, tDof, tTaa, tStreak; uniform float uStreak; uniform vec3 uStreakCol;
+  uniform sampler2D tColor, tDepth, tAO, tBloom, tBlur, tSunVis, tDof, tTaa, tStreak, tOverlay; uniform vec4 uOverlayRect; uniform float uStreak; uniform vec3 uStreakCol;
   uniform vec2 uSrcTexel, uRes, uAOTexel, uTaaTexel, uJitUv;
   uniform float uTime, uSharp, uAOStr, uBloomStr, uVig, uBlurOn, uDither; uniform vec4 uAction;
   uniform mat4 uInvProj; uniform mat3 uCamRot; uniform vec3 uCamPos;
@@ -452,6 +452,12 @@ const COMP_FS = `
     col += ( kIgn( gl_FragCoord.xy + fract( uTime * 7.31 ) * 61.0 ) - 0.5 ) / 255.0;
   #endif
     col = mix( col, vec3( 1.0 ), uFx.y );   // Weißblitz-Übergang (Kino-Replay)
+  #ifdef OVERLAY
+    // Hyperbahn: Minikarte im selben Durchgang (vormultipliziertes Alpha) – ein zweiter Durchgang auf den Bildschirm kostet
+    // auf Kachel-GPUs ein volles Neuladen des Bildes (gemessen +2,5 ms)
+    { vec2 q = ( vUv - uOverlayRect.xy ) / ( uOverlayRect.zw - uOverlayRect.xy );
+      if ( q.x >= 0.0 && q.y >= 0.0 && q.x <= 1.0 && q.y <= 1.0 ) { vec4 ov = texture2D( tOverlay, q ); col = ov.rgb + col * ( 1.0 - ov.a ); } }
+  #endif
     gl_FragColor = vec4( col, 1.0 );
   }`;
 
@@ -502,7 +508,7 @@ export class KinoLook {
       uAction: { value: new THREE.Vector4() }, uTime: F(), uSharp: F(0.3), uAOStr: F(0.6), uBloomStr: F(0.4), uVig: F(0.2), uBlurOn: F(0), uDither: F(1),
       uInvProj: M4(), uCamRot: { value: new THREE.Matrix3() }, uCamPos: V3(),
       uSunDir: V3(0, 1, 0), uSunCol: { value: new THREE.Vector3() }, uHazeCol: { value: new THREE.Vector3() }, uAerial: { value: new THREE.Vector4() },
-      uSunScr: V3(), uFlare: F(1), tStreak: { value: null }, uStreak: F(0), uStreakCol: V3(0.45, 0.75, 1.3),
+      uSunScr: V3(), uFlare: F(1), tStreak: { value: null }, tOverlay: { value: null }, uOverlayRect: { value: new THREE.Vector4() }, uStreak: F(0), uStreakCol: V3(0.45, 0.75, 1.3),
       uHaze0: { value: new THREE.Vector4() }, uHaze1: { value: new THREE.Vector4() }, uHazeR: V2(), uHazeK: F(0),
       uWB: V3(1, 1, 1), uLift: V3(), uGamma: V3(1, 1, 1), uGain: V3(1, 1, 1), uShTint: V3(), uHiTint: V3(), uSplit: F(0), uSat: F(1), uVib: F(0), uContrast: F(0),
       uReproj: M4(), uInvVP: M4(), uCarInv: M4(),
@@ -671,6 +677,7 @@ export class KinoLook {
       r.setRenderTarget(null); r.render(scene, camera);
       if (o.overlay) o.overlay(r);
       this.savePrev(camera);
+      this.overlayGezeichnet = false;
       return true;
     }
     const U = this.u, st = this.stages;
@@ -806,6 +813,8 @@ export class KinoLook {
     const defs = {};
     if (o.whip && o.whip.len > 0.002) defs.WHIP = 1;
     if (act && act.ca > 0.01) defs.ACTION_CA = 1;
+    if (o.overlayTex && o.overlayTex.tex) { defs.OVERLAY = 1; U.tOverlay.value = o.overlayTex.tex; U.uOverlayRect.value.copy(o.overlayTex.rect); }
+    this.overlayGezeichnet = !!defs.OVERLAY;
     if (act && act.radial > 0.01) defs.ACTION_RADIAL = 1;
     if (act && act.vig > 0.01) defs.VIGNETTE = 1;
     if (taa === 'taa') defs.TAA = 1;                                       // n31: History statt Renderskala, nur CAS

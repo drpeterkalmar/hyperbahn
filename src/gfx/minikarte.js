@@ -146,12 +146,24 @@ export class Minikarte {
   // Bildschirm-Rechteck (CSS-px, Ursprung oben links) – vom HUD-Element gemessen
   setzeRechteck(r) { this.rect = r; }
 
-  // je Bild: t (Präsentationszeit), alle Teilnehmer (rennen.alle), Spieler-Index
-  render(t, alle, spielerK) {
-    if (this.modus === 'aus' || !this.rect || !this.rect.w) return;
+  // je Bild VOR dem Kino-Look: Render-Target bei Bedarf neu zeichnen (20 Hz); Rückgabe { tex, rect (UV, unten links) } für
+  // den Endbild-Durchgang des Kino-Looks (kein eigener Bildschirm-Durchgang), oder null
+  vorbereiten(t, alle, spielerK) {
+    if (this.modus === 'aus' || !this.rect || !this.rect.w) return null;
     const r = this.r, dpr = r.getPixelRatio(), W = Math.round(this.rect.w * dpr), H = Math.round(this.rect.h * dpr);
     if (this.rt.width !== W || this.rt.height !== H) { this.rt.setSize(W, H); this.letzt = -1; }
     if (t - this.letzt >= 1 / this.hz || t < this.letzt) { this.letzt = t; this.zeichneRT(t, alle, spielerK, W / H); }
+    const cw = r.domElement.clientWidth, ch = r.domElement.clientHeight, R = this.rect;
+    this.uvRect = this.uvRect || { tex: this.rt.texture, rect: new THREE.Vector4() };
+    this.uvRect.tex = this.rt.texture;
+    this.uvRect.rect.set(R.x / cw, 1 - (R.y + R.h) / ch, (R.x + R.w) / cw, 1 - R.y / ch);
+    return this.uvRect;
+  }
+
+  // Rückfall (Kino-Look ohne Endbild-Durchgang, Stufe Einfach): Quad per Scissor in die Ecke
+  zeichneDirekt() {
+    if (this.modus === 'aus' || !this.rect || !this.rect.w) return;
+    const r = this.r;
     // Quad in die Ecke (WebGL-Viewport: Ursprung unten links)
     const cw = r.domElement.clientWidth, ch = r.domElement.clientHeight;
     const x = this.rect.x, y = ch - this.rect.y - this.rect.h;

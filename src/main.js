@@ -23,6 +23,7 @@ import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
 import { Hud } from './ui/hud.js';
 import { Minikarte } from './gfx/minikarte.js';
+import { GpuZeit } from './gfx/gpuzeit.js';
 import { leseGefuehl, GEFUEHL, KLASSEN_LISTE } from './physics/fahrgefuehl.js';
 
 const q = leseRegler(location.search);
@@ -33,6 +34,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;   // filmisch (Kino-Look übernimmt es ins Render-Target)
 renderer.toneMappingExposure = 1.1;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+// Zähler (Draw-Calls/Dreiecke) über alle Durchgänge eines Bildes (Szene + Kino-Look + Minikarte) – je Bild zurückgesetzt
+renderer.info.autoReset = false;
+const gpu = q.get('gpu') === '1' ? new GpuZeit(renderer.getContext()) : null;
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x0a0614, 0.00075);    // TODO Heavy-Job: Dunst-Dichte am Bild
@@ -231,6 +235,8 @@ window.__app = { ready: true, frames: 0 };   // wie Stuntbahn: tests/util.py war
 function bild() {
   requestAnimationFrame(bild);
   window.__app.frames++;
+  renderer.info.reset();
+  if (gpu) gpu.sammle();
   const tJetzt = performance.now() / 1000;
   const dt = Math.min(0.1, tJetzt - tAlt); tAlt = tJetzt;
   praes += dt;
@@ -291,7 +297,10 @@ function bild() {
   blitzK = Math.max(0, blitzK - dt * 4);
   weiss = fx ? fx.weiss : 0;
   const g = rennen ? spielerT.g : null;
+  const karteBild = rennen && laeuft ? karte.vorbereiten(praes, rennen.alle, spielerT.k) : null;
+  if (gpu) gpu.start('szene');
   kino.render(scene, camera, {
+    overlayTex: karteBild,
     dt, run: !!(rennen && laeuft),
     // Kino-Look ist auf 80–190 km/h geeicht → Tempo skaliert (?blur=); im Bullet-Time-Halbkreis keine Bewegungsunschärfe
     // (Zeit steht, nur die Kamera fährt – die Unschärfe würde sonst die ganze Stadt verschmieren)
@@ -300,7 +309,8 @@ function bild() {
     flash: { k: blitzK, col: blitzFarbe }, white: weiss,
     action: fx ? { sat: fx.saettigung, vig: fx.vignette, ca: fx.ca, radial: fx.radial } : null,
   });
-  if (rennen && laeuft) karte.render(praes, rennen.alle, spielerT.k);
+  if (gpu) gpu.ende();
+  if (karteBild && !kino.overlayGezeichnet) karte.zeichneDirekt();   // Stufe Einfach: eigener kleiner Durchgang
 }
 requestAnimationFrame(bild);
 if (q.get('autostart') === '1') modelle.then(() => starte(hud.einst));
@@ -318,7 +328,7 @@ let fpsN = 0, fpsT = 0;
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
-  bahn, plan, kino, renderer, blitze, karte, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
+  bahn, plan, kino, renderer, blitze, karte, gpu, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'
