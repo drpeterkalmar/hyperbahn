@@ -126,9 +126,18 @@ test('#11 Item-Tabellen: Spalten = 100 %, Ziehung ±1 Prozentpunkt, deterministi
   assert.equal(ziehe(1, () => 0.999), 'lenkrakete'); assert.equal(ziehe(1, () => 0), 'boostZelle');
 });
 
-test('#12 Stoß-Verhältnis leicht/schwer ≈ 7,6×', () => {
+test('#12 Stoß-Verhältnis leicht/schwer: weich (p1c) ≈ 5×, höchstens 6 m/s; ?stoss=alt ≈ 7,6×', () => {
   const m = mess12();
-  assert.ok(Math.abs(m.verhaeltnis - (2.2 / 0.8) / (0.8 / 2.2)) < 0.3, `${m.verhaeltnis}`);
+  // weich: leicht bekommt min(6 m/s, 0,42·8·2) = 6 m/s, schwer 0,42·8·0,36 ≈ 1,2 m/s → ≈ 4,9×
+  assert.ok(m.verhaeltnis > 4 && m.verhaeltnis < 6, `${m.verhaeltnis}`);
+  assert.ok(m.leicht <= GEFUEHL.stossMax + 1e-6, `leicht ${m.leicht}`);
+  const alt = GEFUEHL.stossModus;
+  try {
+    GEFUEHL.stossModus = 'alt';
+    const a = mess12();
+    assert.ok(Math.abs(a.verhaeltnis - (2.2 / 0.8) / (0.8 / 2.2)) < 0.3, `alt ${a.verhaeltnis}`);
+    assert.ok(a.leicht > 2 * m.leicht, `alt leicht ${a.leicht} vs weich ${m.leicht}`);
+  } finally { GEFUEHL.stossModus = alt; }
 });
 
 test('#13/#14 Kamera: +12° in ≤ 0,3 s, zurück ≤ 0,55 s, Grundwert 62°, Nachlauf 3–6 % der Folgedistanz', () => {

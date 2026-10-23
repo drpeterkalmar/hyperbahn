@@ -58,8 +58,12 @@ export const GEFUEHL = {
   neustart: 1,        // ?neustart=0 Neustart-Rhythmus aus
   neustartTipps: 5, neustartTakt: [0.03, 0.13], neustartDauer: 2.0,
   // Stoß, Gummiband, Kamera, Items
-  stoss: 0.85,        // ?stoss=    Impuls = stoss × Relativtempo × Gewichtsverhältnis
-  stossDeckel: 3.0,
+  // p1c (Peter 22.10.: „Zusammenstöße sehr hart“): 0,85 → 0,42, Deckel 3 → 2, höchstens 6 m/s je Kontakt, weich verteilt
+  // (game/rennen.js stoesse); ?stoss=alt = bisheriges Verhalten
+  stoss: 0.42,        // ?stoss=    Impuls = stoss × Relativtempo × Gewichtsverhältnis (gedeckelt)
+  stossDeckel: 2.0,   //            größtes Gewichtsverhältnis (leicht/schwer: 2,0 statt 2,75 → Verhältnis 5,5× statt 7,6×)
+  stossMax: 6,        // ?stossmax= m/s größte Tempoänderung je Gleiter und Kontakt
+  stossModus: 'weich',// ?stoss=alt
   gummiband: 0.5,     // ?gummiband= 0 aus, 1 normal (= 0,5), 2 stark (= 1,0) oder direkt 0…1 als Kommazahl
   fov: 62,            // ?fov=      Grund-Sichtfeld (vertikal)
   fovBoost: 12,       // ?fovboost=
@@ -73,6 +77,8 @@ export function leseGefuehl(search) {
   for (const k of ['beschl', 'gewicht', 'kurve', 'lenk', 'drift', 'mtzeit', 'hupf', 'startfenster', 'rand', 'landebonus', 'treffer', 'neustart', 'stoss', 'fov'])
     GEFUEHL[k] = z(k, GEFUEHL[k]);
   GEFUEHL.fovBoost = z('fovboost', GEFUEHL.fovBoost);
+  GEFUEHL.stossMax = z('stossmax', GEFUEHL.stossMax);
+  if (q.get('stoss') === 'alt') GEFUEHL.stossModus = 'alt';
   if (q.has('gummiband')) {
     const g = q.get('gummiband');
     GEFUEHL.gummiband = g === '0' ? 0 : g === '1' ? 0.5 : g === '2' ? 1 : clamp(z('gummiband', 0.5), 0, 1);

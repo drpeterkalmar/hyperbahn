@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 import { ZEIT } from '../../src/config.js';
 import { strecke1 } from '../../src/track/strecke1.js';
 import { bauePlan, Pilot, PROFILE } from '../../src/ai/pilot.js';
-import { Rennen, TEAMS, START } from '../../src/game/rennen.js';
+import { Rennen, TEAMS, START, STOSS } from '../../src/game/rennen.js';
+import { GEFUEHL } from '../../src/physics/fahrgefuehl.js';
 
 const bahn = strecke1(), plan = bauePlan(bahn), dt = ZEIT.schritt;
 const NULL = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 };
@@ -48,10 +49,34 @@ test('Stoß: überlappende Gleiter werden getrennt und tauschen Impuls', () => {
   const [a, b] = r.gleiter;
   a.setzeAuf(500, 0, 60); b.setzeAuf(503, 0, 30);
   const vrel0 = a.tempo - b.tempo;
-  r.stoesse();
+  for (let k = 0; k <= STOSS.schritte; k++) r.stoesse();   // p1c: Impuls über STOSS.schritte Schritte, Trennung weich
   const d = Math.hypot(a.p.x - b.p.x, a.p.y - b.p.y, a.p.z - b.p.z);
   assert.ok(d > 3, `Abstand ${d}`);
   const va = Math.hypot(a.v.x, a.v.y, a.v.z), vb = Math.hypot(b.v.x, b.v.y, b.v.z);
   assert.ok(va - vb < vrel0, 'Relativtempo kleiner');
   assert.ok(a.ereignisse.some((e) => e.art === 'stoss'));
+});
+
+// p1c (Peter 22.10.: „Zusammenstöße sehr hart“): Rempler = Anstupsen – kein Abheben, gedeckelt, verteilt; ?stoss=alt härter
+test('Weicher Stoß: nur in der Fahrfläche, höchstens stossMax je Kontakt, über mehrere Schritte; alt deutlich härter', () => {
+  const messe = (modus) => {
+    const alt = GEFUEHL.stossModus;
+    try {
+      GEFUEHL.stossModus = modus;
+      const r = new Rennen(bahn, [{ name: 'L', klasse: 'leicht' }, { name: 'S', klasse: 'schwer' }], { runden: 1, ohneCountdown: true, gummiband: 0 });
+      const [l, s] = r.gleiter;
+      l.setzeAuf(500, 0.8, 40); s.setzeAuf(502.5, -0.8, 40);
+      s.v.x -= s.vor.x * 25; s.v.y -= s.vor.y * 25; s.v.z -= s.vor.z * 25;   // schwer kommt mit 25 m/s Unterschied entgegen
+      const v0 = { ...l.v }, verlauf = [];
+      // erster Kontakt-Impuls: geplant im 1. Aufruf, ausgezahlt in den nächsten STOSS.schritte Aufrufen
+      for (let k = 0; k <= STOSS.schritte; k++) { r.stoesse(); verlauf.push(Math.hypot(l.v.x - v0.x, l.v.y - v0.y, l.v.z - v0.z)); }
+      const dv = { x: l.v.x - v0.x, y: l.v.y - v0.y, z: l.v.z - v0.z };
+      return { betrag: Math.hypot(dv.x, dv.y, dv.z), oben: Math.abs(dv.x * l.q.Us.x + dv.y * l.q.Us.y + dv.z * l.q.Us.z), erster: verlauf[1] };
+    } finally { GEFUEHL.stossModus = alt; }
+  };
+  const w = messe('weich'), a = messe('alt');
+  assert.ok(w.betrag <= GEFUEHL.stossMax + 0.01, `weich ${w.betrag.toFixed(2)} m/s`);
+  assert.ok(w.oben < 0.01, `weich senkrecht ${w.oben}`);
+  assert.ok(w.erster < w.betrag * 0.6, 'verteilt statt eines Schlags');
+  assert.ok(a.betrag > 3 * w.betrag, `alt ${a.betrag.toFixed(1)} vs weich ${w.betrag.toFixed(1)} m/s`);
 });

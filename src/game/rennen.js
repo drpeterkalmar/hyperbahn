@@ -33,6 +33,7 @@ export class Rennen {
       };
     });
     this.gleiter = this.alle.map((t) => t.g);
+    this.paarPause = new Map();   // Gleiter-Paar → Schritte ohne neuen Stoß-Impuls (weicher Stoß)
     // fliegender Start (Abnahme, ?at=): kein Start-Boost-Fenster, nichts zu werten
     if (opt.ohneCountdown) for (const t of this.alle) t.start.gewertet = true;
   }
@@ -124,9 +125,24 @@ export class Rennen {
 
   alleKiNachZiel() { return this.alle.every((t) => t.ziel || t.spieler); }
 
-  // Gleiter-Gleiter: weiche Kugeln (Radius ~1,6 m quer / 2,2 m längs), Impulsaustausch entlang der Verbindungslinie
+  // Gleiter-Gleiter: weiche Kugeln (Radius ~1,6 m quer / 2,2 m längs), Impulsaustausch entlang der Verbindungslinie.
+  // p1c „weich“ (Peter 22.10.: „Zusammenstöße sind sehr hart“ → Rempler = Anstupsen):
+  //  • Impuls je Gleiter = stoss (0,42, vorher 0,85) × Annäherungstempo × min(Deckel 2, Gewicht anderer/eigenes), höchstens
+  //    stossMax m/s je Kontakt; nur in der Fahrfläche (kein Abheben/Wegdrücken von der Magnet-Bahn)
+  //  • verteilt über STOSS_SCHRITTE Physik-Schritte statt eines Schlags, danach kurz Pause für das Paar (nur Trennung)
+  //  • Trennung der Überlappung weich (Anteil je Schritt) und in der Fahrfläche
+  //  • Drift bricht nur bei kräftigen Stößen ab
+  // ?stoss=alt: Verhalten bis 0.1.1 (0,85 / Deckel 3, sofort, volle 3D-Richtung)
   stoesse() {
-    const a = this.gleiter, L = this.bahn.L;
+    const a = this.gleiter, L = this.bahn.L, alt = GEFUEHL.stossModus === 'alt';
+    if (!alt) for (const g of a) {
+      if (!g.stossN) continue;
+      const k = 1 / g.stossN;
+      g.v.x += g.stossRest.x * k; g.v.y += g.stossRest.y * k; g.v.z += g.stossRest.z * k;
+      g.stossRest.x -= g.stossRest.x * k; g.stossRest.y -= g.stossRest.y * k; g.stossRest.z -= g.stossRest.z * k;
+      g.stossN--;
+    }
+    for (const [key, n] of this.paarPause) { if (n <= 1) this.paarPause.delete(key); else this.paarPause.set(key, n - 1); }
     for (let i = 0; i < a.length; i++) {
       const gi = a[i]; if (gi.zustand !== 'fahrt') continue;
       for (let j = i + 1; j < a.length; j++) {
@@ -140,23 +156,43 @@ export class Rennen {
         const lo = dx * gi.oben.x + dy * gi.oben.y + dz * gi.oben.z;
         const e = (lv / 4.2) ** 2 + (ll / 2.6) ** 2 + (lo / 1.6) ** 2;
         if (e >= 1) continue;
-        const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-3;
-        const nx = dx / d, ny = dy / d, nz = dz / d;
-        const tief = (1 - Math.sqrt(e)) * 1.2;
+        let nx, ny, nz, tief = (1 - Math.sqrt(e)) * 1.2;
+        if (alt) {
+          const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-3;
+          nx = dx / d; ny = dy / d; nz = dz / d;
+        } else {
+          // Richtung in der Fahrfläche (gemittelte Bahn-Normale der beiden abziehen)
+          const ux = gi.q.Us.x + gj.q.Us.x, uy = gi.q.Us.y + gj.q.Us.y, uz = gi.q.Us.z + gj.q.Us.z;
+          const ul = Math.hypot(ux, uy, uz) || 1, h = (dx * ux + dy * uy + dz * uz) / ul;
+          nx = dx - ux / ul * h; ny = dy - uy / ul * h; nz = dz - uz / ul * h;
+          let d = Math.hypot(nx, ny, nz);
+          if (d < 1e-3) { nx = gi.links.x; ny = gi.links.y; nz = gi.links.z; d = 1; }
+          nx /= d; ny /= d; nz /= d;
+          tief *= STOSS.trennung;
+        }
         gi.p.x -= nx * tief / 2; gi.p.y -= ny * tief / 2; gi.p.z -= nz * tief / 2;
         gj.p.x += nx * tief / 2; gj.p.y += ny * tief / 2; gj.p.z += nz * tief / 2;
+        const key = i * 64 + j;
+        if (!alt && this.paarPause.has(key)) continue;
         const rel = (gj.v.x - gi.v.x) * nx + (gj.v.y - gi.v.y) * ny + (gj.v.z - gi.v.z) * nz;
         if (rel < 0) {
           // Impuls je Gleiter = stoss × Relativtempo × (Gewicht des anderen / eigenes), gedeckelt → Leichte fliegen weiter
-          const wi = gi.kl.stoss, wj = gj.kl.stoss, D = GEFUEHL.stossDeckel;
-          const ki = GEFUEHL.stoss * -rel * Math.min(D, wj / wi), kj = GEFUEHL.stoss * -rel * Math.min(D, wi / wj);
-          gi.v.x -= nx * ki; gi.v.y -= ny * ki; gi.v.z -= nz * ki;
-          gj.v.x += nx * kj; gj.v.y += ny * kj; gj.v.z += nz * kj;
+          const wi = gi.kl.stoss, wj = gj.kl.stoss, D = alt ? 3.0 : GEFUEHL.stossDeckel, k0 = alt ? 0.85 : GEFUEHL.stoss;
+          let ki = k0 * -rel * Math.min(D, wj / wi), kj = k0 * -rel * Math.min(D, wi / wj);
+          if (!alt) { ki = Math.min(ki, GEFUEHL.stossMax); kj = Math.min(kj, GEFUEHL.stossMax); }
+          if (alt) {
+            gi.v.x -= nx * ki; gi.v.y -= ny * ki; gi.v.z -= nz * ki;
+            gj.v.x += nx * kj; gj.v.y += ny * kj; gj.v.z += nz * kj;
+          } else {
+            plane(gi, -nx * ki, -ny * ki, -nz * ki); plane(gj, nx * kj, ny * kj, nz * kj);
+            this.paarPause.set(key, STOSS.pause);
+          }
           gi.schild = Math.max(0, gi.schild - 0.02 * Math.min(D, wj / wi) * Math.min(1, -rel / 20));
           gj.schild = Math.max(0, gj.schild - 0.02 * Math.min(D, wi / wj) * Math.min(1, -rel / 20));
-          const st = Math.min(1, -rel / 15);
-          gi.ereignis('stoss', st, { mit: gj.id }); gj.ereignis('stoss', st, { mit: gi.id });
-          gi.drift.abbrechen(); gj.drift.abbrechen();
+          const st = alt ? Math.min(1, -rel / 15) : Math.min(1, Math.max(ki, kj) / 8);
+          gi.ereignis('stoss', st, { mit: gj.id, dv: [-nx * ki, -ny * ki, -nz * ki], rel: -rel });
+          gj.ereignis('stoss', st, { mit: gi.id, dv: [nx * kj, ny * kj, nz * kj], rel: -rel });
+          if (alt || st > STOSS.driftAb) { gi.drift.abbrechen(); gj.drift.abbrechen(); }
         }
       }
     }
@@ -172,6 +208,16 @@ export class Rennen {
     }
     return out;
   }
+}
+
+// weicher Stoß (p1c): Impuls über `schritte` Physik-Schritte, danach `pause` Schritte kein neuer Impuls für das Paar,
+// Trennung der Überlappung je Schritt zum Anteil `trennung`, Drift-Abbruch erst ab Stoß-Stärke `driftAb`
+export const STOSS = { schritte: 3, pause: 6, trennung: 0.35, driftAb: 0.35 };
+// geplanten Impuls (dv) auf den Gleiter legen: wird in STOSS.schritte Schritten ausgezahlt
+function plane(g, x, y, z) {
+  if (!g.stossRest) g.stossRest = { x: 0, y: 0, z: 0 };
+  g.stossRest.x += x; g.stossRest.y += y; g.stossRest.z += z;
+  g.stossN = STOSS.schritte;
 }
 
 const AUS = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 };

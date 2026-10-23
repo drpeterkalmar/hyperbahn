@@ -22,6 +22,10 @@ export const PROFILE = {
 };
 
 const RAND = 3.2;   // m Abstand der Linie zur Bahnkante
+// Ausweichen seitlich (p1c): Gleiter innerhalb ±laengs m längs und quer näher als quer m → weg m zur Seite (?ausweich=0 aus)
+// Ausweichen nach vorn (p1c): nächster Gleiter voraus, Zeit bis zum Kontakt < ttc s → schneller zur freien Seite (vornWeg m)
+export const AUSWEICH = { seite: 1, laengs: 7, quer: 4.5, weg: 5, vorn: 1, ttc: 3, vornWeg: 6 };
+if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('ausweich') === '0') { AUSWEICH.seite = 0; AUSWEICH.vorn = 0; }
 export let DRIFT_RADIUS = 1000;   // m: Kurven enger als das (≥ 160 m lang) fährt die KI im Drift
 
 // Ideallinie + Tempoplan für eine Bahn (einmal je Strecke, ~50 ms)
@@ -148,8 +152,24 @@ export class Pilot {
     if (this.wackelT <= 0 && this.r() < pr.wackler * dt * 4) { this.wackel = (this.r() * 2 - 1) * 0.5; this.wackelT = 0.35; }
     if (this.wackelT <= 0) this.wackel = 0;
     // Ausweichen: Gleiter knapp voraus auf ähnlicher Linie → seitlich versetzen
-    let ziel = 0;
-    for (const o of andere) {
+    let ziel = 0, rate = 2;
+    if (AUSWEICH.vorn) {
+      // p1c: nächster Gleiter voraus zählt; früher bei hoher Annäherung (Zeit bis zum Kontakt < ttc s) und schneller zur
+      // Seite (rate 4/s); Seite = die, auf der die eigene Linie + Versatz weiter vom anderen weg liegt (in der Fahrbahn)
+      let naechst = Infinity;
+      for (const o of andere) {
+        if (o === g || o.zustand !== 'fahrt') continue;
+        let ds = o.s - g.s; if (ds < -b.L / 2) ds += b.L; if (ds > b.L / 2) ds -= b.L;
+        const dv = g.tempo - o.tempo, ttc = dv > 0.5 ? ds / dv : Infinity;
+        if (ds > 0 && ds < naechst && Math.abs(o.u - g.u) < 5 && ((ds < 45 && dv > -3) || ttc < AUSWEICH.ttc)) {
+          naechst = ds;
+          const lin = this.linieBei(o.s), lim = b.hw[((Math.floor(o.s / b.ds) % b.N) + b.N) % b.N] - 2.4;
+          const plus = clamp(lin + AUSWEICH.vornWeg, -lim, lim), minus = clamp(lin - AUSWEICH.vornWeg, -lim, lim);
+          ziel = (Math.abs(plus - o.u) >= Math.abs(minus - o.u) ? plus : minus) - lin;
+          if (ttc < AUSWEICH.ttc) rate = 4;
+        }
+      }
+    } else for (const o of andere) {
       if (o === g || o.zustand !== 'fahrt') continue;
       let ds = o.s - g.s; if (ds < -b.L / 2) ds += b.L; if (ds > b.L / 2) ds -= b.L;
       if (ds > 0 && ds < 45 && Math.abs(o.u - g.u) < 4.5 && o.tempo < g.tempo + 3) {
@@ -158,7 +178,13 @@ export class Pilot {
         if (Math.abs(o.u) < 1) ziel = g.u >= o.u ? 5 : -5;
       }
     }
-    this.ausweich += (ziel - this.ausweich) * Math.min(1, dt * 2);
+    // p1c: Gleiter direkt daneben (Seite an Seite, weiche Stöße trennen kaum noch) → Platz machen statt Schleifen
+    if (AUSWEICH.seite) for (const o of andere) {
+      if (o === g || o.zustand !== 'fahrt') continue;
+      let ds = o.s - g.s; if (ds < -b.L / 2) ds += b.L; if (ds > b.L / 2) ds -= b.L;
+      if (Math.abs(ds) < AUSWEICH.laengs && Math.abs(o.u - g.u) < AUSWEICH.quer) ziel = (g.u >= o.u ? 1 : -1) * AUSWEICH.weg;
+    }
+    this.ausweich += (ziel - this.ausweich) * Math.min(1, dt * rate);
     // Vorschaupunkt auf der Linie
     const la = clamp((14 + 0.42 * v) * pr.vorschau, 16, 85);
     const sv = g.s + la;

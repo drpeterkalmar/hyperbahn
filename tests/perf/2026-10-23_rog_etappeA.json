@@ -1,0 +1,920 @@
+{
+ "datum": "2026-10-23T11:35:19",
+ "stand": "rog_etappeA",
+ "wurzel": "C:\\Users\\drpet\\AppData\\Local\\Temp\\hb_a",
+ "git": "",
+ "profil": {
+  "drossel": 4,
+  "dpr": 2.6,
+  "sek": 10,
+  "geraete": "hoch,quer",
+  "gpu": "ANGLE/D3D11 headless (Windows, rog17)",
+  "start": "direkt",
+  "vsync": false,
+  "zusatz": ""
+ },
+ "szenen": {
+  "menu_standard": {
+   "hoch": {
+    "n": 989,
+    "p50": 10,
+    "p95": 12.2,
+    "p99": 13.6,
+    "fps": 98.7,
+    "calls": 33,
+    "callsMax": 33,
+    "tris": 471707,
+    "tex": 10,
+    "gpu50": 2.577,
+    "gpu95": 2.877,
+    "zusatz": {
+     "fps": 98.98020396628652,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       692,
+       1537
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": null,
+     "gpuSzene": 2.8855978666666666,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 43,
+     "prog": 26
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   },
+   "quer": {
+    "n": 1077,
+    "p50": 9.2,
+    "p95": 11.4,
+    "p99": 12.9,
+    "fps": 107.5,
+    "calls": 34,
+    "callsMax": 35,
+    "tris": 471709,
+    "tex": 10,
+    "gpu50": 2.467,
+    "gpu95": 2.633,
+    "zusatz": {
+     "fps": 109.37655363904199,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": null,
+     "gpuSzene": 2.648968533333333,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 44,
+     "prog": 26
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   }
+  },
+  "start_standard": {
+   "hoch": {
+    "n": 327,
+    "p50": 29.2,
+    "p95": 41.7,
+    "p99": 52.4,
+    "fps": 32.6,
+    "calls": 85,
+    "callsMax": 89,
+    "tris": 519247,
+    "tex": 24,
+    "gpu50": 4.088,
+    "gpu95": 4.602,
+    "zusatz": {
+     "fps": 34.85361481611045,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       692,
+       1537
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 94.4562052030929,
+     "gpuSzene": 4.057873066666666,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 98,
+     "prog": 41
+    },
+    "boot_s": 1.1,
+    "fehler": []
+   },
+   "quer": {
+    "n": 334,
+    "p50": 28.6,
+    "p95": 44,
+    "p99": 53,
+    "fps": 33.3,
+    "calls": 85,
+    "callsMax": 89,
+    "tris": 519796,
+    "tex": 24,
+    "gpu50": 4.804,
+    "gpu95": 5.407,
+    "zusatz": {
+     "fps": 35.64356435643559,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 94.4562052030929,
+     "gpuSzene": 5.0574848,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 41
+    },
+    "boot_s": 1.1,
+    "fehler": []
+   }
+  },
+  "start_kino": {
+   "hoch": {
+    "n": 330,
+    "p50": 28.7,
+    "p95": 48,
+    "p99": 52.6,
+    "fps": 32.9,
+    "calls": 87,
+    "callsMax": 91,
+    "tris": 519240,
+    "tex": 25,
+    "gpu50": 6.063,
+    "gpu95": 8.617,
+    "zusatz": {
+     "fps": 34.856700233987404,
+     "kino": {
+      "level": 2,
+      "name": "Kino",
+      "pipeline": true,
+      "scale": 1,
+      "msaa": 4,
+      "stages": [
+       "scale",
+       "sharpen",
+       "ssao",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "haze",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       824,
+       1830
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 94.46243805878909,
+     "gpuSzene": 7.949892266666668,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 98,
+     "prog": 41
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   },
+   "quer": {
+    "n": 340,
+    "p50": 28.4,
+    "p95": 44.9,
+    "p99": 53.1,
+    "fps": 33.9,
+    "calls": 87,
+    "callsMax": 91,
+    "tris": 519682,
+    "tex": 25,
+    "gpu50": 6.428,
+    "gpu95": 8.079,
+    "zusatz": {
+     "fps": 36.12575669066973,
+     "kino": {
+      "level": 2,
+      "name": "Kino",
+      "pipeline": true,
+      "scale": 1,
+      "msaa": 4,
+      "stages": [
+       "scale",
+       "sharpen",
+       "ssao",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "haze",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1830,
+       824
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 94.49666626303971,
+     "gpuSzene": 6.909354666666666,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 41
+    },
+    "boot_s": 1.3,
+    "fehler": []
+   }
+  },
+  "pulk_standard": {
+   "hoch": {
+    "n": 296,
+    "p50": 29,
+    "p95": 53.5,
+    "p99": 125.3,
+    "fps": 29.5,
+    "calls": 77,
+    "callsMax": 85,
+    "tris": 507773,
+    "tex": 24,
+    "gpu50": 4.23,
+    "gpu95": 5.316,
+    "zusatz": {
+     "fps": 38.65213082259662,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       692,
+       1537
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 87.26181892129026,
+     "gpuSzene": 4.269038933333333,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 94,
+     "prog": 41
+    },
+    "boot_s": 1.4,
+    "fehler": []
+   },
+   "quer": {
+    "n": 268,
+    "p50": 32.7,
+    "p95": 58.5,
+    "p99": 133.8,
+    "fps": 26.7,
+    "calls": 78,
+    "callsMax": 85,
+    "tris": 508819,
+    "tex": 24,
+    "gpu50": 5.297,
+    "gpu95": 6.71,
+    "zusatz": {
+     "fps": 32.20454767099089,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 87.09469855135328,
+     "gpuSzene": 5.062468266666666,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 95,
+     "prog": 41
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   }
+  },
+  "looping_standard": {
+   "hoch": {
+    "n": 377,
+    "p50": 26.5,
+    "p95": 31.9,
+    "p99": 36.7,
+    "fps": 37.6,
+    "calls": 75,
+    "callsMax": 83,
+    "tris": 505801,
+    "tex": 24,
+    "gpu50": 4.381,
+    "gpu95": 5.313,
+    "zusatz": {
+     "fps": 37.08040593459035,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       692,
+       1537
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 91.9288294225783,
+     "gpuSzene": 4.907298133333333,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 94,
+     "prog": 41
+    },
+    "boot_s": 1.1,
+    "fehler": []
+   },
+   "quer": {
+    "n": 383,
+    "p50": 26,
+    "p95": 30,
+    "p99": 31.9,
+    "fps": 38.2,
+    "calls": 76,
+    "callsMax": 85,
+    "tris": 505802,
+    "tex": 24,
+    "gpu50": 6.074,
+    "gpu95": 6.942,
+    "zusatz": {
+     "fps": 38.690476190476225,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 91.9968635623098,
+     "gpuSzene": 6.725546666666667,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 95,
+     "prog": 41
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   }
+  },
+  "roehre_standard": {
+   "hoch": {
+    "n": 317,
+    "p50": 30,
+    "p95": 49.3,
+    "p99": 62.6,
+    "fps": 31.6,
+    "calls": 80,
+    "callsMax": 85,
+    "tris": 510307,
+    "tex": 24,
+    "gpu50": 4.638,
+    "gpu95": 7.601,
+    "zusatz": {
+     "fps": 35.70720095050324,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       692,
+       1537
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 149.41406741940344,
+     "gpuSzene": 4.5681834666666665,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 94,
+     "prog": 40
+    },
+    "boot_s": 1.1,
+    "fehler": []
+   },
+   "quer": {
+    "n": 322,
+    "p50": 29.7,
+    "p95": 47.9,
+    "p99": 55.7,
+    "fps": 32.1,
+    "calls": 81,
+    "callsMax": 85,
+    "tris": 511978,
+    "tex": 24,
+    "gpu50": 5.771,
+    "gpu95": 7.474,
+    "zusatz": {
+     "fps": 31.695721080648486,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 151.6285015846675,
+     "gpuSzene": 5.492650666666667,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 95,
+     "prog": 40
+    },
+    "boot_s": 1.4,
+    "fehler": []
+   }
+  },
+  "sprung_standard": {
+   "hoch": {
+    "n": 359,
+    "p50": 25.9,
+    "p95": 42.4,
+    "p99": 51.9,
+    "fps": 35.8,
+    "calls": 76,
+    "callsMax": 83,
+    "tris": 487750,
+    "tex": 24,
+    "gpu50": 3.803,
+    "gpu95": 4.493,
+    "zusatz": {
+     "fps": 36.05534983685326,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       692,
+       1537
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 93.62576737086913,
+     "gpuSzene": 4.132949333333333,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 42
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   },
+   "quer": {
+    "n": 368,
+    "p50": 25.4,
+    "p95": 41.3,
+    "p99": 51.1,
+    "fps": 36.7,
+    "calls": 75,
+    "callsMax": 83,
+    "tris": 482788,
+    "tex": 24,
+    "gpu50": 4.769,
+    "gpu95": 6.426,
+    "zusatz": {
+     "fps": 36.71727696561406,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 93.62428730178738,
+     "gpuSzene": 4.386901333333332,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 42
+    },
+    "boot_s": 1.2,
+    "fehler": []
+   }
+  },
+  "sprung_einfach": {
+   "hoch": {
+    "n": 406,
+    "p50": 23,
+    "p95": 36.4,
+    "p99": 46.6,
+    "fps": 40.5,
+    "calls": 67,
+    "callsMax": 74,
+    "tris": 487275,
+    "tex": 16,
+    "gpu50": 3.235,
+    "gpu95": 3.875,
+    "zusatz": {
+     "fps": 40.796019900497555,
+     "kino": {
+      "level": 0,
+      "name": "Einfach",
+      "pipeline": false,
+      "scale": 1,
+      "msaa": 0,
+      "stages": [
+       "contact"
+      ],
+      "grade": "neonnoir",
+      "size": null,
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 93.6212078372851,
+     "gpuSzene": 3.5261781333333335,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 33
+    },
+    "boot_s": 1.1,
+    "fehler": []
+   },
+   "quer": {
+    "n": 378,
+    "p50": 24.7,
+    "p95": 40.7,
+    "p99": 53.1,
+    "fps": 37.7,
+    "calls": 66,
+    "callsMax": 74,
+    "tris": 482692,
+    "tex": 16,
+    "gpu50": 5.188,
+    "gpu95": 7.734,
+    "zusatz": {
+     "fps": 38.5794836248103,
+     "kino": {
+      "level": 0,
+      "name": "Einfach",
+      "pipeline": false,
+      "scale": 1,
+      "msaa": 0,
+      "stages": [
+       "contact"
+      ],
+      "grade": "neonnoir",
+      "size": null,
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 93.62276719899555,
+     "gpuSzene": 4.560145066666666,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 33
+    },
+    "boot_s": 1.0,
+    "fehler": []
+   }
+  }
+ },
+ "ladegroesse": {
+  "dateien": 38,
+  "roh_mb": 1.21,
+  "gzip_mb": 0.36,
+  "extern": [],
+  "groesste_gzip_kb": [
+   [
+    "lib\\three.core.min.js",
+    104
+   ],
+   [
+    "lib\\three.module.min.js",
+    92
+   ],
+   [
+    "src\\gfx\\kinolook.js",
+    19
+   ],
+   [
+    "lib\\addons\\loaders\\GLTFLoader.js",
+    14
+   ],
+   [
+    "src\\gfx\\kern\\taau.js",
+    9
+   ],
+   [
+    "src\\main.js",
+    9
+   ],
+   [
+    "src\\gfx\\stadt.js",
+    8
+   ],
+   [
+    "src\\physics\\gleiter.js",
+    8
+   ],
+   [
+    "src\\gfx\\stadt_plan.js",
+    8
+   ],
+   [
+    "src\\gfx\\kern\\taau_mathe.js",
+    7
+   ]
+  ]
+ }
+}

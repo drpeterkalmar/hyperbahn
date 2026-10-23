@@ -9,7 +9,7 @@ import { baueBahn } from '../src/track/bahn.js';
 import { strecke1 } from '../src/track/strecke1.js';
 import { Gleiter } from '../src/physics/gleiter.js';
 import { bauePlan, Pilot, PROFILE } from '../src/ai/pilot.js';
-import { Rennen, TEAMS } from '../src/game/rennen.js';
+import { Rennen, TEAMS, STOSS } from '../src/game/rennen.js';
 import { ITEMS_HB, ziehe } from '../src/game/items.js';
 import { KameraRig } from '../src/gfx/kamera.js';
 import { rng } from '../src/core/util.js';
@@ -171,7 +171,8 @@ export function mess12() {
   const q0l = l.v.x * l.links.x + l.v.y * l.links.y + l.v.z * l.links.z;
   // aufeinander zu: leicht nach rechts, schwer nach links (je 4 m/s quer)
   for (const [g, sg] of [[l, -1], [s, 1]]) { g.v.x += g.links.x * 4 * sg; g.v.y += g.links.y * 4 * sg; g.v.z += g.links.z * 4 * sg; }
-  r.stoesse();
+  // p1c: weicher Stoß wird über STOSS.schritte Schritte ausgezahlt (?stoss=alt: sofort)
+  for (let k = 0; k <= (GEFUEHL.stossModus === 'alt' ? 0 : STOSS.schritte); k++) r.stoesse();
   const dq = (g, sg) => Math.abs((g.v.x * g.links.x + g.v.y * g.links.y + g.v.z * g.links.z) - 4 * sg);
   void q0l;
   return { leicht: dq(l, -1), schwer: dq(s, 1), verhaeltnis: dq(l, -1) / Math.max(1e-6, dq(s, 1)) };
@@ -235,7 +236,7 @@ if (process.argv[1] && process.argv[1].endsWith('gefuehl_mess.mjs')) {
     zeilen.push(['10 Gummiband aus', '–', 'Feld streut ≥ 2× stärker', `${f(m.faktor, 2)}× (aus: ${f(m.ohne.medianSpreizung, 1)} s)`]);
   }
   if (an(11)) { const m = mess11(); zeilen.push(['11 Item-Verteilung (10 000 je Platz)', 'Tabelle nach Platz', '±1 Prozentpunkt zur Tabelle', `max. ${f(m.maxAbweichungPP)} PP`]); }
-  if (an(12)) { const m = mess12(); zeilen.push(['12 Stoß-Verhältnis leicht/schwer', '≈ 10,7×', '≈ 7,6× (Deckel 3)', `${f(m.verhaeltnis, 1)}×`]); }
+  if (an(12)) { const m = mess12(); zeilen.push(['12 Stoß-Verhältnis leicht/schwer', '≈ 10,7×', GEFUEHL.stossModus === 'alt' ? '≈ 7,6× (Deckel 3)' : '≈ 5,5× (Deckel 2, p1c), höchstens 6 m/s je Kontakt', `${f(m.verhaeltnis, 1)}×`]); }
   if (an(13)) {
     const m = mess13();
     zeilen.push(['13 Sichtfeld-Kick bei Boost', '+8° in ≈ 0,27 s, zurück ≈ 0,27 s', '+12° in ≤ 0,3 s, zurück in 0,5 s', `+${GEFUEHL.fovBoost}° in ${f(m.kickHoch)} s, zurück in ${f(m.kickZurueck)} s (Basis ${f(m.fovBasis, 1)}°)`]);
