@@ -34,6 +34,7 @@ export class Rennen {
     });
     this.gleiter = this.alle.map((t) => t.g);
     this.paarPause = new Map();   // Gleiter-Paar → Schritte ohne neuen Stoß-Impuls (weicher Stoß)
+    this.paarLetzt = new Map();   // Gleiter-Paar → Rennzeit des letzten Stoßes (Folge-Stöße ohne Ton/Kamera)
     // fliegender Start (Abnahme, ?at=): kein Start-Boost-Fenster, nichts zu werten
     if (opt.ohneCountdown) for (const t of this.alle) t.start.gewertet = true;
   }
@@ -190,8 +191,12 @@ export class Rennen {
           gi.schild = Math.max(0, gi.schild - 0.02 * Math.min(D, wj / wi) * Math.min(1, -rel / 20));
           gj.schild = Math.max(0, gj.schild - 0.02 * Math.min(D, wi / wj) * Math.min(1, -rel / 20));
           const st = alt ? Math.min(1, -rel / 15) : Math.min(1, Math.max(ki, kj) / 8);
-          gi.ereignis('stoss', st, { mit: gj.id, dv: [-nx * ki, -ny * ki, -nz * ki], rel: -rel });
-          gj.ereignis('stoss', st, { mit: gi.id, dv: [nx * kj, ny * kj, nz * kj], rel: -rel });
+          // Folge-Stoß desselben Kontakts (< STOSS.folge s nach dem letzten): nur Physik/Messung, kein Ton/Kamera-Ruck –
+          // sonst ruckelt die Kamera beim Schleifen ~27× je Sekunde
+          const folge = !alt && this.zeit - (this.paarLetzt.get(key) ?? -Infinity) < STOSS.folge;
+          this.paarLetzt.set(key, this.zeit);
+          gi.ereignis('stoss', st, { mit: gj.id, dv: [-nx * ki, -ny * ki, -nz * ki], rel: -rel, folge });
+          gj.ereignis('stoss', st, { mit: gi.id, dv: [nx * kj, ny * kj, nz * kj], rel: -rel, folge });
           if (alt || st > STOSS.driftAb) { gi.drift.abbrechen(); gj.drift.abbrechen(); }
         }
       }
@@ -211,11 +216,11 @@ export class Rennen {
 }
 
 // weicher Stoß (p1c): Impuls über `schritte` Physik-Schritte, danach `pause` Schritte kein neuer Impuls für das Paar,
-// Trennung der Überlappung je Schritt zum Anteil `trennung`, Drift-Abbruch erst ab Stoß-Stärke `driftAb`
-export const STOSS = { schritte: 3, pause: 6, trennung: 0.35, driftAb: 0.35 };
+// Trennung der Überlappung je Schritt zum Anteil `trennung`, Drift-Abbruch erst ab Stoß-Stärke `driftAb`, Stöße desselben
+// Paars innerhalb `folge` s gelten als Folge-Stöße (kein Ton, kein Kamera-Ruck)
+export const STOSS = { schritte: 3, pause: 6, trennung: 0.35, driftAb: 0.35, folge: 0.4 };
 // geplanten Impuls (dv) auf den Gleiter legen: wird in STOSS.schritte Schritten ausgezahlt
 function plane(g, x, y, z) {
-  if (!g.stossRest) g.stossRest = { x: 0, y: 0, z: 0 };
   g.stossRest.x += x; g.stossRest.y += y; g.stossRest.z += z;
   g.stossN = STOSS.schritte;
 }

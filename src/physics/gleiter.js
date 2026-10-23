@@ -31,13 +31,16 @@ export class Gleiter {
     this.kl = klasse(this.klasse);
     this.ki = !!opt.ki;
     this.drift = new Drift();
+    // weicher Stoß (game/rennen.js) und Reset: Felder von Anfang an anlegen – nachträglich angehängte Felder ändern die
+    // Objektform mitten im Rennen und bremsen die JS-Engine (p1c-Messung: +50 % Rechenzeit in Gleiter.schritt)
+    this.stossRest = v3(); this.stossN = 0; this.resetZeit = -Infinity; this.respawns = 0;
     this.p = v3(); this.v = v3(); this.w = v3();
     this.vor = v3(0, 0, -1); this.links = v3(-1, 0, 0); this.oben = v3(0, 1, 0);
     this.q = neueAbfrage(); this.qp = [neueAbfrage(), neueAbfrage(), neueAbfrage(), neueAbfrage()];
     this.hint = 0;
     this.ereignisse = [];
     this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
-      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0 };
+      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0 };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 

@@ -2,6 +2,12 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## 0.1.3 – 23.10.2026 (Mess-Gate-Nachbesserung zu 0.1.2)
+- 0.1.2 kostete in den Sprung-Szenen des Mess-Gates +8 bis +30 % p95 (CPU-Profil: `Gleiter.schritt` +50 %): die Felder des
+  weichen Stoßes wurden erst beim ersten Stoß an die Gleiter gehängt – das ändert die Objektform mitten im Rennen und bremst
+  die JS-Engine. Jetzt im Konstruktor angelegt → A/B wieder −5 bis +3 % (Rauschen).
+- Schleif-Kontakt: Folge-Stöße desselben Paars (< 0,4 s) lösen keinen Ton/Kamera-Ruck mehr aus (vorher bis ~27× je Sekunde).
+
 ## 0.1.2 – 23.10.2026 (weichere Zusammenstöße)
 - **Rempler fühlen sich wie Anstupsen an** (Peter: „Zusammenstöße mit anderen Gleitern sind sehr hart“): Impuls halbiert
   (0,85 → 0,42 × Annäherungstempo), Gewichts-Deckel 3 → 2, höchstens 6 m/s je Kontakt, nur in der Fahrfläche (kein

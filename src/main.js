@@ -195,7 +195,7 @@ function ereignisse() {
         case 'absturz': hud.meldung('ABFLUG', praes, 1.5); vibriere(60); break;
         case 'runde': hud.meldung(`RUNDE ${Math.min(e.runde + 1, rennen.runden)}`, praes, 1.2); break;
         case 'ziel': hud.meldung(`ZIEL · PLATZ ${e.platz}`, praes, 2.5); vibriere(60); break;
-        case 'stoss': rig.stoss(0.3 * e.staerke); break;
+        case 'stoss': if (e.folge) continue; rig.stoss(0.3 * e.staerke); break;   // p1c: Schleif-Kontakt nur einmal spürbar
         case 'driftStufe': hud.meldung(['', 'DRIFT', 'DRIFT ✦✦', 'DRIFT ✦✦✦'][e.stufe], praes, 0.6); break;
         case 'driftWarnung': hud.meldung('ZU LANG!', praes, 0.6); break;
         case 'miniturbo': blitz(0.35 + 0.15 * e.stufe, DRIFT_FARBEN[e.stufe]); hud.meldung(e.stufe >= 3 ? 'ULTRA-TURBO' : 'MINI-TURBO', praes, 0.9); rig.stoss(0.2); break;
