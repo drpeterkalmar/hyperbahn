@@ -27,6 +27,9 @@ GPU_ARGS = ["--use-angle=metal", "--enable-unsafe-swiftshader", "--ignore-gpu-bl
 # Linux (omen16, n31): ANGLE über Vulkan statt Metal (gleiche Weiche wie tests/util.py)
 if sys.platform.startswith('linux'):
     GPU_ARGS = ["--use-gl=angle", "--use-angle=vulkan", "--ignore-gpu-blocklist", "--enable-webgl", "--mute-audio"]
+# Windows (rog17, p1c): ANGLE über Direct3D 11
+if sys.platform == 'win32':
+    GPU_ARGS = ["--use-angle=d3d11", "--ignore-gpu-blocklist", "--enable-webgl", "--mute-audio"]
 UA = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"
 
 def profil(geraet, dpr):
@@ -228,7 +231,7 @@ def main():
     except Exception: rev = None
     nur = set(x for x in a.nur.split(',') if x)
     res = {'datum': datetime.datetime.now().isoformat(timespec='seconds'), 'stand': a.stand, 'wurzel': wurzel, 'git': rev,
-           'profil': {'drossel': a.drossel, 'dpr': a.dpr, 'sek': a.sek, 'geraete': a.geraete, 'gpu': 'ANGLE/Vulkan headless (Linux)' if sys.platform.startswith('linux') else 'ANGLE/Metal headless', 'start': a.start, 'vsync': a.mit_vsync, 'zusatz': a.zusatz}, 'szenen': {}}
+           'profil': {'drossel': a.drossel, 'dpr': a.dpr, 'sek': a.sek, 'geraete': a.geraete, 'gpu': 'ANGLE/Vulkan headless (Linux)' if sys.platform.startswith('linux') else 'ANGLE/D3D11 headless (Windows, rog17)' if sys.platform == 'win32' else 'ANGLE/Metal headless', 'start': a.start, 'vsync': a.mit_vsync, 'zusatz': a.zusatz}, 'szenen': {}}
     with Server(wurzel) as srv, sync_playwright() as pw:
         for sz in cfg['szenen']:
             if nur and sz['name'] not in nur: continue
@@ -248,7 +251,7 @@ def main():
             res['ladegroesse'] = ladegroesse(pw, srv.base, wurzel, cfg, a)
     os.makedirs(os.path.join(REPO, 'tests', 'perf'), exist_ok=True)   # Ergebnis immer in dieses Repo (auch bei --wurzel = main-Kopie)
     out = os.path.join(REPO, 'tests', 'perf', f"{datetime.date.today().isoformat()}_{a.stand}.json")
-    json.dump(res, open(out, 'w'), ensure_ascii=False, indent=1)
+    json.dump(res, open(out, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)
     print(tabelle(res)); print('→', os.path.relpath(out, REPO))
 
 # A/B im Wechsel: Hintergrundlast trifft alle Varianten gleich (auf einem geteilten Rechner schwankt dieselbe Variante
@@ -289,7 +292,7 @@ def ab_modus(a, cfg, sync_playwright):
                 print(sz['name'], g, ' | '.join(f"{n}: p50 {o['p50']} p95 {o['p95']}" + (f" ({(o['p95'] - b['p95']) / b['p95'] * 100:+.0f} %)" if o['p95'] and b['p95'] and n != var[0][0] else '') + f" calls {o['calls']}" + (f" GPU {o['gpu50']}/{o['gpu95']} ms" if o.get('gpu50') else '') for n, o in out.items()), flush=True)
     out = os.path.join(REPO, 'tests', 'perf', f"{datetime.date.today().isoformat()}_{a.stand}.json")
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    json.dump(res, open(out, 'w'), ensure_ascii=False, indent=1)
+    json.dump(res, open(out, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)
     print('→', os.path.relpath(out, REPO))
 
 if __name__ == '__main__':

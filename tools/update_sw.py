@@ -17,13 +17,13 @@ for d in ['src', 'lib', 'icons', 'assets']:
             # n30 Impostors: nur die Tannen (Land, Standard-Landschaft) vorab; die Themen-Bäume beim ersten Abruf
             if rel.startswith(os.path.join('assets', 'tex', 'imp') + os.sep) and not (f == 'impostor.json' or f.startswith('tanne')): continue
             if f.endswith(('.js', '.png', '.css', '.webp', '.jpg', '.json', '.glb', '.hdr', '.bin', '.m4a', '.ktx2', '.wasm')) and not f.startswith('.') and not twin and rel != os.path.join('assets', 'sammlung_stil.json'):
-                files.append(rel)
+                files.append(rel.replace(os.sep, '/'))   # Windows (rog17): Pfade in sw.js immer mit /
 files = sorted(set(files))
 # Inhalts-Hash auch über die Themen-Pakete (nicht vorab gecacht, aber eine Änderung muss die Version wechseln)
 hashed = list(files)
 for dp, dn, fn in os.walk(os.path.join(ROOT, 'assets', 'themes')):
     for f in sorted(fn):
-        if not f.startswith('.'): hashed.append(os.path.relpath(os.path.join(dp, f), ROOT))
+        if not f.startswith('.'): hashed.append(os.path.relpath(os.path.join(dp, f), ROOT).replace(os.sep, '/'))
 hashed = sorted(set(hashed))
 h = hashlib.sha256()
 for f in hashed:
@@ -34,9 +34,9 @@ ver = h.hexdigest()[:10]
 # Inhalts-Hash macht der Heavy-Job mit dem normalen Aufruf ohne Argument.
 import sys
 if '--version' in sys.argv: ver = sys.argv[sys.argv.index('--version') + 1]
-tpl = open(os.path.join(ROOT, 'tools', 'sw.template.js')).read()
+tpl = open(os.path.join(ROOT, 'tools', 'sw.template.js'), encoding='utf-8').read()
 out = tpl.replace('__VERSION__', ver).replace('__ASSETS__', ',\n  '.join("'" + f + "'" for f in files))
-open(os.path.join(ROOT, 'sw.js'), 'w').write(out)
-open(os.path.join(ROOT, 'src', 'build.js'), 'w').write(f"export const BUILD = '{ver}';\n")
+open(os.path.join(ROOT, 'sw.js'), 'w', encoding='utf-8', newline='\n').write(out)
+open(os.path.join(ROOT, 'src', 'build.js'), 'w', encoding='utf-8', newline='\n').write(f"export const BUILD = '{ver}';\n")
 size = sum(os.path.getsize(os.path.join(ROOT, f)) for f in files)
 print('sw.js Version', ver, len(files), 'Dateien', round(size / 1e6, 2), 'MB')

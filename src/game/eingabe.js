@@ -1,8 +1,8 @@
 // Eingabe: Tastatur, Touch (Handy zuerst, hoch + quer), Gamepad → roh = { gas, lenk, bremseL, bremseR, nase, rolle }.
 // Tastatur: ←/→ bzw. A/D lenken, ↑/W Gas, ↓/S Gas weg (auf Leicht: Auto-Gas aus), Q/E Luftbremse links/rechts,
-// Leertaste Barrel-Roll (in der Luft), ↑/↓ in der Luft = Nase senken/heben.
+// Leertaste Barrel-Roll (in der Luft), ↑/↓ in der Luft = Nase senken/heben, R/Rücktaste = Reset auf die Strecke.
 // Touch: linke/rechte Bildschirmhälfte lenken (Daumen-Position = Stärke), zwei Luftbremsen-Tasten, Roll-Taste.
-// Gamepad: linker Stick lenken/Nase, RT Gas, LB/RB Luftbremsen, A Barrel-Roll.
+// Gamepad: linker Stick lenken/Nase, RT Gas, LB/RB Luftbremsen, A Barrel-Roll, Y bzw. Zurück/View = Reset.
 import { clamp } from '../core/util.js';
 
 // Lenkrampe für Tasten/Touch: weich hoch (sonst zuckt der Gleiter bei 600 km/h), schnell zurück
@@ -19,8 +19,11 @@ export class Eingabe {
     this.touch = { lenk: 0, bremseL: 0, bremseR: 0, rolle: 0, aktiv: false };
     this.lenk = 0;
     this.roh = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 };
+    this.resetWunsch = false; this.gpReset = false;
     if (ziel) {
-      ziel.addEventListener('keydown', (e) => { this.tasten.add(e.code); if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault(); });
+      ziel.addEventListener('keydown', (e) => {
+        if ((e.code === 'KeyR' || e.code === 'Backspace') && !e.repeat) { this.resetWunsch = true; e.preventDefault(); }
+        this.tasten.add(e.code); if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault(); });
       ziel.addEventListener('keyup', (e) => this.tasten.delete(e.code));
       ziel.addEventListener('blur', () => this.tasten.clear());
     }
@@ -52,6 +55,17 @@ export class Eingabe {
     };
     knopf(bremseL, 'bremseL'); knopf(bremseR, 'bremseR'); knopf(rolle, 'rolle');
   }
+
+  // Reset-Wunsch (Taste R/Rücktaste, Gamepad Y oder Zurück/View, HUD-Knopf über wuenscheReset): einmal je Druck
+  resetGewuenscht() {
+    const gp = typeof navigator !== 'undefined' && navigator.getGamepads ? [...navigator.getGamepads()].find((p) => p && p.connected) : null;
+    const an = !!(gp && ((gp.buttons[3] && gp.buttons[3].pressed) || (gp.buttons[8] && gp.buttons[8].pressed)));
+    if (an && !this.gpReset) this.resetWunsch = true;
+    this.gpReset = an;
+    const w = this.resetWunsch; this.resetWunsch = false;
+    return w;
+  }
+  wuenscheReset() { this.resetWunsch = true; }
 
   // Gas für den Start-Boost (Countdown): ↑/W, Gamepad RT oder ein Finger auf dem Bildschirm
   startGas() {

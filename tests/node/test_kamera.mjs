@@ -9,6 +9,7 @@ import { Gleiter } from '../../src/physics/gleiter.js';
 import { bauePlan, Pilot, PROFILE } from '../../src/ai/pilot.js';
 import { KameraRig, KAM } from '../../src/gfx/kamera.js';
 import { endlich } from '../../src/core/vec.js';
+import { neueAbfrage, F_LUECKE } from '../../src/track/bahn.js';
 
 const bahn = strecke1(), plan = bauePlan(bahn), dt = ZEIT.schritt;
 const segS = (name) => { const k = bahn.abschnitte.findIndex((a) => a.name === name); return [bahn.segStart[k], bahn.segStart[k] + bahn.abschnitte[k].len]; };
@@ -62,4 +63,25 @@ test('Riesensprung: Panorama zieht zurück; Bullet-Time fährt Halbkreis', () =>
   rig.update(1 / 60, g, { orbitAn: 1, orbit: Math.PI, fov: 0, zoom: 1, shake: 0 });
   const nachher = { x: rig.pos.x - g.p.x, z: rig.pos.z - g.p.z };
   assert.ok(vorher.x * nachher.x + vorher.z * nachher.z < 0, 'Kamera auf der Gegenseite');
+});
+
+// p1c (Peter 22.10.: „Kamera clippt im Looping durch den Boden“): Kamera nie hinter/unter der Fahrbahn – Looping,
+// Korkenzieher, Wand, Überkopf, Twist; mit und ohne Bullet-Time-Halbkreis; Looping-Höhe steigt weich
+test('Kamera bleibt über der Fahrbahn (Looping, Röhre, Wand, Überkopf, Twist), Looping-Höhe steigt', () => {
+  const q = neueAbfrage();
+  for (const name of ['Großer Looping', 'Korkenzieher-Röhre', 'Fassade', 'Unter der Brücke', 'Möbius-Twist']) {
+    for (const orbit of [false, true]) {
+      const [s0, s1] = segS(name);
+      let minH = 99, maxLoop = 0, bild = 0;
+      fahrt(s0 - 150, (s1 - s0 + 250) / 90, {}, (rig, g) => {
+        bild++;
+        if (orbit && bild % 30 < 15) rig.update(1 / 60, g, { orbitAn: 1, orbit: (bild % 30) / 15 * Math.PI, fov: 0, zoom: 1, shake: 0 });
+        const r = bahn.abfrage(rig.pos, g.hint, q);
+        if (r.ok && !(r.flags & F_LUECKE) && Math.abs(r.u) <= r.hw + 2) minH = Math.min(minH, r.h);
+        maxLoop = Math.max(maxLoop, rig.loopK);
+      });
+      assert.ok(minH >= KAM.boden - 0.01, `${name}${orbit ? ' (Bullet-Time)' : ''}: Kamera ${minH.toFixed(2)} m über der Fahrbahn`);
+      assert.ok(maxLoop > 0.8, `${name}: Looping-Anteil ${maxLoop.toFixed(2)}`);
+    }
+  }
 });

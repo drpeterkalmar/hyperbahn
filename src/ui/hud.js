@@ -43,6 +43,8 @@ export class Hud {
         <button class="tk bremse-r" data-k="bremseR">BREMSE ▶︎</button>
       </div>
       <button class="pause" data-k="pause" aria-label="Pause">❚❚</button>
+      <button class="reset" data-k="reset" aria-label="Zurück auf die Strecke (R)" title="Zurück auf die Strecke (R)">↺</button>
+      <div class="abblende" data-k="abblende"></div>
       <div class="karte" data-k="karte" title="Minikarte: tippen = groß/klein"></div>`;
     root.appendChild(this.hud);
     this.k = {};
@@ -130,6 +132,15 @@ export class Hud {
     k.countdown.textContent = z.countdown > 0 ? String(Math.ceil(z.countdown)) : '';
     if (t > this.meldungBis) k.meldung.classList.remove('an');
   }
+
+  // Reset: kurze Überblendung (dunkel → klar in 0,4 s); gesperrt = Knopf kurz grau
+  abblenden() {
+    const a = this.k.abblende;
+    a.style.transition = 'none'; a.style.opacity = '0.85';
+    void a.offsetWidth;
+    a.style.transition = 'opacity 0.4s ease-out'; a.style.opacity = '0';
+  }
+  resetGesperrt(an) { this.k.reset.classList.toggle('gesperrt', !!an); }
 
   meldung(text, t, dauer = 1.6) { this.k.meldung.textContent = text; this.k.meldung.classList.add('an'); this.meldungBis = t + dauer; }
 

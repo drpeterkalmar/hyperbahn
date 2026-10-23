@@ -20,6 +20,7 @@ import { GEFUEHL, klasse, bandBeschl, lenkFaktor, kurvenFaktor, Drift, miniTurbo
 const PUNKTE = [[1.6, 1.0, -0.2], [1.6, -1.0, -0.2], [-1.6, 1.0, -0.2], [-1.6, -1.0, -0.2]];
 const TRAEGHEIT = { vor: 0.6, links: 1.6, oben: 1.8 };   // je Masse (Rolle, Nicken, Gieren)
 const ABSTURZ_ZEIT = 1.6;   // s bis zum Respawn
+export const RESET_SPERRE = 1.0;   // s Doppelklick-Schutz des Reset-Knopfs
 
 export class Gleiter {
   constructor(bahn, opt = {}) {
@@ -416,6 +417,34 @@ export class Gleiter {
     this.statistik.abfluege++;
     if (this.absprung) this.statistik.sprungAbstuerze++;
     this.ereignis('absturz', 1, { grund });
+  }
+
+  // 1-Klick-Reset (p1c, Peter 22.10.): sofort mittig an die letzte sichere Stelle (sicherS: zuletzt ≥ 0,5 s am Boden auf
+  // der Bahn – nie vor der aktuellen Stelle), ausgerichtet, mit angemessenem Schwung (Tempo bleibt, aber 45–70 %
+  // Höchsttempo; vMin z. B. Sprung-Mindesttempo, falls ein Absprung kurz bevorsteht). Kein Abkürzen:
+  //  • im Flug über einer Sprung-Lücke kein Reset (sonst Teleport über die Schlucht), erst wenn der Gleiter unter die
+  //    Lücken-Bahn gefallen ist – dann zählt er als Absturz (normaler Respawn hinter der Lücke nach ABSTURZ_ZEIT)
+  //  • schon abgestürzt: Respawn sofort (gleiches Ziel wie ohnehin)
+  //  • respawns zählt hoch → das Rennen bucht den Rücksprung als negativen Fortschritt (Rundenzählung bleibt ehrlich)
+  //  • Doppelklick-Schutz: höchstens ein Reset je RESET_SPERRE s
+  // Rückgabe: 'reset' | 'respawn' | 'absturz' | 'sprung' (abgelehnt) | 'sperre' (abgelehnt)
+  zuruecksetzen(vMin = 0) {
+    if (this.zeit - (this.resetZeit ?? -Infinity) < RESET_SPERRE) return 'sperre';
+    if (this.zustand === 'absturz') { this.resetZeit = this.zeit; this.respawn(); return 'respawn'; }
+    const ueberLuecke = this.absprung && !this.boden && (this.q.flags & F_LUECKE);
+    if (ueberLuecke && this.h > -2) return 'sprung';
+    this.resetZeit = this.zeit;
+    if (ueberLuecke) { this.abgestuerzt('reset'); return 'absturz'; }
+    const vmax = GLEITER.vmax * this.kl.top;
+    const v = Math.max(clamp(this.tempo, 0.45 * vmax, 0.7 * vmax), Math.min(vMin, vmax));
+    const schild = this.schild;
+    this.setzeAuf(this.sicherS, 0, v);
+    this.schild = schild;
+    this.respawns = (this.respawns || 0) + 1;
+    this.statistik.resets = (this.statistik.resets || 0) + 1;
+    this.neustartFenster = 1.5;
+    this.ereignis('reset', 1);
+    return 'reset';
   }
 
   // Respawn: nach einem Sprung-Absturz hinter der Lücke (Landezone), sonst an der letzten sicheren Stelle

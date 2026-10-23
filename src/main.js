@@ -17,7 +17,7 @@ import { MomentWaechter } from './game/momente.js';
 import { Uhr, ActionRegie, BlitzBremse, bus } from './core/zeit.js';
 import { baueBahnMesh } from './gfx/bahnmesh.js';
 import { baueGleiter, BAUFORM_LISTE, ladeGleiterModelle } from './gfx/gleitermesh.js';
-import { KameraRig, wendeAn } from './gfx/kamera.js';
+import { KameraRig, wendeAn, leseKamera } from './gfx/kamera.js';
 import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
@@ -25,9 +25,11 @@ import { Hud } from './ui/hud.js';
 import { Minikarte } from './gfx/minikarte.js';
 import { GpuZeit } from './gfx/gpuzeit.js';
 import { leseGefuehl, GEFUEHL, KLASSEN_LISTE } from './physics/fahrgefuehl.js';
+import { RESET_SPERRE } from './physics/gleiter.js';
 
 const q = leseRegler(location.search);
 leseGefuehl(location.search);
+leseKamera(location.search);
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -118,6 +120,8 @@ hud.k.karte.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); hud.
 addEventListener('resize', () => setTimeout(karteRechteck, 50));
 eingabe.bindeTouch(canvas, { bremseL: hud.k.bremseL, bremseR: hud.k.bremseR, rolle: hud.k.rolle });
 hud.k.pause.addEventListener('click', () => { laeuft = false; hud.zeigeMenue(true, true); });
+// Reset-Knopf (p1c): sofort beim Antippen (pointerdown), nicht erst beim Loslassen
+hud.k.reset.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); ev.preventDefault(); eingabe.wuenscheReset(); });
 hud.zeigeMenue(true);
 
 function starte(e) {
@@ -200,6 +204,7 @@ function ereignisse() {
         case 'treffer': blitz(0.5, [1, 0.2, 0.2]); rig.stoss(0.8); vibriere(40); break;
         case 'abgefangen': hud.meldung('ABGEFANGEN', praes, 1); break;
         case 'neustart': hud.meldung('NEUSTART!', praes, 1); blitz(0.4, [0.3, 1, 0.5]); break;
+        case 'reset': case 'respawn': hud.abblenden(); rig.init = false; break;   // p1c: kurze Überblendung, Kamera springt mit
       }
       if (ton) ton.ereignis(e.art, e.staerke);
     }
@@ -230,6 +235,18 @@ function speedOk(g) {
   return null;
 }
 
+// 1-Klick-Reset (p1c): nur im laufenden Rennen; angemessener Schwung = Sprung-Mindesttempo × 1,15, falls von der sicheren
+// Stelle aus ein Absprung in ≤ 900 m kommt (sonst landete man nach dem Reset in der Schlucht)
+function zuruecksetzen() {
+  if (!rennen || !laeuft || rennen.phase !== 'rennen' || spielerT.ziel) return;
+  const g = spielerT.g;
+  let vMin = 0;
+  for (const a of absprungS) { let d = a.s - g.sicherS; if (d < 0) d += bahn.L; if (d < 900) { vMin = a.vmin * 1.15; break; } }
+  const r = g.zuruecksetzen(vMin);
+  if (r === 'reset' || r === 'respawn') hud.meldung('ZURÜCK AUF DIE BAHN', praes, 0.9);
+  else if (r === 'sprung') hud.meldung('IM SPRUNG – ERST LANDEN', praes, 0.9);
+}
+
 // --- Hauptschleife ---
 let tAlt = performance.now() / 1000;
 window.__app = { ready: true, frames: 0 };   // wie Stuntbahn: tests/util.py wartet auf ready + frames
@@ -251,6 +268,8 @@ function bild() {
     uhr.faktorExtern = fx.zeitFaktor;          // wirkt nur offline (Uhr ignoriert ihn online)
     const n = uhr.tick(dt);
     const g = spielerT.g;
+    if (eingabe.resetGewuenscht()) zuruecksetzen();
+    hud.resetGesperrt(rennen.phase !== 'rennen' || g.zeit - (g.resetZeit ?? -Infinity) < RESET_SPERRE);
     for (let i = 0; i < n; i++) {
       const roh = eingabe.lesen(ZEIT.schritt, !g.boden);
       let ein = autopilot ? autopilot.steuer(g, ZEIT.schritt, rennen.gleiter) : hilfe.anwenden(g, roh, ZEIT.schritt, rennen.gleiter);
@@ -330,7 +349,7 @@ let fpsN = 0, fpsT = 0;
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
   bahn, plan, kino, renderer, blitze, karte, gpu, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
-  get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; },
+  get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; }, get rig() { return rig; }, reset: () => zuruecksetzen(),
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'
   moment: (art = 'sprungScheitel') => { if (!regie) return null; regie.letzt = -Infinity; const g = spielerT.g; return regie.melde(art, 1, { x: g.p.x, y: g.p.y, z: g.p.z }, {}, praes); },
