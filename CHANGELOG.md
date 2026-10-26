@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P1b Etappe B: Energie = Schild = Boost, Boxengasse)
+## 0.1.6 – 26.10.2026 (P1b Etappe B: Energie = Schild = Boost, Boxengasse)
 - **Ein Energie-Balken** (HUD „ENERGIE“, vorher „SCHILD“): Wandtreffer/Rempler kosten wie bisher, dazu **manueller Boost**
   am Boden (Leertaste/ROLLE-Taste, die am Boden „⚡ BOOST“ zeigt; Gamepad A/X) ab Runde 2 (1-Runden-Rennen: ab der Hälfte):
   +35 % Höchsttempo für 1,6 s, kostet 12 %, nie unter 1 % – 8 Boosts aus vollem Balken.
