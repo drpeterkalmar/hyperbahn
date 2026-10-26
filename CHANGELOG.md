@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P1b Etappe C: Flugzeit-Boost, Boost-Reserve mit Ketten-Deckel)
+## 0.1.7 – 26.10.2026 (P1b Etappe C: Flugzeit-Boost, Boost-Reserve mit Ketten-Deckel)
 - **Flugzeit-Boost** (`?flugboost=0` aus): saubere Landung (Nase ≤ 12° zur Bahn) nach ≥ 0,8 / 1,6 / 3,0 s Flug gibt Stufe
   1/2/3 (+1,0 s/+15 %, +1,5 s/+20 %, +1,5 s/+25 %). Jeder Riesensprung = Stufe 3, Zeitgewinn 0,55–0,67 s.
   **HUD-Flugmesser** in der Bildmitte: Flugzeit mit Marken bei 0,8/1,6/3,0 s, nach der Landung 1,5 s das Ergebnis.
