@@ -58,6 +58,16 @@ body.ruhig .schild.warn i { animation: none; }
 .flug span { display: block; margin-top: 4px; font: 800 italic clamp(11px, 2.6vmin, 15px) var(--schrift); letter-spacing: 0.12em; color: #fff; text-shadow: 0 0 6px #000, var(--glow-c); white-space: nowrap; }
 .flug.stufe span { color: var(--gelb); text-shadow: 0 0 8px var(--gelb); }
 .flug.schief span { color: #ff6a5a; }
+/* P1b: G-Vignette (Neon-Noir: magenta → schwarz am Rand), unter allen HUD-Elementen */
+.gvig { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 30%, rgba(190, 0, 150, 0.95) 66%, rgba(0, 0, 0, 1) 100%); }
+/* P1b: Drehzahl-Band im Countdown (Gamepad) */
+.drehzahl { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); width: min(50vw, 300px); text-align: center; opacity: 0; pointer-events: none; }
+.drehzahl.an { opacity: 1; }
+.dz-balken { position: relative; height: 10px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 5px; overflow: hidden; }
+.dz-balken i { position: absolute; inset: 0; transform-origin: left; background: var(--cyan); }
+.dz-balken s { position: absolute; top: 0; bottom: 0; background: rgba(61, 255, 122, 0.55); }
+.drehzahl.gut .dz-balken i { background: #3dff7a; } .drehzahl.zuviel .dz-balken i { background: var(--rot); }
+.drehzahl span { display: block; margin-top: 4px; font: 800 12px var(--schrift); letter-spacing: 0.15em; color: #fff; text-shadow: 0 0 6px #000; }
 .blitz { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen; }
 @keyframes puls { from { opacity: 0.55; } to { opacity: 1; } }
 

@@ -8,6 +8,7 @@ import { ITEMS_HB, ITEMS_REF, spaltenSummen, ziehe, itemZufall } from '../../src
 import { mess1, mess3, mess4, mess5, mess7, mess9, mess11, mess12, mess13 } from '../../tools/gefuehl_mess.mjs';
 import { strecke1 } from '../../src/track/strecke1.js';
 import { bauePlan, Pilot, PROFILE } from '../../src/ai/pilot.js';
+import { VORLAGE } from '../../src/config.js';
 import { Rennen, TEAMS } from '../../src/game/rennen.js';
 import { ZEIT } from '../../src/config.js';
 
@@ -81,16 +82,27 @@ test('Start-Boost-Fenster, Überdrehen, Neustart-Rhythmus', () => {
   assert.ok(!neustartErfuellt([0, 0.1, 0.2, 0.3]), 'zu wenige');
   // im Rennen: Spieler tippt genau auf Grün, Gegner hält Dauergas → Start-Boost bzw. Stotterer
   const bahn = strecke1();
-  const r = new Rennen(bahn, [{ name: 'A' }, { name: 'B', spieler: true }], { runden: 1, gummiband: 0 });
-  // A = Spieler (Eingabe), B wird hier nur über startSpieler gesteuert – beide sind Menschen ohne Pilot
-  let n = 0;
-  while (r.zeit < 0.5 && n++ < 2000) {
-    const rel = r.phase === 'countdown' ? -r.countdown : r.zeit;
-    r.schritt(dt, { gas: 1, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 }, { gas: rel > -0.03 ? 1 : 0 });
-  }
-  assert.equal(r.alle[0].g.statistik.startboost, 1, 'Tipp auf Grün = Start-Boost');
+  // Tipp-Zeitpunkt → Start-Boost: bisher (?startgrad=0) auf Grün, ab P1b abgestuft am Idealpunkt 0,25 s vor Grün
+  const tippe = (tipp, grad) => {
+    const alt = VORLAGE.start.grad; VORLAGE.start.grad = grad;
+    try {
+      const r = new Rennen(bahn, [{ name: 'A' }, { name: 'B', spieler: true }], { runden: 1, gummiband: 0 });
+      // A = Spieler (Eingabe), B wird hier nur über startSpieler gesteuert – beide sind Menschen ohne Pilot
+      let n = 0;
+      while (r.zeit < 0.5 && n++ < 2000) {
+        const rel = r.phase === 'countdown' ? -r.countdown : r.zeit;
+        r.schritt(dt, { gas: 1, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 }, { gas: rel > tipp ? 1 : 0 });
+      }
+      return r.alle[0];
+    } finally { VORLAGE.start.grad = alt; }
+  };
+  assert.equal(tippe(-0.03, 0).g.statistik.startboost, 1, 'bisher: Tipp auf Grün = Start-Boost');
+  const ideal = tippe(-0.25, 1), rand = tippe(-0.43, 1), daneben = tippe(-0.03, 1);
+  assert.equal(ideal.g.statistik.startboost, 1); assert.ok(ideal.start.staerke > 0.97, `ideal ${ideal.start.staerke}`);
+  assert.ok(rand.start.staerke > 0.3 && rand.start.staerke < 0.45, `Rand ${rand.start.staerke}`);
+  assert.equal(daneben.g.statistik.startboost, 0, 'auf Grün ist zu spät (Idealpunkt davor)');
   const r2 = new Rennen(bahn, [{ name: 'A' }], { runden: 1, gummiband: 0 });
-  n = 0; while (r2.zeit < 0.5 && n++ < 2000) r2.schritt(dt, { gas: 1, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 });
+  let n = 0; while (r2.zeit < 0.5 && n++ < 2000) r2.schritt(dt, { gas: 1, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 });
   assert.ok(r2.alle[0].g.stotter > 0 || r2.alle[0].g.ereignisse.some((e) => e.art === 'stotterer'), 'Dauergas = Stotterer');
 });
 

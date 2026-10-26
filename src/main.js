@@ -29,6 +29,7 @@ import { GpuZeit } from './gfx/gpuzeit.js';
 import { leseGefuehl, GEFUEHL, KLASSEN_LISTE } from './physics/fahrgefuehl.js';
 import { RESET_SPERRE } from './physics/gleiter.js';
 import { VERSION } from './version.js';
+import { gVignetteDeckkraft } from './game/gvignette.js';
 
 const q = leseRegler(location.search);
 leseGefuehl(location.search);
@@ -140,6 +141,7 @@ hud.k.reset.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); ev.p
 hud.zeigeMenue(true);
 
 function starte(e) {
+  startAnalog = false;
   for (const m of meshes) { scene.remove(m.gruppe); scene.remove(m.spur); }
   const anzahl = q.has('gegner') ? SPIEL.gegner : e.gegner;
   const ki = q.has('ki') ? SPIEL.ki : e.ki;
@@ -223,8 +225,8 @@ function ereignisse() {
         case 'driftStufe': hud.meldung(['', 'DRIFT', 'DRIFT ✦✦', 'DRIFT ✦✦✦'][e.stufe], praes, 0.6); break;
         case 'driftWarnung': hud.meldung('ZU LANG!', praes, 0.6); break;
         case 'miniturbo': blitz(0.35 + 0.15 * e.stufe, DRIFT_FARBEN[e.stufe]); hud.meldung(e.stufe >= 3 ? 'ULTRA-TURBO' : 'MINI-TURBO', praes, 0.9); rig.stoss(0.2); break;
-        case 'startboost': blitz(0.6, [0.3, 1, 1]); hud.meldung('START-BOOST!', praes, 1.2); break;
-        case 'stotterer': hud.meldung('ÜBERDREHT', praes, 1.2); break;
+        case 'startboost': blitz(0.3 + 0.3 * e.staerke, [0.3, 1, 1]); hud.meldung(e.band ? 'START-BOOST · DREHZAHL PERFEKT' : e.staerke >= 0.95 ? 'PERFEKTER START!' : `START-BOOST ${Math.round(e.staerke * 100)} %`, praes, 1.2); break;
+        case 'stotterer': hud.meldung(e.band ? 'ÜBERDREHT · DREHZAHL ZU HOCH' : 'ÜBERDREHT', praes, 1.2); break;
         case 'treffer': blitz(0.5, [1, 0.2, 0.2]); rig.stoss(0.8); vibriere(40); break;
         case 'abgefangen': hud.meldung('ABGEFANGEN', praes, 1); break;
         case 'neustart': hud.meldung('NEUSTART!', praes, 1); blitz(0.4, [0.3, 1, 0.5]); break;
@@ -238,7 +240,8 @@ function ereignisse() {
 
 // Drift-Funken je Stufe: cyan → magenta → weiß-gold (HDR für Bloom)
 const DRIFT_FARBEN = [[0.6, 2.2, 2.6], [0.6, 2.2, 2.6], [2.6, 0.5, 2.2], [3.2, 2.6, 1.2]];
-const startEin = { gas: 0 };
+const startEin = { gas: 0, drehzahl: undefined };
+let startAnalog = false;
 function driftFunken() {
   for (const t of rennen.alle) {
     const g = t.g;
@@ -319,6 +322,10 @@ function bild() {
       if (!fliegend && (rennen.phase === 'countdown' || rennen.zeit < GEFUEHL.startfenster)) {
         const startGas = autopilot ? autopilot.startGas(rennen.phase === 'countdown' ? -rennen.countdown : rennen.zeit) : (eingabe.startGas() ? 1 : 0);
         startEin.gas = startGas;
+        // Drehzahl-Band (P1b): nur wer im Countdown den analogen Gas-Abzug benutzt hat, wird nach dem Band gewertet
+        const dz = autopilot ? null : eingabe.startDrehzahl();
+        if (dz != null && dz > 0.05 && rennen.phase === 'countdown') startAnalog = true;
+        startEin.drehzahl = startAnalog ? dz : undefined;
         if (rennen.phase === 'countdown') ein = { ...ein, gas: startGas };
       }
       spielerT.ein = ein;
@@ -344,6 +351,9 @@ function bild() {
     }, praes);
     document.body.classList.toggle('ruhig', blitze.reduziert);
     if (VORLAGE.flug.an) hud.flugMesser(!g.boden && g.zustand === 'fahrt', g.luftZeit, praes);
+    // G-Vignette (P1b) und Drehzahl im Countdown (nur mit analogem Gas-Abzug)
+    hud.gVignette(gVignetteDeckkraft(g.gLast, blitze.reduziert));
+    hud.drehzahl(rennen.phase === 'countdown' && startAnalog && VORLAGE.start.band ? startEin.drehzahl : null, VORLAGE.start);
     WARNLICHT.ruhig = blitze.reduziert;
     if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {

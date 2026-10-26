@@ -9,7 +9,7 @@ HOCH = dict(PIXEL7_LAND, viewport={"width": 412, "height": 915})
 OUT = os.path.join(ROOT, 'tests', 'shots', 'p1b')
 ZUSTAND = """(() => { const g = __hb.spieler, r = __hb.rennen; if (!g) return null;
   return { phase: r.phase, zustand: g.zustand, boden: g.boden, luft: +g.luftZeit.toFixed(2), tempo: +g.tempo.toFixed(1), h: +g.h.toFixed(2),
-    energie: +(g.energie ?? g.schild).toFixed(3), flug: document.querySelector('[data-k=flugT]').textContent, taste: document.querySelector('[data-k=rolle]').textContent, boost: +g.boost.toFixed(2), s: Math.round(g.s), runde: __hb.rennen.alle.find((t) => t.g === g).runde }; })()"""
+    energie: +(g.energie ?? g.schild).toFixed(3), u: +g.u.toFixed(1), gLast: +g.gLast.toFixed(1), flug: document.querySelector('[data-k=flugT]').textContent, taste: document.querySelector('[data-k=rolle]').textContent, boost: +g.boost.toFixed(2), s: Math.round(g.s), runde: __hb.rennen.alle.find((t) => t.g === g).runde }; })()"""
 
 
 def collage(name, bilder, breite=420):
@@ -73,7 +73,27 @@ SZENEN = {
     'warnung': ('&at=Start-Ziel', "(() => { const g = __hb.spieler; g.schild = 0.18; g.boostFrei = true; setTimeout(() => { dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); setTimeout(() => dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' })), 200); }, 1200); })()", None, 12, 0.2),
     # Flugmesser + Flugzeit-Boost: Riesensprung mit Pad-Kette (Reserve), Messer füllt sich, Stufe nach der Landung
     'flug': ('&at=H%C3%A4userschlucht%20Anlauf', None, "!__hb.spieler.boden && __hb.spieler.luftZeit > 0.6", 14, 0.35),
+    # G-Vignette im Looping (magenta/schwarzer Rand bei hoher G-Last)
+    'gvignette': ('&at=Gro%C3%9Fer%20Looping', None, "__hb.spieler.gLast > 6", 6, 0.25),
+    # Seitwärts-Schub: Taste Y (Code KeyZ) 1,5 s gehalten – Gleiter versetzt nach links ohne zu drehen
+    'strafe': ('&hilfe=profi&at=Start-Ziel', "(() => { dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyZ' })); setTimeout(() => dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyZ' })), 1500); })()", None, 8, 0.2),
 }
+
+def start_tipp(pw, srv):
+    # abgestufter Start-Boost: ↑ 0,25 s vor Grün antippen (echte Tastatur), Meldung + Boost nach Grün
+    s = Session(pw, srv.base, device=PIXEL7_LAND)
+    try:
+        s.open('?nosw&autostart=1&gegner=3&action=0')
+        s.pg.wait_for_function("__hb.rennen && __hb.rennen.phase === 'countdown' && __hb.rennen.countdown < 0.27", timeout=60000, polling=5)
+        s.pg.keyboard.down('ArrowUp')
+        s.pg.wait_for_function("__hb.rennen.phase === 'rennen' && __hb.rennen.zeit > 0.3", timeout=60000)
+        p = s.shot('start_tipp', 'p1b')
+        st = s.ev("(() => { const t = __hb.rennen.alle.find((x) => x.spieler); return { staerke: t.start.staerke, tipp: t.start.tipp, boost: t.g.boost, meldung: document.querySelector('[data-k=meldung]').textContent }; })()")
+        s.pg.keyboard.up('ArrowUp')
+        print('start', json.dumps(st, ensure_ascii=False), 'Fehler', s.errors[:5])
+        return dict(start=st, fehler=s.errors[:5])
+    finally:
+        s.close()
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(); ap.add_argument('--nur', default=''); ap.add_argument('--q', default='')
@@ -83,6 +103,7 @@ if __name__ == '__main__':
     erg = {}
     with Server() as srv, sync_playwright() as pw:
         if not nur or 'smoke' in nur: erg['smoke'] = smoke(pw, srv, a.q)
+        if 'start' in nur: erg['start'] = start_tipp(pw, srv)
         for name, (q, vor, warte, n, pause) in SZENEN.items():
             if nur and name not in nur: continue
             try: erg[name] = szene(pw, srv, name, q + a.q, vor, warte, n, pause)

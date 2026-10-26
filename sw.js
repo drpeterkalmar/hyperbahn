@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = 'a18074ea5e';
+const VERSION = 'd657066d47';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -31,6 +31,7 @@ const ASSETS = [
   'src/game/bestzeiten.js',
   'src/game/eingabe.js',
   'src/game/fahrhilfe.js',
+  'src/game/gvignette.js',
   'src/game/items.js',
   'src/game/momente.js',
   'src/game/rennen.js',

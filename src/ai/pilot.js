@@ -124,7 +124,9 @@ export class Pilot {
     this.driftT = 0; this.driftKurve = -1;
     // Start-Tipp relativ zu Grün (s): Treffer im Fenster mit Wahrscheinlichkeit profil.start, sonst zu früh/zu spät
     const rs = this.r();
-    this.startTipp = rs < (profil.start || 0) ? -0.06 + this.r() * 0.1 : (this.r() < 0.5 ? -0.9 - this.r() * 0.4 : 0.2 + this.r() * 0.3);
+    // abgestufter Start (P1b): Treffer streuen um den Idealpunkt vor Grün, sonst wie bisher um Grün
+    const mitte = VORLAGE.start.grad ? VORLAGE.start.ideal + 0.01 : -0.01;
+    this.startTipp = rs < (profil.start || 0) ? mitte - 0.05 + this.r() * 0.1 : (this.r() < 0.5 ? -0.9 - this.r() * 0.4 : 0.2 + this.r() * 0.3);
   }
 
   // Gas im Countdown/kurz nach Grün (rel = Zeit relativ zu Grün)

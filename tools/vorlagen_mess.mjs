@@ -7,6 +7,9 @@ import { baueBahn } from '../src/track/bahn.js';
 import { strecke1, SPRUNG_MINDEST } from '../src/track/strecke1.js';
 import { Gleiter } from '../src/physics/gleiter.js';
 import { kiRennen } from './ki_rennen.mjs';
+import { bauePlan, Pilot, PROFILE } from '../src/ai/pilot.js';
+import { Rennen, TEAMS } from '../src/game/rennen.js';
+import { gVignetteDeckkraft } from '../src/game/gvignette.js';
 
 const dt = ZEIT.schritt;
 const RAD = 180 / Math.PI;
@@ -231,6 +234,94 @@ export function m7() {
   return { stufen, reserve, resMax };
 }
 
+// 10) KI-Revanche: Rennen mit einem Menschen (Autopilot „Mittel“, Startplatz 6) gegen 7 KI; je Überholen des Menschen an einer
+// KI „Mittel“: holt sich diese KI den Platz innerhalb von 10 s zurück? Quote mit/ohne Revanche
+export function m10(n = 20) {
+  const quote = (regler) => {
+    leseRegler(regler);
+    const bahn = strecke1(), plan = bauePlan(bahn);
+    let ueber = 0, zurueck = 0, revs = 0;
+    for (let r = 0; r < n; r++) {
+      const profile = ['profi', 'mittel', 'mittel', 'leicht', 'mittel', 'mittel', 'profi', 'mittel'];
+      const teil = TEAMS.map((t, k) => ({ ...t, spieler: k === 5, pilot: new Pilot(bahn, plan, PROFILE[k === 5 ? 'mittel' : profile[k]], 500 * r + 13 * k + 3) }));
+      const rn = new Rennen(bahn, teil, { runden: 2, ohneCountdown: true });
+      const sp = rn.alle[5], offen = [];
+      const vorAlt = new Map();
+      let i = 0;
+      while (rn.phase !== 'ziel' && i++ < 240 * 400) {
+        rn.schritt(dt, null);
+        for (const g of rn.gleiter) g.ereignisse.length = 0;
+        if (i % 24) continue;   // Stichprobe 0,1 s
+        for (const t of rn.alle) {
+          if (t === sp || t.pilot.profil.name !== 'Mittel' || t.ziel || sp.ziel) continue;
+          const vor = t.fortschritt > sp.fortschritt;
+          if (vorAlt.get(t) && !vor) { ueber++; offen.push({ t, bis: rn.zeit + 10 }); }
+          vorAlt.set(t, vor);
+        }
+        for (let k = offen.length - 1; k >= 0; k--) {
+          const o = offen[k];
+          if (o.t.fortschritt > sp.fortschritt) { zurueck++; offen.splice(k, 1); } else if (rn.zeit > o.bis) offen.splice(k, 1);
+        }
+      }
+      revs += rn.alle.reduce((a, t) => a + (t.g.statistik.revanchen || 0), 0);
+    }
+    return { ueber, zurueck, quote: zurueck / Math.max(1, ueber), revs };
+  };
+  const ohne = quote(REGLER_JETZT + '&revanche=0'), mit = quote(REGLER_JETZT);
+  return { mit, ohne };
+}
+
+// 11) Start-Boost abgestuft: Ø-Stärke der KI-Starts je Profil (echte Tester-Telemetrie braucht Handys – offen)
+export function m11(n = 40) {
+  leseRegler(REGLER_JETZT);
+  const bahn = strecke1(), plan = bauePlan(bahn), out = {};
+  for (const p of ['leicht', 'mittel', 'profi']) {
+    let summe = 0, treffer = 0;
+    for (let r = 0; r < n; r++) {
+      const rn = new Rennen(bahn, [{ name: 'K', pilot: new Pilot(bahn, plan, PROFILE[p], 77 + r * 31) }], { runden: 1 });
+      while (rn.zeit < 0.5) rn.schritt(dt, null);
+      summe += rn.alle[0].start.staerke; treffer += rn.alle[0].start.staerke > 0 ? 1 : 0;
+    }
+    out[p] = { staerke: summe / n, quote: treffer / n };
+  }
+  return out;
+}
+
+// 13) G-Vignette: KI „Mittel“ fährt 2 Runden; je Looping-Durchfahrt höchste Deckkraft, Maximum gesamt, „Blitze reduziert“ = 0
+export function m13() {
+  leseRegler(REGLER_JETZT);
+  const bahn = strecke1(), plan = bauePlan(bahn);
+  const k = bahn.abschnitte.findIndex((a) => a.name === 'Großer Looping');
+  const s0 = bahn.segStart[k], s1 = s0 + bahn.abschnitte[k].len;
+  const g = new Gleiter(bahn, { s: 5, v0: 60 }), p = new Pilot(bahn, plan, PROFILE.mittel, 9);
+  const durch = []; let jetzt = null, max = 0, maxRed = 0, gMax = 0, weg = 0, sAlt = g.s;
+  for (let i = 0; i < 400 / dt && weg < 2 * bahn.L; i++) {
+    g.schritt(dt, p.steuer(g, dt, [])); g.ereignisse.length = 0;
+    let d = g.s - sAlt; if (d < -bahn.L / 2) d += bahn.L; if (Math.abs(d) < 80) weg += d; sAlt = g.s;
+    const dk = gVignetteDeckkraft(g.gLast, false);
+    max = Math.max(max, dk); maxRed = Math.max(maxRed, gVignetteDeckkraft(g.gLast, true)); gMax = Math.max(gMax, g.gLast);
+    const drin = g.s > s0 && g.s < s1;
+    if (drin && !jetzt) jetzt = { max: 0 };
+    if (drin) jetzt.max = Math.max(jetzt.max, dk);
+    if (!drin && jetzt) { durch.push(jetzt.max); jetzt = null; }
+  }
+  return { durch, max, maxRed, gMax };
+}
+
+// Seitwärts-Schub: 1 s voll seitlich bei 80 m/s auf breiter Ebene – Querversatz, Tempo-Verlust, Drehung
+export function mS() {
+  leseRegler(REGLER_JETZT);
+  const b = ebene(60, 6000);
+  const lauf = (st) => {
+    const g = new Gleiter(b, { s: 200, v0: 80 });
+    const vor0 = { ...g.vor };
+    for (let i = 0; i < 1 / dt; i++) g.schritt(dt, { ...AUS, gas: g.tempo < 80 ? 1 : 0.6, strafe: st });
+    return { u: g.u, v: g.tempo, dreh: Math.acos(Math.min(1, dot(g.vor, vor0))) * RAD };
+  };
+  const mit = lauf(1), ohne = lauf(0);
+  return { versatz: mit.u - ohne.u, tempo: mit.v - ohne.v, dreh: mit.dreh };
+}
+
 const MESS = {
   1: ['Schwebe-Ruhelage & Federweg nach Landung aus 10 m', '1,15–1,25 m; Einfedern ≤ 0,4 m, ruhig ≤ 0,5 s, kein Durchschlag',
     (r) => `Ruhe ${r.ruhe.toFixed(2)} m · Einfedern ${r.einfedern.toFixed(2)} m (tiefste ${r.hMin.toFixed(2)} m) · ruhig nach ${r.ruhig.toFixed(2)} s · Aufsetzer ${r.durchschlag}`, m1],
@@ -252,6 +343,14 @@ const MESS = {
     (r) => `Tempo ${(r.tempo * 100).toFixed(0)} % · Energie ${(r.energie * 100).toFixed(1)} %`, m8],
   L: ['Lenkwechsel bei 60 m/s (Gegenlenken)', 'Gegenlenken ≈ doppelt so schnell wie Anlenken (Vorlage), Gierrate ≤ 100°/s',
     (r) => `volle Gierrate ${(r.voll * RAD).toFixed(0)}°/s · Anlenken bis 90 % ${r.anlenken.toFixed(2)} s · Gegenlenken: Richtungswechsel nach ${r.wechselNull.toFixed(2)} s, 90 % nach ${r.wechsel90.toFixed(2)} s`, mL],
+  10: ['KI-Revanche (20 Rennen à 2 Runden, Mensch = Autopilot Mittel)', 'Zurück-Überholquote der KI „Mittel“ 25–40 %',
+    (r) => `mit Revanche ${(r.mit.quote * 100).toFixed(0)} % (${r.mit.zurueck}/${r.mit.ueber}, ${r.mit.revs} Revanchen) · ohne ${(r.ohne.quote * 100).toFixed(0)} % (${r.ohne.zurueck}/${r.ohne.ueber})`, m10],
+  11: ['Start-Boost abgestuft (KI-Telemetrie je Profil)', 'Ø-Stärke Tester Handy 50–70 % (Tester offen)',
+    (r) => Object.entries(r).map(([p, x]) => `${p}: Ø ${(x.staerke * 100).toFixed(0)} % (Treffer ${(x.quote * 100).toFixed(0)} %)`).join(' · '), m11],
+  13: ['G-Vignette', 'in jedem Looping, nie > 35 %, aus mit „Blitze reduzieren“',
+    (r) => `Looping-Durchfahrten ${r.durch.map((x) => (x * 100).toFixed(0) + ' %').join(' / ')} · max. ${(r.max * 100).toFixed(0)} % (G-Last max. ${r.gMax.toFixed(1)} g) · reduziert ${(r.maxRed * 100).toFixed(0)} %`, m13],
+  S: ['Seitwärts-Schub 1 s bei 80 m/s', '6 m/s² quer, kostet kein Tempo',
+    (r) => `Versatz ${r.versatz.toFixed(1)} m · Tempo ${r.tempo >= 0 ? '+' : ''}${r.tempo.toFixed(2)} m/s · Nase dreht ${r.dreh.toFixed(1)}°`, mS],
   9: ['Sprung verfehlt (Häuserschlucht)', 'Zeitverlust 2,0–3,0 s, nie vor den Sprung zurück',
     (r) => `Zeitverlust ${r.verlust.toFixed(2)} s · Abflüge ${r.schlecht.abfluege} · vor den Sprung zurück: ${r.schlecht.vorDemSprung ? 'JA' : 'nein'}`, m9],
 };

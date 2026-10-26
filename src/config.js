@@ -136,6 +136,20 @@ export const VORLAGE = {
   // Reserve und Stufe: [Flugzeit s, Reserve s, +Höchsttempo]; HUD-Flugmesser bleibt `messer` s nach der Landung stehen.
   // Stufe 3: Datenblatt-Startwert 2,0 s Reserve gab 0,65–0,80 s Zeitgewinn je Riesensprung (Ziel 0,4–0,7) → 1,5 s
   flug: { an: 1, sauber: 12, messer: 1.5, stufen: [[0.8, 1.0, 0.15], [1.6, 1.5, 0.20], [3.0, 1.5, 0.25]] },
+  // Start (?startgrad=0, ?startband=0 = bisher): abgestufter Start-Boost – Tipp am Idealpunkt `ideal` s vor Grün = 100 %,
+  // linear bis `rand` am Fensterrand (±`fenster` s), außerhalb nichts; Drehzahl-Band (analoger Gas-Abzug am Gamepad): bei Grün
+  // zwischen `lo` und `hi` = voller Start-Boost (1 Pad), darüber Stotterer `stotterer` s
+  start: { grad: 1, ideal: -0.25, fenster: 0.2, rand: 0.3, band: 1, lo: 0.85, hi: 0.90, stotterer: 0.8 },
+  // KI-Revanche (?revanche=0 aus): eine KI „Mittel“/„Profi“, die gerade vom Menschen überholt wurde (Abstand < `naehe` m),
+  // fährt `dauer` s mit +`deckel` Höchsttempo und Beschleunigung ×`beschl` – nur offline. Datenblatt-Startwert ×1,5 gab
+  // 55 % Zurück-Überholquote (Ziel 25–40 %) → Messung entscheidet: nur +8 % Höchsttempo (28 %)
+  revanche: { an: 1, dauer: 3, deckel: 0.08, beschl: 1.0, naehe: 40 },
+  // Seitwärts-Schub (?strafe=0 aus): Gamepad rechter Stick seitlich, Tastatur Y/X (QWERTZ; QWERTY Z/X) – Quertempo bis `max`
+  // m/s, aufgebaut mit `beschl` m/s², kostet kein Tempo (Touch: die Luftbremsen übernehmen)
+  strafe: { an: 1, beschl: 6, max: 8 },
+  // G-Vignette (?gvignette=0 aus): Neon-Noir-Vignette (magenta → schwarz) ab `ab` g, voll bei `voll` g, höchstens `max`
+  // Deckkraft; rein optisch, aus mit „Blitze reduzieren“
+  gvignette: { an: 1, ab: 3, voll: 7, max: 0.35 },
 };
 
 export const BLITZE = { reduziert: false, maxProSek: 3, strobeDaempfung: 0.35 };
@@ -172,6 +186,11 @@ export function leseRegler(search) {
   V.energie.rolle = zahl('rollkosten', 10) / 100;
   V.reserve.max = zahl('reserve', 4); V.reserve.an = V.reserve.max > 0 ? 1 : 0;
   V.flug.an = q.get('flugboost') === '0' ? 0 : 1;
+  V.start.grad = q.get('startgrad') === '0' ? 0 : 1;
+  V.start.band = q.get('startband') === '0' ? 0 : 1;
+  V.revanche.an = q.get('revanche') === '0' ? 0 : 1;
+  V.strafe.an = q.get('strafe') === '0' ? 0 : 1;
+  V.gvignette.an = q.get('gvignette') === '0' ? 0 : 1;
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';

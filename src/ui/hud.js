@@ -28,6 +28,7 @@ export class Hud {
     // Spiel-HUD
     this.hud = el('div', 'hud');
     this.hud.innerHTML = `
+      <div class="gvig" data-k="gvig"></div>
       <div class="hud-oben">
         <div class="platz"><span class="gross" data-k="platz">–</span><span class="klein" data-k="von">/8</span></div>
         <div class="runde">RUNDE <span data-k="runde">1/3</span><div class="zeit" data-k="zeit">0:00,00</div><div class="zeit beste" data-k="beste"></div></div>
@@ -40,6 +41,7 @@ export class Hud {
       <div class="hinweis magnet" data-k="magnet">⟁ MAGNET</div>
       <div class="hinweis speed" data-k="speed">SPEED OK</div>
       <div class="countdown" data-k="countdown"></div>
+      <div class="drehzahl" data-k="drehzahl"><div class="dz-balken"><i data-k="dzI"></i><s data-k="dzBand"></s></div><span data-k="dzT"></span></div>
       <div class="flug" data-k="flug"><div class="flug-balken"><i data-k="flugI"></i><s style="left:26.7%"></s><s style="left:53.3%"></s><s style="left:calc(100% - 2px)"></s></div><span data-k="flugT"></span></div>
       <div class="meldung" data-k="meldung"></div>
       <div class="blitz" data-k="blitz"></div>
@@ -85,7 +87,7 @@ export class Hud {
       </div>
       <button class="credits-knopf">Credits</button>
       <div class="version">v${VERSION}</div>
-      <div class="steuerung">← → lenken · ↑ Gas (beim Countdown auf „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste Barrel-Roll im Sprung (= Turbo) · in der Luft ↓ = Nase hoch, ↑ neu drücken = Nase runter (über den Absprung gehaltenes Gas verstellt die Nase nie)</div>`;
+      <div class="steuerung">← → lenken · ↑ Gas (kurz vor „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste: am Boden Boost (ab Runde 2), im Sprung Barrel-Roll (Turbo bei der Landung) · Y/X seitwärts · in der Luft ↓ = Nase hoch, ↑ neu drücken = Nase runter (über den Absprung gehaltenes Gas verstellt die Nase nie)</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
     this.menue.querySelector('.weiter').addEventListener('click', () => this.onWeiter && this.onWeiter());
     this.menue.querySelector('.credits-knopf').addEventListener('click', () => this.zeigeCredits());
@@ -148,6 +150,24 @@ export class Hud {
     k.speed.textContent = z.speedOk === false ? 'MEHR TEMPO!' : 'SPEED OK';
     k.countdown.textContent = z.countdown > 0 ? String(Math.ceil(z.countdown)) : '';
     if (t > this.meldungBis) k.meldung.classList.remove('an');
+  }
+
+  // G-Vignette (P1b): Deckkraft 0…0,35
+  gVignette(d) {
+    if (d === this.gvAlt) return;
+    this.gvAlt = d; this.k.gvig.style.opacity = d.toFixed(3);
+  }
+
+  // Drehzahl-Band im Countdown (P1b, nur mit analogem Gas-Abzug): wert 0…1 oder null = aus
+  drehzahl(wert, S) {
+    const k = this.k;
+    k.drehzahl.classList.toggle('an', wert != null);
+    if (wert == null) return;
+    k.dzI.style.transform = `scaleX(${Math.max(0, Math.min(1, wert))})`;
+    k.dzBand.style.left = `${S.lo * 100}%`; k.dzBand.style.width = `${(S.hi - S.lo) * 100}%`;
+    const im = wert >= S.lo && wert <= S.hi;
+    k.drehzahl.classList.toggle('gut', im); k.drehzahl.classList.toggle('zuviel', wert > S.hi);
+    k.dzT.textContent = `DREHZAHL ${Math.round(wert * 100)} %${im ? ' ✓' : ''}`;
   }
 
   // Flugmesser (P1b): in der Luft Flugzeit + erreichte Stufe; nach der Landung (ergebnis) VORLAGE.flug.messer s stehen

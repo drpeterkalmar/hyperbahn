@@ -2,6 +2,18 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P1b Etappe D: Start-Varianten, KI-Revanche, Seitwärts-Schub, G-Vignette)
+- **Abgestufter Start-Boost** (`?startgrad=0` = bisher „Tipp auf Grün“): Idealpunkt 0,25 s **vor** Grün = 100 % („PERFEKTER
+  START!“), linear bis 30 % am Fensterrand (±0,2 s), Meldung zeigt die Stärke. KI trifft je Profil Ø 12/33/54 %.
+- **Drehzahl-Band** für den analogen Gas-Abzug (Gamepad RT, `?startband=0` aus): Drehzahl-Anzeige im Countdown, bei Grün
+  85–90 % = voller Start-Boost, darüber 0,8 s Stotterer. Tastatur/Touch nutzen den abgestuften Tipp.
+- **KI-Revanche** (`?revanche=0` aus): eine KI „Mittel“/„Profi“, die du gerade überholt hast, fährt 3 s mit +8 % Höchsttempo
+  (nur offline) – Zurück-Überholquote 28 % (Ziel 25–40 %, vorher 9 %; Datenblatt-Startwert ×1,5 Beschleunigung gab 55 %).
+- **Seitwärts-Schub** (`?strafe=0` aus): Gamepad rechter Stick seitlich, Tastatur Y/X – bis 8 m/s quer, ohne zu drehen,
+  kostet kein Tempo (Touch: die Luftbremsen übernehmen).
+- **G-Vignette** (`?gvignette=0` aus): magenta/schwarzer Rand ab 3 g, höchstens 35 % – in jedem Looping, aus mit „Blitze
+  reduzieren“, bremst nicht.
+
 ## 0.1.7 – 26.10.2026 (P1b Etappe C: Flugzeit-Boost, Boost-Reserve mit Ketten-Deckel)
 - **Flugzeit-Boost** (`?flugboost=0` aus): saubere Landung (Nase ≤ 12° zur Bahn) nach ≥ 0,8 / 1,6 / 3,0 s Flug gibt Stufe
   1/2/3 (+1,0 s/+15 %, +1,5 s/+20 %, +1,5 s/+25 %). Jeder Riesensprung = Stufe 3, Zeitgewinn 0,55–0,67 s.

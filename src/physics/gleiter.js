@@ -40,6 +40,7 @@ export class Gleiter {
     // Energie = Schild = Boost (P1b): boostFrei setzt das Rennen (ab Runde 2); Felder hier anlegen (feste Objektform)
     this.boostFrei = false; this.boostTaste = false; this.rolleTaste = false; this.imBox = false; this.notlauf = false;
     this.warnung = false; this.gerollt = false; this.rolleBonus = false;
+    this.revanche = 0; this.strafeV = 0; this.gLast = 1;   // KI-Revanche (s), Seitwärts-Schub (m/s), G-Last (P1b)
     this.p = v3(); this.v = v3(); this.w = v3();
     this.vor = v3(0, 0, -1); this.links = v3(-1, 0, 0); this.oben = v3(0, 1, 0);
     this.q = neueAbfrage(); this.qp = [neueAbfrage(), neueAbfrage(), neueAbfrage(), neueAbfrage()];
@@ -107,7 +108,7 @@ export class Gleiter {
     const VS = VORLAGE.schwebe, hartUnter = VS.an ? VS.min : GLEITER.minHoehe;
     const kS = (G / 4) / (VS.soll / GLEITER.hoehe - 1);
     const cS = 2 * VS.zeta * Math.sqrt(4 * kS * VS.soll / (GLEITER.hoehe * GLEITER.hoehe)) / 4;
-    let kontakte = 0, minH = Infinity;
+    let kontakte = 0, minH = Infinity, fSum = 0;
     for (let n = 0; n < 4; n++) {
       const o = PUNKTE[n];
       const r = _r;
@@ -130,7 +131,7 @@ export class Gleiter {
       let f = VS.an ? kS * (VS.soll / Math.max(qi.h, VS.min) - 1) - cS * vn * clamp((VS.soll - qi.h) / (VS.soll - GLEITER.hoehe), 0, 1)
         : k * x * (1 + 2 * Math.max(0, x / GLEITER.hoehe) ** 2) - c * vn;
       if (f < 0) f = 0;
-      addSk(a, a, qi.Us, f);
+      addSk(a, a, qi.Us, f); fSum += f;
       setze(_f, qi.Us.x * f, qi.Us.y * f, qi.Us.z * f);
       kreuz(_t, r, _f);
       addSk(tau, tau, _t, 1);
@@ -143,6 +144,8 @@ export class Gleiter {
       }
     }
     this.kontakte = kontakte;
+    // G-Last (für die G-Vignette): Federkraft / g, geglättet (0,15 s)
+    this.gLast += ((kontakte >= 2 ? fSum / G : 0) - this.gLast) * Math.min(1, dt / 0.15);
     const amBoden = kontakte >= 2;
     const gripAnteil = Math.min(1, kontakte / 3);
 
@@ -210,7 +213,9 @@ export class Gleiter {
     const leer = VE.an && this.schild <= 0.001;
     if (leer && !this.notlauf) this.ereignis('notlauf', 1);
     this.notlauf = leer;
-    let vz = vmaxK * (1 + this.boost + this.mt) * (leer ? VE.notlauf : 1);
+    // KI-Revanche (P1b): kurz mehr Höchsttempo und Beschleunigung nach einem Überholtwerden durch den Menschen
+    const rev = this.revanche > 0 ? (this.revanche -= dt, VORLAGE.revanche) : null;
+    let vz = vmaxK * (1 + this.boost + this.mt + (rev ? rev.deckel : 0)) * (leer ? VE.notlauf : 1);
     if (this.boost <= 0) vz *= kurvenFaktor(lenk, dr.aktiv);
     this.imRand = aufBahn && amBoden && Math.abs(q.u) > q.hw - GEFUEHL.randBreite;
     if (this.imRand && !this.randImmun) vz *= 1 - GEFUEHL.rand * (this.kl.rand / 0.30) * (this.boost > 0 ? 0.5 : 1);
@@ -225,7 +230,8 @@ export class Gleiter {
     const zugBei = (v) => GLEITER.schub * (v / vmax) ** 2;
     const band = bandBeschl(this.kl, tempo / vz) * (this.neustartBonus > 0 ? this.kl.neustart : 1)
       // Reserve läuft: Antrieb ×beschl – am Boden und nur ohne gezogene Luftbremse (sonst käme man vor Kurven nicht mehr runter)
-      * (VORLAGE.reserve.an && this.boostZeit > 0 && amBoden && this.blW + this.brW < 0.1 ? VORLAGE.reserve.beschl : 1);
+      * (VORLAGE.reserve.an && this.boostZeit > 0 && amBoden && this.blW + this.brW < 0.1 ? VORLAGE.reserve.beschl : 1)
+      * (rev ? rev.beschl : 1);
     const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
     addSk(a, a, _d, schub);
     if (tempo > 1e-6) {
@@ -246,7 +252,11 @@ export class Gleiter {
       // Gleiten (Vorlage): ohne Drift richtet sich die Bahn mit gezogener Luftbremse langsamer aus (Zeitkonstante VB.rutsch s)
       const bw = Math.max(this.blW, this.brW);
       const gripB = VB.an && !dr.aktiv ? grip + (1 / VB.rutsch - grip) * bw : grip * (1 + 0.4 * (this.blW + this.brW));
-      addSk(a, a, _l, -vq * gripB * gripAnteil);
+      // Seitwärts-Schub (P1b): Seitenhaftung zieht das Quertempo auf strafeV statt auf 0 – seitlich versetzen ohne zu drehen
+      const VSt = VORLAGE.strafe;
+      const sz = VSt.an && !steuerlos ? clamp(ein.strafe || 0, -1, 1) * VSt.max : 0;
+      this.strafeV += clamp(sz - this.strafeV, -VSt.beschl * dt, VSt.beschl * dt);
+      addSk(a, a, _l, -(vq - this.strafeV) * gripB * gripAnteil);
     }
 
     // --- Drehung ---

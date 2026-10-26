@@ -7,7 +7,7 @@
 import { Gleiter } from '../physics/gleiter.js';
 import { GEFUEHL, startWertung } from '../physics/fahrgefuehl.js';
 import { gummiband } from '../ai/gummiband.js';
-import { VORLAGE } from '../config.js';
+import { VORLAGE, SPIEL, BOOST } from '../config.js';
 
 export const START = { reihe: 22, quer: 5.5, vorStrich: 12, countdown: 3 };
 
@@ -30,7 +30,7 @@ export class Rennen {
       return {
         k, name: t.name || `Fahrer ${k + 1}`, farbe: t.farbe, pilot: t.pilot || null, spieler, klasse: g.klasse,
         g, fortschritt: -abstand, sAlt: g.s, runde: 0, rundenStart: 0, rundenZeiten: [], beste: Infinity,
-        ziel: null, platz: k + 1, start: { dauer: 0, tipp: null, alt: false, gewertet: false },
+        ziel: null, platz: k + 1, start: { dauer: 0, tipp: null, alt: false, gewertet: false, staerke: 0, drehzahl: null }, warVor: false,
       };
     });
     this.gleiter = this.alle.map((t) => t.g);
@@ -50,8 +50,17 @@ export class Rennen {
       this.startGas(dt, -Math.max(0, this.countdown), startSpieler || einSpieler);
       if (this.countdown <= 0) {
         this.phase = 'rennen'; this.countdown = 0;
+        // Drehzahl-Band (P1b, analoger Gas-Abzug): bei Grün im Band = voller Start-Boost, darüber Stotterer; Drehzahl halten
+        // ist hier gewollt – die Dauergas-Regel gilt dann nicht
+        const S = VORLAGE.start, d = startSpieler && startSpieler.drehzahl;
+        const sp = this.spieler;
+        if (S.band && sp && !sp.start.gewertet && typeof d === 'number') {
+          sp.start.gewertet = true; sp.start.drehzahl = d;
+          if (d >= S.lo && d <= S.hi) { sp.g.padBoost(); sp.g.statistik.startboost++; sp.g.ereignis('startboost', 1, { band: true }); }
+          else if (d > S.hi) { sp.g.stotter = S.stotterer; sp.g.ereignis('stotterer', 1, { band: true }); }
+        }
         // Überdrehen: zu langes Dauergas vor Grün → Triebwerks-Stotterer
-        for (const t of this.alle) if (startWertung(null, t.start.dauer) === 'stotterer') { t.g.stotter = GEFUEHL.stotterer; t.start.gewertet = true; t.g.ereignis('stotterer', 1); }
+        for (const t of this.alle) if (!t.start.gewertet && startWertung(null, t.start.dauer) === 'stotterer') { t.g.stotter = GEFUEHL.stotterer; t.start.gewertet = true; t.g.ereignis('stotterer', 1); }
       }
       return;
     }
@@ -68,6 +77,22 @@ export class Rennen {
     }
     this.stoesse();
     this.fortschritt();
+    this.revancheSchritt();
+  }
+
+  // KI-Revanche (P1b): eine KI „Mittel“/„Profi“, die der Mensch gerade überholt hat (Abstand < naehe m), bekommt für kurze
+  // Zeit mehr Höchsttempo/Beschleunigung (Gleiter.revanche); nur offline, nur gegen Menschen
+  revancheSchritt() {
+    const R = VORLAGE.revanche, sp = this.spieler;
+    if (!R.an || SPIEL.online || !sp || sp.ziel) return;
+    for (const t of this.alle) {
+      if (t === sp || !t.pilot || t.spieler) continue;
+      const vor = t.fortschritt > sp.fortschritt;
+      if (t.warVor && !vor && sp.fortschritt - t.fortschritt < R.naehe && ['Mittel', 'Profi'].includes(t.pilot.profil.name) && !t.ziel) {
+        t.g.revanche = R.dauer; t.g.ereignis('revanche', 1); t.g.statistik.revanchen = (t.g.statistik.revanchen || 0) + 1;
+      }
+      t.warVor = vor;
+    }
   }
 
   // Start-Boost: Gas-Flanken um Grün mitschreiben (Spieler = Eingabe, KI/Autopilot = Start-Tipp des Piloten)
@@ -85,7 +110,12 @@ export class Rennen {
       const st = t.start;
       if (st.gewertet) continue;
       st.gewertet = true;
-      if (startWertung(st.tipp, 0) === 'boost') { t.g.padBoost(); t.g.statistik.startboost++; t.g.ereignis('startboost', 1); }
+      if (VORLAGE.start.grad) {
+        // abgestuft (P1b): Stärke nach Abstand zum Idealpunkt vor Grün
+        const k = startStaerke(st.tipp);
+        st.staerke = k;
+        if (k > 0) { t.g.padBoost(BOOST.gewinn * k); t.g.statistik.startboost++; t.g.ereignis('startboost', k); }
+      } else if (startWertung(st.tipp, 0) === 'boost') { t.g.padBoost(); t.g.statistik.startboost++; t.g.ereignis('startboost', 1); }
     }
   }
 
@@ -216,6 +246,14 @@ export class Rennen {
     }
     return out;
   }
+}
+
+// Abgestufter Start-Boost (P1b): Tipp-Zeitpunkt relativ zu Grün → Stärke 0…1 (Idealpunkt = 1, Fensterrand = rand)
+export function startStaerke(tipp) {
+  const S = VORLAGE.start;
+  if (tipp == null) return 0;
+  const d = Math.abs(tipp - S.ideal);
+  return d > S.fenster ? 0 : 1 - (1 - S.rand) * d / S.fenster;
 }
 
 // weicher Stoß (p1c): Impuls über `schritte` Physik-Schritte, danach `pause` Schritte kein neuer Impuls für das Paar,

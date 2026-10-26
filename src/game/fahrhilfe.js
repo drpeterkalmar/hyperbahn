@@ -23,7 +23,7 @@ export class Fahrhilfe {
     // gleicher Pilot wie die KI, aber ohne menschliche Fehler – liefert nur die „Wunsch-Lenkung“
     this.pilot = new Pilot(bahn, plan, { ...PROFILE.profi, linie: 0, wackler: 0, rolle: 0 }, 1);
     this.gewicht = 1;
-    this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0 };
+    this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0, strafe: 0 };
   }
 
   setzeStufe(stufe) { this.stufe = stufe; this.cfg = HILFE[stufe] || HILFE.leicht; }
@@ -32,7 +32,7 @@ export class Fahrhilfe {
   anwenden(g, roh, dt, andere = []) {
     const c = this.cfg, e = this.ein;
     e.bremseL = roh.bremseL || 0; e.bremseR = roh.bremseR || 0; e.rolle = roh.rolle || 0;
-    e.nase = roh.nase || 0; e.boost = roh.boost || 0;
+    e.nase = roh.nase || 0; e.boost = roh.boost || 0; e.strafe = roh.strafe || 0;
     // Auto-Gas: nur Leicht; „Gas weg“ (roh.gas < 0 = Bremstaste) bleibt möglich
     e.gas = c.autoGas ? (roh.gas < 0 ? 0 : 1) : clamp(roh.gas || 0, 0, 1);
     // Gewicht des Lenkzugs: deutliche Eingabe → schnell aus, sonst sanft zurück

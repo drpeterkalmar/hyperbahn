@@ -18,12 +18,14 @@ P1b (Vorlagen-Nachträge): Änderungen je Version in `CHANGELOG.md`, Bericht `P1
 | Luftbremse links / rechts | Q / E | Tasten „◀︎ BREMSE“ / „BREMSE ▶︎“ | LB / RB |
 | Barrel-Roll im Sprung (Turbo nach der Landung, kostet 10 % Energie) | Leertaste | Taste „⟲ ROLLE“ | A |
 | Energie-Boost am Boden (ab Runde 2, kostet 12 %) | Leertaste | dieselbe Taste („⚡ BOOST“) | A / X |
+| Seitwärts-Schub | Y / X (QWERTY: Z / X) | – (Luftbremsen) | rechter Stick seitlich |
 | Nase heben / senken (in der Luft) | ↓ / ↑ neu drücken (über den Absprung gehaltenes ↑ bleibt Gas) | – | linker Stick zurück/vor |
 
 **Drift + Mini-Turbo:** In der Kurve die Luftbremse auf der Innenseite halten = Rutschen. Kurz lösen und wieder ziehen
 („pumpen“) hebt die Funkenstufe (cyan → magenta → weiß-gold); loslassen ab Stufe 2 gibt einen Turbo-Schub. Zu lange
-halten (> 1,7 s) lässt die Stufe verfallen. **Start-Boost:** Gas genau auf „Grün“ tippen (Fenster 0,25 s; Touch: Finger auf
-den Bildschirm) – wer schon lange vorher Vollgas gibt, überdreht. **Treffer** (ab Phase 2): beide Luftbremsen ziehen fängt
+halten (> 1,7 s) lässt die Stufe verfallen. **Start-Boost:** Gas kurz **vor** „Grün“ antippen (Touch: Finger auf den
+Bildschirm) – am stärksten 0,25 s vor Grün (100 %, „PERFEKTER START!“), am Rand des Fensters (±0,2 s) noch 30 %; wer schon
+lange vorher Vollgas gibt, überdreht. Mit Gamepad-Gas (RT) gilt das Drehzahl-Band: bei Grün 85–90 % halten. **Treffer** (ab Phase 2): beide Luftbremsen ziehen fängt
 den Gleiter ab; im Dreher 5× schnell Gas tippen = Neustart-Schub. **Gleiter-Klassen:** Leicht (spritzig), Mittel, Schwer
 (oben stark, rammt). Fahrgefühl inspiriert von klassischen Fun-Racern der 90er.
 
@@ -76,7 +78,7 @@ Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle
 `?items=hb|ref` (Phase 2).
 Vorlagen-Mechaniken (P1b, je 0/alt = bisher): `?schwebe=0` (1/h-Feder) · `?bremse=0` / `?rutsch=1.2` (Luftbremse) ·
 `?lenk=alt` (Gegenlenken) · `?wand=0` (Wandschaden) · `?bergung=1.5` (Bergungs-Drohne, s) · `?nicken=0` (harte Landung) ·
-`?schraeg=0` (Schräglage) · `?energie=0` (Energie/Boxengasse aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10` · `?flugboost=0` · `?reserve=4` (s, 0 = bisher).
+`?schraeg=0` (Schräglage) · `?energie=0` (Energie/Boxengasse aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10` · `?flugboost=0` · `?reserve=4` (s, 0 = bisher) · `?startgrad=0` · `?startband=0` · `?revanche=0` · `?strafe=0` · `?gvignette=0`.
 Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Start), `?autopilot=1`, `?nosw`.
 
 ## Tests (ohne Browser)
