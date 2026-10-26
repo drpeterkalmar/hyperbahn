@@ -2,6 +2,11 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## 0.1.17 – 26.10.2026
+- Action-Zeitlupe (Peter: „in der Luft eher störend“): nur noch bei der Zieldurchfahrt (jetzt auf jedem Platz, bisher nur
+  Platz 1); Sprung-Scheitel, Überholen, Beinahe, Ringe, Magnet und der kurze Absprung-Akzent lösen keine Zeitlupe mehr aus.
+  Alt: `?momente=alle` (alle Momente), `?slowmo=1` (Absprung-Akzent).
+
 ## 0.1.16 – 26.10.2026
 - Reset-Knopf ↺ (Peter): von links unten (mitten in der Lenkfläche, beim Lenken ständig getroffen) nach oben rechts unter
   die Pause verlegt.

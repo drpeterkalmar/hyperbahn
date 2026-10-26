@@ -84,13 +84,16 @@ export const WAND = {
 export const ZEIT = {
   schritt: 1 / 240,  // s fester Physik-Schritt (Sim-Uhr, netztauglich, kein Durchrutschen bei 800 km/h)
   maxSchritte: 24,   // je Bild höchstens (Spirale des Todes vermeiden)
-  slowmo: 1,         // Zeitlupe-Akzent beim Absprung (0 = aus, ?slowmo=)
+  slowmo: 0,         // Zeitlupe-Akzent beim Absprung (0 = aus, ?slowmo=1). 26.10.2026 Peter: in der Luft störend → aus (war 1)
   slowmoDauer: 0.3,  // s
   slowmoTempo: 0.35, // Zeitfaktor im Akzent
 };
 
 export const ACTION = {
   stufe: 1,          // 0 Aus, 1 Selten, 2 Oft (?action=)
+  // 26.10.2026 Peter: „Actionslomo in der Luft eher störend, nur im Ziel“ → nur die Zieldurchfahrt (jeder Platz) löst einen
+  // Moment aus; ?momente=alle = alle Arten wie bis 0.1.16 (Sprung-Scheitel, Überholen, Beinahe, Ringe, Magnet, Treffer)
+  nurZiel: 1,
   abkuehl: [Infinity, 14, 8],  // s Mindestabstand je Stufe (≥ 8 s)
   schwelle: [Infinity, 0.62, 0.42], // Spektakel-Wertung, ab der ein Moment ausgelöst werden darf
   liveMax: 1.2,      // s Live-Moment (Speed-Ramp/Zoom-Punch) gesamt
@@ -193,6 +196,7 @@ export function leseRegler(search) {
   V.gvignette.an = q.get('gvignette') === '0' ? 0 : 1;
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
+  if (q.get('momente') === 'alle') ACTION.nurZiel = 0;
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';
   KAMERA.horizontHalten = q.get('horizont') === '1';
   KAMERA.unschaerfe = zahl('blur', KAMERA.unschaerfe);

@@ -23,9 +23,19 @@ test('Zeitlupe nur offline: offline langsamer, online bleibt timeScale 1', () =>
   assert.ok(Math.abs(nOff - 60) <= 1, `offline ${nOff}`);
   assert.ok(Math.abs(nOn - 240) <= 1, `online ${nOn}`);
   assert.equal(on.zeitFaktor, 1);
-  assert.equal(on.akzent(), false, 'Absprung-Akzent online nur als Schein');
-  assert.equal(off.akzent(), true);
-  assert.ok(off.zeitFaktor < 1);
+  const alt = ZEIT.slowmo; ZEIT.slowmo = 1;   // Akzent ist seit 26.10.2026 Standard aus – Mechanik mit ?slowmo=1 prüfen
+  try {
+    assert.equal(on.akzent(), false, 'Absprung-Akzent online nur als Schein');
+    assert.equal(off.akzent(), true);
+    assert.ok(off.zeitFaktor < 1);
+  } finally { ZEIT.slowmo = alt; }
+});
+
+test('26.10.2026 Standard: Momente nur im Ziel, Absprung-Akzent aus (?momente=alle / ?slowmo=1 = bisher)', () => {
+  assert.equal(ZEIT.slowmo, 0);
+  const r = new ActionRegie({ stufe: 2 });
+  assert.equal(r.melde('sprungScheitel', 1, null, {}, 100), null);
+  assert.ok(r.melde('zielSieg', 0.9, null, {}, 200));
 });
 
 test('Absprung-Akzent ?slowmo=0 schaltet ab', () => {
@@ -43,7 +53,7 @@ test('Speed-Ramp 1× → 0,1× → 1,5× → 1×', () => {
 
 test('Regie: Abkühlzeit ≥ 8 s, Stufe Aus = nie, Gefahr blockt, Oft > Selten', () => {
   const strom = (stufe) => {
-    const r = new ActionRegie({ stufe, seed: 3 });
+    const r = new ActionRegie({ stufe, seed: 3, nurZiel: 0 });
     let ausl = 0, letzt = -99, minAbst = Infinity;
     for (let t = 0; t < 600; t += 0.05) {
       r.aktualisiere(t);
@@ -58,14 +68,14 @@ test('Regie: Abkühlzeit ≥ 8 s, Stufe Aus = nie, Gefahr blockt, Oft > Selten',
   assert.equal(aus.ausl, 0);
   assert.ok(selten.ausl > 5 && oft.ausl > selten.ausl, `selten ${selten.ausl} oft ${oft.ausl}`);
   assert.ok(selten.minAbst >= 8 && oft.minAbst >= 8, `Abstand ${selten.minAbst} / ${oft.minAbst}`);
-  const r = new ActionRegie({ stufe: 2 });
+  const r = new ActionRegie({ stufe: 2, nurZiel: 0 });
   assert.equal(r.melde('sprungScheitel', 1, null, { gefahr: true }, 100), null);
   assert.ok(r.melde('sprungScheitel', 1, null, {}, 100));
 });
 
 test('Regie: Dauer-Grenzen, Bullet-Time ≤ 0,05× mit Halbkreis-Orbit, online nur Schein', () => {
   for (const online of [false, true]) {
-    const r = new ActionRegie({ stufe: 2, online, seed: 1 });
+    const r = new ActionRegie({ stufe: 2, online, seed: 1, nurZiel: 0 });
     const p = r.melde('sprungScheitel', 1, { x: 0, y: 0, z: 0 }, {}, 10);
     assert.ok(p && p.typ === 'bullet' && p.dauer <= 1.5);
     let minF = 9, orbitMax = 0, dauer = 0;
@@ -79,7 +89,7 @@ test('Regie: Dauer-Grenzen, Bullet-Time ≤ 0,05× mit Halbkreis-Orbit, online n
     if (online) assert.equal(minF, 1, 'online kein echter Zeitfaktor');
     else assert.ok(minF <= 0.05, `offline ${minF}`);
     // Speed-Ramp ≤ 1,2 s
-    const r2 = new ActionRegie({ stufe: 2, online, seed: 1 });
+    const r2 = new ActionRegie({ stufe: 2, online, seed: 1, nurZiel: 0 });
     const p2 = r2.melde('ueberholen', 1, null, {}, 0);
     assert.ok(p2.dauer <= 1.2);
   }
@@ -96,7 +106,7 @@ test('Blitz-Bremse: höchstens 3 Blitze je Sekunde, Strobos gedämpft; Standard 
 });
 
 test('Ereignis-Bus actionMoment(art, stärke, pos) erreicht die Regie', () => {
-  const r = new ActionRegie({ stufe: 2 });
+  const r = new ActionRegie({ stufe: 2, nurZiel: 0 });
   const ab = r.verbinde(bus);
   r.t = 50;
   actionMoment('explosion', 1, { x: 1, y: 2, z: 3 });   // Phase-2-Art über dieselbe Schnittstelle

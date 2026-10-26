@@ -111,8 +111,8 @@ export function rampTempo(t, dauer = ACTION.liveMax) {
 }
 
 export class ActionRegie {
-  constructor({ stufe = ACTION.stufe, online = false, seed = 7, blitze = new BlitzBremse() } = {}) {
-    this.stufe = stufe; this.online = online; this.r = rng(seed); this.blitze = blitze;
+  constructor({ stufe = ACTION.stufe, online = false, seed = 7, blitze = new BlitzBremse(), nurZiel = ACTION.nurZiel } = {}) {
+    this.stufe = stufe; this.nurZiel = !!nurZiel; this.online = online; this.r = rng(seed); this.blitze = blitze;
     this.letzt = -Infinity;
     this.aktiv = null;
     this.statistik = { gemeldet: 0, ausgeloest: 0, jeArt: {} };
@@ -125,6 +125,7 @@ export class ActionRegie {
   melde(art, staerke, pos, kontext = {}, t = this.t || 0) {
     this.statistik.gemeldet++;
     if (this.stufe <= 0 || this.aktiv) return null;
+    if (this.nurZiel && art !== 'zielSieg') return null;           // 26.10.2026: nur im Ziel (?momente=alle)
     if (kontext.gefahr) return null;                               // Spieler muss sofort reagieren
     if (t - this.letzt < ACTION.abkuehl[this.stufe]) return null;  // Abkühlzeit
     const a = ARTEN[art]; if (!a) return null;

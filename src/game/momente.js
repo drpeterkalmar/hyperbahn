@@ -4,7 +4,7 @@
 //   ueberholen:     Spieler geht knapp (< 3,5 m quer) an einem Gegner vorbei
 //   beinahe:        Beinahe-Kollision (< 2,8 m quer, Gegner längs gleichauf, hohe Relativfahrt)
 //   ringKette:      ≥ 2 Boost-Ringe innerhalb von 3 s
-//   zielSieg:       Zieldurchfahrt auf Platz 1
+//   zielSieg:       Zieldurchfahrt (26.10.2026: jeder Platz – Platz 1 Stärke 1, sonst 0,9; bis 0.1.16 nur Platz 1)
 //   magnetTempo:    Looping-/Magnet-Abschnitt mit ≥ 95 % Höchsttempo × Boost
 // `gefahr` (Spieler muss gleich reagieren): Tempoplan voraus deutlich unter dem aktuellen Tempo (Kurve) oder Wand nah.
 import { actionMoment } from '../core/zeit.js';
@@ -40,7 +40,7 @@ export class MomentWaechter {
         this.ringe = this.ringe.filter((x) => x > t - 3); this.ringe.push(t);
         if (this.ringe.length >= 2) this.melde('ringKette', Math.min(1, 0.6 + 0.2 * this.ringe.length), kopie(g.p), { gefahr: false });
       }
-      if (e.art === 'ziel' && e.platz === 1) this.melde('zielSieg', 1, kopie(g.p), { gefahr: false });
+      if (e.art === 'ziel') this.melde('zielSieg', e.platz === 1 ? 1 : 0.9, kopie(g.p), { gefahr: false });
     }
     // Sprung-Scheitel (Steiggeschwindigkeit Welt-y wechselt von + nach −), nur in der Lücke
     const vy = g.v.y;
