@@ -12,12 +12,12 @@ const SONNE = [0.55, 0.42, -0.72];
 
 export const THEMA = {
   himmel: { oben: [0.0, 0.0, 0.004], horizont: [0.002, 0.004, 0.012], glut: [0, 0, 0], boden: [0.0, 0.0, 0.004], wolken: 0,
-    sterne: 1, sonne: { dir: SONNE, farbe: [4, 3.8, 3.4], staerke: 0.5 }, erde: { dir: [0.15, -1, 0.35], groesse: 0.72 } },
+    sterne: 1, sonne: { dir: SONNE, farbe: [4, 3.8, 3.4], staerke: 0.6, hof: 0.05 }, erde: { dir: [0.15, -1, 0.35], groesse: 0.72 } },
   nebel: { farbe: 0x02030a, dichte: 0.00004 },
   licht: { hemi: [0x6a8ac8, 0x1a2a4a, 0.55], richtung: { farbe: 0xffffff, staerke: 1.6, dir: SONNE } },
   grade: 'orbit',
   dunst: { farbe: 0x1a3a6a, aerial: { density: 0.00002, falloff: 0.001, base: 0, max: 0.1 } },
-  sonneKino: SONNE,
+  sonneKino: null,   // im All keine Linsen-Blendung über das halbe Bild (P2-Bildprüfung)
   umgebung: { grund: 0x03050c, farben: [0xffffff, 0x4a8cff, 0xb18cff, 0x00e5ff, 0xffd400, 0x2a6aff], hell: 2.6, oben: 0x2a4a8a },
   look: {
     fahrbahn: { farbe: 0x0c0e14, rau: 0.3, metall: 0.7, linie: [0.7, 0.55, 1.0], linieStaerke: 1.5 },

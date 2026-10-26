@@ -1,0 +1,24 @@
+Strecke wueste
+Luft-Messung (Standard)
+
+Raketensilo mit Pads  (Absprung 170 m/s)
+  neutral        ok 8.25 s 898 m (Nase 1°)  Nase/Flugbahn -0…18°
+  ↑ dauerhaft    ok 8.25 s 898 m (Nase 1°)  Nase/Flugbahn -0…18°
+  kürzer (best)  ok 4.74 s 593 m (Nase -0°) T=5
+  weiter (best)  ok (hart) 14.16 s 1331 m (Nase 2°) T=1.5
+  ↑ neu 5 s      ok 4.74 s 593 m (Nase -0°)
+  ↓ 5 s          ok (hart) 13.22 s 1278 m (Nase 1°)
+  Spanne kürzer↔weiter 738 m
+
+Raketensilo ohne Pads  (Absprung 95 m/s)
+  neutral        ok 6.22 s 537 m (Nase 0°)  Nase/Flugbahn -0…12°
+  ↑ dauerhaft    ok 6.22 s 537 m (Nase 0°)  Nase/Flugbahn -0…12°
+  kürzer (best)  ok 5.75 s 495 m (Nase 0°) T=5
+  weiter (best)  ok 13.07 s 1087 m (Nase 2°) T=3
+  ↑ neu 5 s      ok 5.75 s 495 m (Nase 0°)
+  ↓ 5 s          ok 11.93 s 994 m (Nase 1°)
+  Spanne kürzer↔weiter 592 m
+
+Summe ↑ dauerhaft: 0 Abstürze, 0 Bauchlandungen; Spanne gesamt 1330 m
+2 Runden, KI-Lenker mittel, ↑ dauerhaft: 2 Luft-Phasen > 0,4 s (längste 8.3 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 176 s
+2 Runden, KI-Lenker profi, ↑ dauerhaft: 3 Luft-Phasen > 0,4 s (längste 8.3 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 173 s

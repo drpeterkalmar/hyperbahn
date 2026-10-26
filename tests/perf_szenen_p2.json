@@ -1,0 +1,205 @@
+{
+ "_kommentar": "P2: je Strecke Start (Pulk), Signatur-Passage und Riesensprung-Anlauf, Standard-Stufe (?look=1), Spieler per Autopilot, fliegender Start per ?at=. Bezug: Megastadt.",
+ "bereit": "window.__app && window.__app.ready && window.__app.frames > 3 && window.__hb",
+ "info": "() => { const i = __hb.renderer.info, g = __hb.gpu; return { calls: i.render.calls, tris: i.render.triangles, tex: i.memory.textures, gpu: g && g.werte.szene && g.werte.szene.length ? g.werte.szene[g.werte.szene.length - 1] + (g.werte.karte && g.werte.karte.length ? g.werte.karte[g.werte.karte.length - 1] : 0) : null }; }",
+ "zusatz": "() => ({ fps: __hb.fps, kino: __hb.kino.describe(), tempo: __hb.spieler ? __hb.spieler.tempo : null, gpuSzene: __hb.gpu && __hb.gpu.mittel('szene'), gpuKarte: __hb.gpu && __hb.gpu.mittel('karte'), gpuKarte95: __hb.gpu && __hb.gpu.p95('karte'), geo: __hb.renderer.info.memory.geometries, prog: __hb.renderer.info.programs.length })",
+ "ladeQuery": "?nosw",
+ "ladeNachlauf": 4,
+ "szenen": [
+  {
+   "name": "megastadt_start",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=megastadt",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 3
+    }
+   ]
+  },
+  {
+   "name": "megastadt_signatur",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=megastadt&at=Gro%C3%9Fer%20Looping",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "megastadt_sprung",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=megastadt&at=H%C3%A4userschlucht%20Anlauf",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "wueste_start",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=wueste",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 3
+    }
+   ]
+  },
+  {
+   "name": "wueste_signatur",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=wueste&at=Startbahn",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "wueste_sprung",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=wueste&at=Silo%20Anlauf",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "riff_start",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=riff",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 3
+    }
+   ]
+  },
+  {
+   "name": "riff_signatur",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=riff&at=Korkenzieher",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "riff_sprung",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=riff&at=Riffgraben%20Anlauf",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "gebirge_start",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=gebirge",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 3
+    }
+   ]
+  },
+  {
+   "name": "gebirge_signatur",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=gebirge&at=Serpentine%201",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "gebirge_sprung",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=gebirge&at=Tal%20Anlauf",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "orbit_start",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=orbit",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 3
+    }
+   ]
+  },
+  {
+   "name": "orbit_signatur",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=orbit&at=Trommel-Anflug",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  },
+  {
+   "name": "orbit_sprung",
+   "query": "?nosw&look=1&autostart=1&autopilot=1&gpu=1&startplatz=6&strecke=orbit&at=Schwerelos%20Anlauf",
+   "schritte": [
+    {
+     "bis": "__hb.rennen && __hb.rennen.phase === 'rennen'",
+     "max": 25
+    },
+    {
+     "warte": 2
+    }
+   ]
+  }
+ ]
+}

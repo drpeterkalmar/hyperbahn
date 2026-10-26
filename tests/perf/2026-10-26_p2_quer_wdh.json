@@ -1,0 +1,323 @@
+{
+ "datum": "2026-10-26T10:59:08",
+ "stand": "p2_quer_wdh",
+ "wurzel": "/Users/wohnzimmer/dev/.wt/hyperbahn-hyperbahn-p2-strecken",
+ "git": "c02a76b",
+ "profil": {
+  "drossel": 4,
+  "dpr": 2.6,
+  "sek": 10,
+  "geraete": "quer",
+  "gpu": "ANGLE/Metal headless",
+  "start": "open",
+  "vsync": false,
+  "zusatz": ""
+ },
+ "szenen": {
+  "megastadt_start": {
+   "quer": {
+    "n": 1853,
+    "p50": 5.4,
+    "p95": 6.8,
+    "p99": 7.6,
+    "fps": 185.1,
+    "calls": 60,
+    "callsMax": 73,
+    "tris": 409476,
+    "tex": 24,
+    "gpu50": 3.506,
+    "gpu95": 5.467,
+    "zusatz": {
+     "fps": 190.82825459816004,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 74.96101355200575,
+     "gpuSzene": 3.6225509,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 71,
+     "prog": 39
+    },
+    "boot_s": 0.6,
+    "fehler": [],
+    "runden_p95": [
+     6.6,
+     6.8,
+     7
+    ]
+   }
+  },
+  "megastadt_sprung": {
+   "quer": {
+    "n": 1656,
+    "p50": 6,
+    "p95": 7.4,
+    "p99": 8.2,
+    "fps": 165.4,
+    "calls": 75,
+    "callsMax": 85,
+    "tris": 420702,
+    "tex": 24,
+    "gpu50": 3.407,
+    "gpu95": 4.162,
+    "zusatz": {
+     "fps": 156.12569611663622,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 81.84077903892505,
+     "gpuSzene": 3.9351328666666676,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 81,
+     "prog": 41
+    },
+    "boot_s": 0.6,
+    "fehler": [],
+    "runden_p95": [
+     7.6,
+     7.4,
+     7.2
+    ]
+   }
+  },
+  "riff_start": {
+   "quer": {
+    "n": 1701,
+    "p50": 5.8,
+    "p95": 7.1,
+    "p99": 7.9,
+    "fps": 169.9,
+    "calls": 71,
+    "callsMax": 80,
+    "tris": 441906,
+    "tex": 23,
+    "gpu50": 3.255,
+    "gpu95": 4.246,
+    "zusatz": {
+     "fps": 154.70605851096002,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "riff",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 97.9664092953087,
+     "gpuSzene": 3.922157766666667,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 76,
+     "prog": 43
+    },
+    "boot_s": 0.7,
+    "fehler": [],
+    "runden_p95": [
+     7.9,
+     7.1,
+     7.1
+    ]
+   }
+  },
+  "gebirge_sprung": {
+   "quer": {
+    "n": 1707,
+    "p50": 5.8,
+    "p95": 7.2,
+    "p99": 8.1,
+    "fps": 170.5,
+    "calls": 70,
+    "callsMax": 83,
+    "tris": 196650,
+    "tex": 23,
+    "gpu50": 3.162,
+    "gpu95": 3.784,
+    "zusatz": {
+     "fps": 171.4000996512209,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "gewitter",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 86.4083753281093,
+     "gpuSzene": 3.1816292833333324,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 80,
+     "prog": 44
+    },
+    "boot_s": 0.7,
+    "fehler": [],
+    "runden_p95": [
+     7.2,
+     7,
+     7.5
+    ]
+   }
+  },
+  "orbit_start": {
+   "quer": {
+    "n": 1752,
+    "p50": 5.6,
+    "p95": 7.1,
+    "p99": 7.9,
+    "fps": 175,
+    "calls": 50,
+    "callsMax": 60,
+    "tris": 125435,
+    "tex": 24,
+    "gpu50": 2.968,
+    "gpu95": 3.751,
+    "zusatz": {
+     "fps": 159.33081058793292,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "orbit",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 99.83508941904597,
+     "gpuSzene": 3.546642650000001,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 76,
+     "prog": 39
+    },
+    "boot_s": 0.4,
+    "fehler": [],
+    "runden_p95": [
+     6.9,
+     7.1,
+     8
+    ]
+   }
+  }
+ }
+}

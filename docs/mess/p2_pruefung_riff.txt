@@ -1,0 +1,13 @@
+Riff-Röhre: 9.13 km, Schließfehler 0.003 m / 0.0000°, kleinster Radius 255 m, Krümmungssprung 0.00015, Querneigung 2.93°/2 m
+  Abstand zu sich selbst (Rest über Halbbreiten + 3 m): Infinity m bei null; steil ohne Magnet: 0
+  Pad-Ketten [2,3,4,3], Ringe 3
+  Sprung Riffgraben: Lücke 400 m, Pads davor 5, Ringe 3, Landezone true (38 m breit), Mindesttempo 71.0 m/s (Tabelle 71)
+KI-Gate 10 Runden: Phase ziel, Abflüge 0, Wand 0.07 je Gleiter-Minute, Median {"profi":85.5,"mittel":90.5,"leicht":94}
+  Vanta    profi  schnell Runden 11 beste 84.1 Abflüge 0 Landungen 11 Wand 0
+  Kyrie    profi  sicher  Runden 10 beste 87.0 Abflüge 0 Landungen 11 Wand 0
+  Oszill   mittel sicher  Runden 10 beste 88.7 Abflüge 0 Landungen 10 Wand 1
+  Nadir    mittel schnell Runden 10 beste 85.9 Abflüge 0 Landungen 10 Wand 2
+  Halcyon  mittel sicher  Runden 10 beste 88.7 Abflüge 0 Landungen 10 Wand 0
+  Ion      leicht sicher  Runden 10 beste 92.6 Abflüge 0 Landungen 10 Wand 0
+  Ferro    leicht sicher  Runden 10 beste 93.8 Abflüge 0 Landungen 10 Wand 0
+  Quell    profi  schnell Runden 11 beste 84.5 Abflüge 0 Landungen 11 Wand 6

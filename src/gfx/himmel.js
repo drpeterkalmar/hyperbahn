@@ -13,7 +13,7 @@ export function baueHimmel(thema = HIMMEL) {
   const u = {
     uZeit: { value: 0 }, uOben: { value: v3(HIMMEL.oben) }, uHorizont: { value: v3(HIMMEL.horizont) }, uGlut: { value: v3(HIMMEL.glut) },
     uWolken: { value: HIMMEL.wolken }, uWolkenFarbe: { value: v3(HIMMEL.wolkenFarbe) }, uWolkenTempo: { value: 0.01 },
-    uSonneDir: { value: new THREE.Vector3(0, 1, 0) }, uSonneFarbe: { value: new THREE.Vector3() }, uSonne: { value: 0 },
+    uSonneDir: { value: new THREE.Vector3(0, 1, 0) }, uSonneFarbe: { value: new THREE.Vector3() }, uSonne: { value: 0 }, uHof: { value: 1 },
     uSterne: { value: 0 }, uWasser: { value: 0 }, uBlitz: { value: 0 }, uBoden: { value: v3(HIMMEL.horizont) },
     uErde: { value: 0 }, uErdeDir: { value: new THREE.Vector3(0, -1, 0) }, uErdeSin: { value: 0.6 },
   };
@@ -21,7 +21,7 @@ export function baueHimmel(thema = HIMMEL) {
     uniforms: u,
     vertexShader: 'varying vec3 vR; void main() { vR = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }',
     fragmentShader: `
-      uniform float uZeit, uWolken, uWolkenTempo, uSonne, uSterne, uWasser, uBlitz, uErde, uErdeSin;
+      uniform float uZeit, uWolken, uWolkenTempo, uSonne, uHof, uSterne, uWasser, uBlitz, uErde, uErdeSin;
       uniform vec3 uOben, uHorizont, uGlut, uWolkenFarbe, uSonneDir, uSonneFarbe, uBoden, uErdeDir;
       float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
       float rau3(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -44,7 +44,7 @@ export function baueHimmel(thema = HIMMEL) {
         c += vec3(0.55, 0.6, 0.9) * uBlitz * 0.35 * smoothstep(-0.1, 0.4, y);
         // Sonne: Scheibe + weicher Hof (HDR → Bloom)
         float cs = max(dot(d, uSonneDir), 0.0);
-        c += uSonneFarbe * uSonne * (pow(cs, 900.0) * 6.0 + pow(cs, 24.0) * 0.35 + pow(cs, 4.0) * 0.08);
+        c += uSonneFarbe * uSonne * (pow(cs, 900.0) * 6.0 + (pow(cs, 24.0) * 0.35 + pow(cs, 4.0) * 0.08) * uHof);
         // Sterne (Weltall): feines Raster, Zufall je Zelle, leicht funkelnd
         if (uSterne > 0.0) {
           vec2 sp = vec2(atan(d.z, d.x) * 180.0, asin(y) * 180.0);
@@ -101,6 +101,7 @@ export function baueHimmel(thema = HIMMEL) {
     const s = t.sonne;
     u.uSonne.value = s ? s.staerke ?? 1 : 0;
     if (s) { u.uSonneDir.value.fromArray(s.dir).normalize(); u.uSonneFarbe.value.fromArray(s.farbe); }
+    u.uHof.value = s && s.hof != null ? s.hof : 1;   // Hof um die Sonne (Dunst); im All fast keiner
     u.uSterne.value = t.sterne || 0; u.uWasser.value = t.wasser || 0;
     u.uErde.value = t.erde ? 1 : 0;
     if (t.erde) { u.uErdeDir.value.fromArray(t.erde.dir).normalize(); u.uErdeSin.value = t.erde.groesse; }

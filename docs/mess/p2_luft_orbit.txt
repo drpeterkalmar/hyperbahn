@@ -1,0 +1,24 @@
+Strecke orbit
+Luft-Messung (Standard)
+
+Schwerelos mit Pads  (Absprung 170 m/s)
+  neutral        ok 7.18 s 847 m (Nase -0°)  Nase/Flugbahn -0…9°
+  ↑ dauerhaft    ok 7.18 s 847 m (Nase -0°)  Nase/Flugbahn -0…9°
+  kürzer (best)  ok (hart) 3.73 s 516 m (Nase 3°) T=1
+  weiter (best)  ok (hart) 13.13 s 1245 m (Nase 1°) T=1
+  ↑ neu 5 s      ok 3.73 s 516 m (Nase 2°)
+  ↓ 5 s          ABSTURZ(weg) 13.65 s 0 m
+  Spanne kürzer↔weiter 729 m
+
+Schwerelos ohne Pads  (Absprung 95 m/s)
+  neutral        ok 7.47 s 676 m (Nase -1°)  Nase/Flugbahn -1…6°
+  ↑ dauerhaft    ok 7.47 s 676 m (Nase -1°)  Nase/Flugbahn -1…6°
+  kürzer (best)  ok 5.59 s 516 m (Nase 2°) T=1
+  weiter (best)  ok (hart) 15.52 s 1266 m (Nase 2°) T=1.5
+  ↑ neu 5 s      ok (hart) 5.59 s 516 m (Nase 3°)
+  ↓ 5 s          ABSTURZ(weg) 7.58 s 0 m
+  Spanne kürzer↔weiter 750 m
+
+Summe ↑ dauerhaft: 0 Abstürze, 0 Bauchlandungen; Spanne gesamt 1479 m
+2 Runden, KI-Lenker mittel, ↑ dauerhaft: 4 Luft-Phasen > 0,4 s (längste 7.2 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 184 s
+2 Runden, KI-Lenker profi, ↑ dauerhaft: 4 Luft-Phasen > 0,4 s (längste 7.1 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 182 s

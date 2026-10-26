@@ -198,7 +198,7 @@ export class Hud {
       <ul><li>„Racing spaceship“ – Nikcore</li><li>„Blue Demon (Space Racer)“ – Mattdude</li>
       <li>„Racing ship“ – pedrolopezgarcia</li><li>„The Arrow“ – totidoki</li></ul>
       <p>Musik: „Cyber Runner“ – ansimuz (OpenGameArt, CC0).</p>
-      <p>three.js (MIT). Strecke, Stadt, Physik, KI und Klänge: eigene Arbeit.</p>
+      <p>three.js (MIT). Strecken, Kulissen (Stadt, Wüste, Riff, Gebirge, Orbit – alles prozedural), Physik, KI und Klänge: eigene Arbeit.</p>
       <button class="zu">Schließen</button>`;
     c.querySelector('.zu').addEventListener('click', () => c.remove());
     this.menue.appendChild(c);

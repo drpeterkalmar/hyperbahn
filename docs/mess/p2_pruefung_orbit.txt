@@ -1,0 +1,13 @@
+Orbital-Ring: 9.69 km, Schließfehler 0.003 m / 0.0000°, kleinster Radius 99 m, Krümmungssprung 0.00027, Querneigung 1.93°/2 m
+  Abstand zu sich selbst (Rest über Halbbreiten + 3 m): 25.4 m bei [2048,3088,54.4]; steil ohne Magnet: 0
+  Pad-Ketten [2,2,4,3,3], Ringe 6
+  Sprung Schwerelos: Lücke 520 m, Pads davor 4, Ringe 6, Landezone true (38 m breit), Mindesttempo 41.5 m/s (Tabelle 39)
+KI-Gate 10 Runden: Phase ziel, Abflüge 0, Wand 0.15 je Gleiter-Minute, Median {"profi":91,"mittel":93.1,"leicht":97}
+  Vanta    profi  sicher  Runden 10 beste 89.8 Abflüge 0 Landungen 21 Wand 3
+  Kyrie    profi  sicher  Runden 10 beste 89.8 Abflüge 0 Landungen 21 Wand 0
+  Oszill   mittel sicher  Runden 10 beste 91.3 Abflüge 0 Landungen 20 Wand 0
+  Nadir    mittel sicher  Runden 10 beste 91.9 Abflüge 0 Landungen 20 Wand 2
+  Halcyon  mittel sicher  Runden 10 beste 91.8 Abflüge 0 Landungen 20 Wand 3
+  Ion      leicht sicher  Runden 10 beste 95.1 Abflüge 0 Landungen 20 Wand 2
+  Ferro    leicht sicher  Runden 10 beste 95.6 Abflüge 0 Landungen 20 Wand 2
+  Quell    profi  sicher  Runden 10 beste 89.9 Abflüge 0 Landungen 21 Wand 8

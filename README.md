@@ -8,6 +8,7 @@ ES-Module, PWA über GitHub Pages. Plan: Phasen 1–4 als Queue-Jobs (`~/.hermes
 **Stand:** Phase 1 fertig (Schwebe-Physik mit Magnethaftung, Strecke „Neon-Megastadt“, Neon-Noir-Look, 7 KI-Gegner,
 3D-Minikarte, Musik) – Bericht: `PHASE1_BERICHT.md`. Nächste Phasen: Items/Waffen, Strecken-Generator + Cups, Online.
 P1b (Vorlagen-Nachträge): Änderungen je Version in `CHANGELOG.md`, Bericht `P1B_VORLAGEN_BERICHT.md`.
+**P2 (Strecken):** 4 neue Strecken, Streckenwahl mit Vorschau, Zufällig, Cup – Bericht `P2_STRECKEN_BERICHT.md`.
 
 ## Steuerung
 | Aktion | Tastatur | Touch | Gamepad |
@@ -100,14 +101,17 @@ Schwebe-Physik (Magnethaftung kopfüber, Looping bei 25 m/s und 800 km/h, Boost,
 Werkzeuge: `node tools/gefuehl_mess.mjs` (14 Fahrgefühl-Messgrößen als Tabelle), `node tools/luft_mess.mjs [?nase=alt]`
 (Spieler-Profile über die Riesensprünge), `node tools/rundenzeit_mess.mjs` (Rundenzeit je Fassung → Rundenzahl), `node tools/vorlagen_mess.mjs [regler]`
 (Messgrößen des Vorlagen-Datenblatts), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
-`node tools/strecke_schliessen.mjs` (Runde schließen nach Änderungen an Strecke 1).
+`node tools/strecke_schliessen.mjs [kurz|lang|<id>]` (Runde schließen nach Änderungen an einer Strecke),
+`node tools/strecke_pruefen.mjs <id> [runden]` (P2: Geometrie, Mindesttempo, KI-Gate, Wandtreffer je Strecke),
+`node tools/ki_rennen.mjs 10 <id>`, `node tools/luft_mess.mjs <id>`, `node tools/rundenzeit_mess.mjs 6 alle`.
 
 ## Tests im Browser (ein Browser, stumm)
-`python3 tests/smoke.py` (Laden, Rennen, 0 Fehler) · `python3 tests/etappe0.py` (Rauchtest hoch + quer, Bildfolge
+`python3 tests/smoke.py` (Laden, Rennen, 0 Fehler) · `python3 tests/p2_strecken.py [--hoch] [--nur wueste,riff]`
+(Menü + Bildfolgen je Strecke) · `python3 tests/p2_cup.py` (Cup-Ablauf) · `python3 tests/etappe0.py` (Rauchtest hoch + quer, Bildfolge
 Riesensprung mit gehaltenem ↑, neu und `?nase=alt`) · `python3 tests/vorlagen_bilder.py` (Rauchtest + Bildfolgen der
 P1b-Mechaniken) · `python3 tests/p1_shots.py [--nur looping,sprung1]` (Abnahme-Bilder
 hoch + quer aller Passagen, Bullet-Time-Bildfolge, Collagen) · `python3 tests/test_eingabe_zeitlupe.py` (Lenken wirkt in der
-Bullet-Time) · `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand <name>` (Mess-Gate Mittelklasse-Android).
+Bullet-Time) · `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand <name>` (Mess-Gate Mittelklasse-Android; P2: `--szenen tests/perf_szenen_p2.json`).
 Konsole: `__hb.galerie()` zeigt alle Gleiter nebeneinander, `__hb.moment('sprungScheitel')` erzwingt eine Bullet-Time.
 `node tools/action_mess.mjs` misst die Häufigkeit der Action-Momente je Rennen.
 

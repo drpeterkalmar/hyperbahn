@@ -1,0 +1,14 @@
+Gewitter-Pass: 8.83 km, Schließfehler 0.006 m / 0.0000°, kleinster Radius 121 m, Krümmungssprung 0.00038, Querneigung 1.17°/2 m
+  Abstand zu sich selbst (Rest über Halbbreiten + 3 m): Infinity m bei null; steil ohne Magnet: 0
+  Pad-Ketten [2,3,2,4,3], Ringe 5
+  Sprung Scharte: Lücke 220 m, Pads davor 0, Ringe 2, Landezone true (34 m breit), Mindesttempo 54.9 m/s (Tabelle 55)
+  Sprung Talsprung: Lücke 400 m, Pads davor 4, Ringe 3, Landezone true (38 m breit), Mindesttempo 70.3 m/s (Tabelle 70)
+KI-Gate 10 Runden: Phase ziel, Abflüge 0, Wand 0.16 je Gleiter-Minute, Median {"profi":88.1,"mittel":91.6,"leicht":96.8}
+  Vanta    profi  schnell Runden 10 beste 87.4 Abflüge 0 Landungen 22 Wand 3
+  Kyrie    profi  sicher  Runden 10 beste 86.9 Abflüge 0 Landungen 22 Wand 5
+  Oszill   mittel sicher  Runden 10 beste 89.8 Abflüge 0 Landungen 21 Wand 0
+  Nadir    mittel schnell Runden 10 beste 89.9 Abflüge 0 Landungen 21 Wand 2
+  Halcyon  mittel sicher  Runden 10 beste 89.3 Abflüge 0 Landungen 21 Wand 2
+  Ion      leicht sicher  Runden 10 beste 94.9 Abflüge 0 Landungen 20 Wand 2
+  Ferro    leicht sicher  Runden 10 beste 95.9 Abflüge 0 Landungen 20 Wand 0
+  Quell    profi  schnell Runden 10 beste 86.9 Abflüge 0 Landungen 22 Wand 7

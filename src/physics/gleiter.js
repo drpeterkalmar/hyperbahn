@@ -344,10 +344,12 @@ export class Gleiter {
       // Abflug-Erkennung: unter der Fahrbahn, zu tief in der Schlucht, zu weit weg oder zu lange in der Luft
       const unter = aufBahn && q.h < -4;
       const schlucht = (q.flags & F_LUECKE) && q.h < -14;
-      const weg = Math.abs(q.u) > q.hw + 45 || q.h > ((q.flags & (F_LUECKE | F_LANDEZONE)) ? 160 : 70);
+      // P2: nach einem Absprung (langer Flug über Lücke/Landezone hinaus) großzügiger – erst über der Bahn wieder zählt es
+      const flug = this.absprung && this.luftZeit > 1;
+      const weg = Math.abs(q.u) > q.hw + (flug ? 90 : 45) || q.h > ((q.flags & (F_LUECKE | F_LANDEZONE)) || flug ? 160 : 70);
       // P2: über eine offene Kante (ohne Bande) gefahren und schon unter die Fahrfläche gesackt
       const kante = !aufBahn && (q.flags & (q.u > 0 ? F_OFFEN_L : F_OFFEN_R)) && q.h < -5;
-      if (unter || schlucht || weg || kante || this.luftZeit > 12) return this.abgestuerzt(unter ? 'unter' : schlucht ? 'schlucht' : weg ? 'weg' : kante ? 'kante' : 'luft');
+      if (unter || schlucht || weg || kante || this.luftZeit > (flug ? 16 : 12)) return this.abgestuerzt(unter ? 'unter' : schlucht ? 'schlucht' : weg ? 'weg' : kante ? 'kante' : 'luft');
     }
     this.boden = amBoden;
   }
@@ -391,7 +393,8 @@ export class Gleiter {
     // Auftrieb: Nase über der Flugbahn → flacher und weiter
     const t = this.tempo || 1;
     const anstell = clamp(-dot(this.v, this.oben) / t, -0.4, 0.4);   // Bahn unter der Nase = positiver Anstellwinkel
-    if (anstell > 0) addSk(this.v, this.v, this.oben, GLEITER.luftAuftrieb * t * anstell * dt * (1 - this.landeW));
+    // P2: in schwacher Schwerkraft (q.schwere < 1) auch weniger Auftrieb – sonst segelt man mit hochgezogener Nase endlos
+    if (anstell > 0) addSk(this.v, this.v, this.oben, GLEITER.luftAuftrieb * t * anstell * dt * (1 - this.landeW) * q.schwere);
     // Barrel-Roll
     // nur auf neuen Tastendruck (Flanke), sonst rollte gehaltene Taste endlos
     const neu = ein.rolle && !this.rolleTaste;

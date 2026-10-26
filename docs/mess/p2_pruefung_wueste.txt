@@ -1,0 +1,13 @@
+Wüsten-Raumhafen: 9.51 km, Schließfehler 0.005 m / 0.0000°, kleinster Radius 318 m, Krümmungssprung 0.00011, Querneigung 0.49°/2 m
+  Abstand zu sich selbst (Rest über Halbbreiten + 3 m): Infinity m bei null; steil ohne Magnet: 0
+  Pad-Ketten [2,3,4,3,3], Ringe 4
+  Sprung Raketensilo: Lücke 500 m, Pads davor 4, Ringe 4, Landezone true (38 m breit), Mindesttempo 63.4 m/s (Tabelle 63)
+KI-Gate 10 Runden: Phase ziel, Abflüge 0, Wand 0.09 je Gleiter-Minute, Median {"profi":85.8,"mittel":87.6,"leicht":90}
+  Vanta    profi  sicher  Runden 10 beste 84.7 Abflüge 0 Landungen 17 Wand 0
+  Kyrie    profi  sicher  Runden 10 beste 84.8 Abflüge 0 Landungen 16 Wand 3
+  Oszill   mittel sicher  Runden 10 beste 86.7 Abflüge 0 Landungen 14 Wand 0
+  Nadir    mittel sicher  Runden 10 beste 85.4 Abflüge 0 Landungen 12 Wand 0
+  Halcyon  mittel sicher  Runden 10 beste 86.0 Abflüge 0 Landungen 14 Wand 1
+  Ion      leicht sicher  Runden 10 beste 88.7 Abflüge 0 Landungen 13 Wand 4
+  Ferro    leicht sicher  Runden 10 beste 88.0 Abflüge 0 Landungen 12 Wand 2
+  Quell    profi  sicher  Runden 10 beste 84.9 Abflüge 0 Landungen 14 Wand 1

@@ -4,7 +4,7 @@
 |---|---|---|
 | three.js (`lib/three.*.min.js`, `lib/addons/…`) | three.js r18x, kopiert aus dem Stuntbahn-Repo | MIT (`lib/THREE_LICENSE.txt`) |
 | Kino-Look + TAAU (`src/gfx/kinolook.js`, `src/gfx/kern/taau*.js`), Mess-Gate (`tests/perf_gate.py`, `tests/util.py`, `tests/collage.py`) | Stuntbahn (Peters eigener Code) | eigener Code |
-| Strecke, Physik, KI, Zeit-Logik, HUD, Minikarte, Stadt, Himmel, Klänge (Synthese), Leucht-Teile der Gleiter | eigene Arbeit | eigener Code |
+| Strecken (Megastadt, Wüsten-Raumhafen, Riff-Röhre, Gewitter-Pass, Orbital-Ring), Physik, KI, Zeit-Logik, HUD, Minikarte, Kulissen (Stadt, Dünen, Riff mit Korallen/Fischen/Seetang, Gebirge mit Gewitter, Raumstation und Erde – alles prozedural aus Grundkörpern und Shadern, keine Fremd-Assets), Himmel, Klänge (Synthese), Leucht-Teile der Gleiter | eigene Arbeit | eigener Code |
 | Icons (`icons/`) | prozedural erzeugt (`tools/make_icons.py`) | eigene Arbeit |
 
 ## Gleiter-Modelle (`assets/gleiter/*.glb`)

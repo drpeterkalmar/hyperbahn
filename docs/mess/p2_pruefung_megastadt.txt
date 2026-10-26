@@ -1,0 +1,14 @@
+Neon-Megastadt: 13.30 km, Schließfehler 0.007 m / 0.0000°, kleinster Radius 99 m, Krümmungssprung 0.00027, Querneigung 2.93°/2 m
+  Abstand zu sich selbst (Rest über Halbbreiten + 3 m): 31.4 m bei [1492,2108,58.4]; steil ohne Magnet: 0
+  Pad-Ketten [2,3,4,4,3], Ringe 5
+  Sprung Häuserschlucht: Lücke 400 m, Pads davor 4, Ringe 2, Landezone true (38 m breit), Mindesttempo 71.9 m/s (Tabelle 73)
+  Sprung Neon-Schlucht: Lücke 410 m, Pads davor 4, Ringe 3, Landezone true (38 m breit), Mindesttempo 68.2 m/s (Tabelle 69)
+KI-Gate 10 Runden: Phase ziel, Abflüge 0, Wand 0.36 je Gleiter-Minute, Median {"profi":131.9,"mittel":135.5,"leicht":141.2}
+  Vanta    profi  sicher  Runden 10 beste 131.7 Abflüge 0 Landungen 21 Wand 1
+  Kyrie    profi  sicher  Runden 10 beste 131.3 Abflüge 0 Landungen 21 Wand 7
+  Oszill   mittel sicher  Runden 10 beste 133.3 Abflüge 0 Landungen 21 Wand 7
+  Nadir    mittel sicher  Runden 10 beste 133.5 Abflüge 0 Landungen 21 Wand 6
+  Halcyon  mittel sicher  Runden 10 beste 133.4 Abflüge 0 Landungen 21 Wand 5
+  Ion      leicht sicher  Runden 10 beste 138.8 Abflüge 0 Landungen 20 Wand 16
+  Ferro    leicht sicher  Runden 10 beste 138.8 Abflüge 0 Landungen 20 Wand 16
+  Quell    profi  sicher  Runden 10 beste 131.3 Abflüge 0 Landungen 21 Wand 10

@@ -2,6 +2,13 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P2 Abschluss)
+- Bericht `P2_STRECKEN_BERICHT.md` (Messtabelle je Strecke, Mess-Gate, Bild-Prüfung, Handy-Testhinweise), Messprotokolle
+  `docs/mess/p2_*`, Bildfolgen `docs/bilder/p2_*`.
+- Orbit: kein Sonnen-Schleier mehr über dem halben Bild (kein Hof/keine Linsenblendung im All).
+- Lange Flüge: nach einem Absprung großzügigere Abflug-Grenze (wer die Nase lange hochzieht, landet in Wüste/Gebirge jetzt
+  statt geborgen zu werden); in schwacher Schwerkraft wirkt auch der Auftrieb schwächer.
+
 ## 0.1.13 – 26.10.2026 (P2: Orbital-Ring + Cup)
 - **Neue Strecke „Orbital-Ring“** (Show): Raumstation über der Erde – Sterne, die Erde groß unter der Bahn (Kontinente,
   Wolken, Tag/Nacht, Stadtlichter, Atmosphären-Saum), Stationsring mit Solarflügeln, gläserne Trommel. **Möbius-Band**
