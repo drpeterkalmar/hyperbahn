@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P1b Etappe A: Fahrphysik nach dem Vorlagen-Datenblatt)
+## 0.1.5 – 26.10.2026 (P1b Etappe A: Fahrphysik nach dem Vorlagen-Datenblatt)
 - **Schwebe-Feder nach dem 1/h-Gesetz** (`?schwebe=0` = bisher): weich oben, sehr hart nah am Boden, Ruhelage 1,20 m;
   Landung aus 10 m federt 0,36 m ein und ist nach 0,36 s ruhig (vorher bretthart 0,03 m). Drift-Hüpfer nur aus der Ruhelage.
 - **Luftbremse** (`?bremse=0`, `?rutsch=1.2`): Wirkung baut sich in 0,2 s auf; Dauer-Halten ohne Drift senkt das Tempo
