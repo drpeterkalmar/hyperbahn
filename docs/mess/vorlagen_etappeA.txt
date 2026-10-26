@@ -1,0 +1,22 @@
+Vorlagen-Messgrößen (Standard)
+#1 Schwebe-Ruhelage & Federweg nach Landung aus 10 m
+   Ziel: 1,15–1,25 m; Einfedern ≤ 0,4 m, ruhig ≤ 0,5 s, kein Durchschlag
+   gemessen: Ruhe 1.20 m · Einfedern 0.36 m (tiefste 0.84 m) · ruhig nach 0.36 s · Aufsetzer 0
+#2 Kurvenradius bei Top mit/ohne eine Luftbremse
+   Ziel: mit ≤ 0,6 × ohne
+   gemessen: ohne 133 m (83 m/s) · mit 42 m (65 m/s) · 0.32 ×
+#3 Tempo nach 3 s Dauer-Luftbremse (Top)
+   Ziel: eine 78–82 %, beide ≈ 45 %
+   gemessen: eine 80 % · beide 46 %
+#4 Gleitwinkel beim Bremsen-Drift
+   Ziel: max. 15–25°, zurück ≤ 1,2 s
+   gemessen: max. 24.7° · zurück nach 0.73 s
+#8 Wandtreffer 30° bei Top
+   Ziel: −15…−25 % Tempo, −4…−8 % Energie
+   gemessen: Tempo -19 % · Energie -6.1 %
+#9 Sprung verfehlt (Häuserschlucht)
+   Ziel: Zeitverlust 2,0–3,0 s, nie vor den Sprung zurück
+   gemessen: Zeitverlust 2.21 s · Abflüge 1 · vor den Sprung zurück: nein
+#L Lenkwechsel bei 60 m/s (Gegenlenken)
+   Ziel: Gegenlenken ≈ doppelt so schnell wie Anlenken (Vorlage), Gierrate ≤ 100°/s
+   gemessen: volle Gierrate 42°/s · Anlenken bis 90 % 0.22 s · Gegenlenken: Richtungswechsel nach 0.11 s, 90 % nach 0.33 s

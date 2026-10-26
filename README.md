@@ -30,6 +30,10 @@ den Gleiter ab; im Dreher 5× schnell Gas tippen = Neustart-Schub. **Gleiter-Kla
 drückt in der Luft neu: ↓ = Nase hoch (weiter), ↑ = Nase runter (kürzer). Eine Hülle verhindert Sturzflug und Absturz in
 die Schlucht, kurz vor dem Aufsetzen richtet die Landehilfe die Nase zur Bahn aus.
 
+**Abflug:** Eine Bergungs-Drohne holt den Gleiter in 1,5 s zurück; wer einen Sprung nicht schafft, wird hinter der Lücke
+abgesetzt. Wandtreffer bremsen je nach Winkel (−10…−30 %), der Gleiter gleitet an der Wand ab. Luftbremse geradeaus
+gehalten bremst kräftig (eine ≈ 80 %, beide ≈ 45 % Tempo).
+
 **Strecke:** Neon-Megastadt in der Kurzfassung (2 Runden, ein Rennen ≈ 4:30–4:50) oder lang (1 Runde) – Menü „Strecke“.
 Bestzeiten werden je Fassung und Rundenzahl gemerkt.
 
@@ -60,6 +64,9 @@ Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle
 `?drift=1` (Mini-Turbo-Schub) · `?mtzeit=0.3` · `?hupf=0` · `?startfenster=0.25` · `?rand=0.3` (Störfeld am Rand) ·
 `?landebonus=0.1` · `?treffer=1` · `?neustart=0` · `?stoss=0.85` · `?gummiband=0|1|2` · `?fov=62` · `?fovboost=12` ·
 `?items=hb|ref` (Phase 2).
+Vorlagen-Mechaniken (P1b, je 0/alt = bisher): `?schwebe=0` (1/h-Feder) · `?bremse=0` / `?rutsch=1.2` (Luftbremse) ·
+`?lenk=alt` (Gegenlenken) · `?wand=0` (Wandschaden) · `?bergung=1.5` (Bergungs-Drohne, s) · `?nicken=0` (harte Landung) ·
+`?schraeg=0` (Schräglage).
 Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Start), `?autopilot=1`, `?nosw`.
 
 ## Tests (ohne Browser)
@@ -67,12 +74,14 @@ Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Star
 Schwebe-Physik (Magnethaftung kopfüber, Looping bei 25 m/s und 800 km/h, Boost, Sprünge, Wand), KI-Gate (8 Gleiter ×
 10 Runden ohne Abflug), Zeit-Logik/Action-Momente, Fahrhilfe, Kamera, Geometrie, Modul-Rauchtest.
 Werkzeuge: `node tools/gefuehl_mess.mjs` (14 Fahrgefühl-Messgrößen als Tabelle), `node tools/luft_mess.mjs [?nase=alt]`
-(Spieler-Profile über die Riesensprünge), `node tools/rundenzeit_mess.mjs` (Rundenzeit je Fassung → Rundenzahl), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
+(Spieler-Profile über die Riesensprünge), `node tools/rundenzeit_mess.mjs` (Rundenzeit je Fassung → Rundenzahl), `node tools/vorlagen_mess.mjs [regler]`
+(Messgrößen des Vorlagen-Datenblatts), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
 `node tools/strecke_schliessen.mjs` (Runde schließen nach Änderungen an Strecke 1).
 
 ## Tests im Browser (ein Browser, stumm)
 `python3 tests/smoke.py` (Laden, Rennen, 0 Fehler) · `python3 tests/etappe0.py` (Rauchtest hoch + quer, Bildfolge
-Riesensprung mit gehaltenem ↑, neu und `?nase=alt`) · `python3 tests/p1_shots.py [--nur looping,sprung1]` (Abnahme-Bilder
+Riesensprung mit gehaltenem ↑, neu und `?nase=alt`) · `python3 tests/vorlagen_bilder.py` (Rauchtest + Bildfolgen der
+P1b-Mechaniken) · `python3 tests/p1_shots.py [--nur looping,sprung1]` (Abnahme-Bilder
 hoch + quer aller Passagen, Bullet-Time-Bildfolge, Collagen) · `python3 tests/test_eingabe_zeitlupe.py` (Lenken wirkt in der
 Bullet-Time) · `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand <name>` (Mess-Gate Mittelklasse-Android).
 Konsole: `__hb.galerie()` zeigt alle Gleiter nebeneinander, `__hb.moment('sprungScheitel')` erzwingt eine Bullet-Time.

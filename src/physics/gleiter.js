@@ -10,7 +10,7 @@
 // Eingabe je Schritt: { gas 0…1, lenk −1…1 (+ links), bremseL 0…1, bremseR 0…1 (Luftbremsen), nase −1…1 (+ hoch, nur in
 // der Luft), rolle −1|0|1 (Barrel-Roll im Sprung = Turbo) }.
 // Ereignisse (für Effekte/Ton/HUD/Action-Momente) landen in `ereignisse` und werden vom Spiel abgeholt.
-import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE } from '../config.js';
+import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE, VORLAGE } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
 import { neueAbfrage, padBei, F_MAGNET, F_LUECKE, F_LANDEZONE } from '../track/bahn.js';
 import { clamp, smoothstep } from '../core/util.js';
@@ -21,7 +21,8 @@ import { GEFUEHL, klasse, bandBeschl, lenkFaktor, kurvenFaktor, Drift, miniTurbo
 // Schwebe-Punkte im Körper-Rahmen (vor, links, oben)
 const PUNKTE = [[1.6, 1.0, -0.2], [1.6, -1.0, -0.2], [-1.6, 1.0, -0.2], [-1.6, -1.0, -0.2]];
 const TRAEGHEIT = { vor: 0.6, links: 1.6, oben: 1.8 };   // je Masse (Rolle, Nicken, Gieren)
-const ABSTURZ_ZEIT = 1.6;   // s bis zum Respawn
+const ABSTURZ_ZEIT = 1.6;   // s bis zum Respawn (bis 0.1.4; jetzt VORLAGE.bergung.zeit, ?bergung=0 = alt)
+const bergungZeit = () => (VORLAGE.bergung.zeit > 0 ? VORLAGE.bergung.zeit : ABSTURZ_ZEIT);
 export const RESET_SPERRE = 1.0;   // s Doppelklick-Schutz des Reset-Knopfs
 
 export class Gleiter {
@@ -42,7 +43,7 @@ export class Gleiter {
     this.hint = 0;
     this.ereignisse = [];
     this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
-      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0 };
+      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0, hartLandungen: 0 };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 
@@ -56,6 +57,7 @@ export class Gleiter {
     orthoRahmen(this.vor, this.links, this.oben);
     setze(this.v, q.T.x * v0, q.T.y * v0, q.T.z * v0);
     setze(this.w, 0, 0, 0);
+    this.blW = 0; this.brW = 0;   // Luftbremsen-Wirkung (baut sich in VORLAGE.bremse.aufbau s auf)
     this.hint = q.i;
     this.s = q.s; this.u = q.u; this.h = q.h;
     this.boden = true; this.kontakte = 4;
@@ -66,7 +68,7 @@ export class Gleiter {
     this.rolle = null;
     this.zustand = 'fahrt'; this.absturzZeit = 0;
     this.sicherS = q.s; this.sicherZeit = 0;
-    this.wandKontakt = 0;
+    this.wandKontakt = 0; this.wandZeit = -Infinity;
     this.zeit = this.zeit || 0;
     this.tempo = v0;
     this.ringeLetzt = q.s;
@@ -83,7 +85,7 @@ export class Gleiter {
     this.zeit += dt;
     if (this.zustand === 'absturz') {
       this.absturzZeit += dt;
-      if (this.absturzZeit >= ABSTURZ_ZEIT) this.respawn();
+      if (this.absturzZeit >= bergungZeit()) this.respawn();
       return;
     }
     const b = this.bahn, q = b.abfrage(this.p, this.hint, this.q);
@@ -97,6 +99,10 @@ export class Gleiter {
     const a = _a; setze(a, 0, 0, 0);
     const tau = _tau; setze(tau, 0, 0, 0);
     const k = GLEITER.omega * GLEITER.omega / 4, c = 2 * GLEITER.zeta * GLEITER.omega / 4;
+    // 1/h-Feder (Vorlage): je Punkt kS·(soll/h − 1); kS so, dass die Ruhelage unter 1 g bei GLEITER.hoehe liegt
+    const VS = VORLAGE.schwebe, hartUnter = VS.an ? VS.min : GLEITER.minHoehe;
+    const kS = (G / 4) / (VS.soll / GLEITER.hoehe - 1);
+    const cS = 2 * VS.zeta * Math.sqrt(4 * kS * VS.soll / (GLEITER.hoehe * GLEITER.hoehe)) / 4;
     let kontakte = 0, minH = Infinity;
     for (let n = 0; n < 4; n++) {
       const o = PUNKTE[n];
@@ -116,15 +122,17 @@ export class Gleiter {
       const vn = dot(this.v, qi.Us) + dot(_vp, qi.Us);
       const x = GLEITER.hoehe - qi.h;
       // progressive Feder (+ x³-Anteil): hält auch 10–15 g im Looping ohne Aufsetzen
-      let f = k * x * (1 + 2 * Math.max(0, x / GLEITER.hoehe) ** 2) - c * vn;
+      // Dämpfung der 1/h-Feder erst im Federweg (über `soll` kein Luftkissen), weich eingeblendet bis zur Ruhelage
+      let f = VS.an ? kS * (VS.soll / Math.max(qi.h, VS.min) - 1) - cS * vn * clamp((VS.soll - qi.h) / (VS.soll - GLEITER.hoehe), 0, 1)
+        : k * x * (1 + 2 * Math.max(0, x / GLEITER.hoehe) ** 2) - c * vn;
       if (f < 0) f = 0;
       addSk(a, a, qi.Us, f);
       setze(_f, qi.Us.x * f, qi.Us.y * f, qi.Us.z * f);
       kreuz(_t, r, _f);
       addSk(tau, tau, _t, 1);
       // harter Aufsetzer: Lage korrigieren, Eindringgeschwindigkeit nehmen
-      if (qi.h < GLEITER.minHoehe) {
-        addSk(this.p, this.p, qi.Us, (GLEITER.minHoehe - qi.h) * 0.25);
+      if (qi.h < hartUnter) {
+        addSk(this.p, this.p, qi.Us, (hartUnter - qi.h) * 0.25);
         if (vn < 0) addSk(this.v, this.v, qi.Us, -vn * 0.25);
         this.reibung(dt, 2.5);
         if (vn < -6) this.ereignis('aufsetzer', clamp(-vn / 25, 0, 1));
@@ -171,7 +179,16 @@ export class Gleiter {
     }
     if (steuerlos) { gas = 0; lenk = 0; bl = 0; br = 0; }
     const dr = this.drift.schritt(dt, { boden: amBoden, x: tempo / vmaxK, lenk, bremseL: bl, bremseR: br, magnet: this.magnet > 0.5 });
-    if (dr.hupf) addSk(this.v, this.v, q.Us, Math.sqrt(2 * G * GEFUEHL.hupfHoehe));
+    // Luftbremsen-Wirkung (Vorlage): baut sich in VB.aufbau s auf und ab; im Drift wirkt sie sofort (Pump-Rhythmus des
+    // Mini-Turbos, Drift-Werte aus fahrgefuehl.js bleiben)
+    const VB = VORLAGE.bremse;
+    if (VB.an && !dr.aktiv) {
+      const r = dt / VB.aufbau;
+      this.blW += clamp(bl - this.blW, -r, r); this.brW += clamp(br - this.brW, -r, r);
+    } else { this.blW = bl; this.brW = br; }
+    // Hüpfer beim Drift-Einstieg – mit 1/h-Feder nur aus der Ruhelage (sonst stapeln sich Hüpfer bei schnellem Neu-Ziehen,
+    // weil oberhalb `soll` keine Feder mehr bremst)
+    if (dr.hupf && (!VS.an || (minH < VS.soll + 0.1 && dot(this.v, q.Us) < 0.5))) addSk(this.v, this.v, q.Us, Math.sqrt(2 * G * GEFUEHL.hupfHoehe));
     if (dr.neueStufe) { this.statistik.driftStufen[dr.neueStufe]++; this.ereignis('driftStufe', dr.neueStufe / 3, { stufe: dr.neueStufe }); }
     if (dr.zuLang) this.ereignis('driftWarnung', 1);
     if (dr.turbo) { this.mtStufe = dr.turbo; this.mtT = 0; this.statistik.miniturbos++; this.ereignis('miniturbo', dr.turbo / 3, { stufe: dr.turbo }); }
@@ -197,7 +214,11 @@ export class Gleiter {
     const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
     addSk(a, a, _d, schub);
     if (tempo > 1e-6) {
-      const zug = zugBei(tempo) + (amBoden ? GLEITER.luftbremseZug * (bl + br) * 0.5 * (dr.aktiv ? GEFUEHL.driftZug : 1) : 0);
+      // Luftbremsen-Widerstand: im Drift wie bisher (Drift = Rutschen, nicht Bremsen); sonst Vorlage: eine ≈ 80 %, beide ≈ 45 %
+      const eine = Math.max(this.blW, this.brW), beide = Math.min(this.blW, this.brW);
+      const bremsZug = !amBoden ? 0 : (dr.aktiv || !VB.an) ? GLEITER.luftbremseZug * (this.blW + this.brW) * 0.5 * (dr.aktiv ? GEFUEHL.driftZug : 1)
+        : VB.zug * (eine - beide) + VB.zugBeide * beide;
+      const zug = zugBei(tempo) + bremsZug;
       addSk(a, a, this.v, -zug / tempo);
     }
 
@@ -206,14 +227,19 @@ export class Gleiter {
       setze(_l, this.links.x, this.links.y, this.links.z);
       addSk(_l, _l, q.Us, -dot(_l, q.Us)); norm(_l, _l);
       const vq = dot(this.v, _l);
-      const grip = GLEITER.grip * (dr.aktiv ? GEFUEHL.driftGrip : 1) * (steuerlos ? 0.3 : 1);
-      addSk(a, a, _l, -vq * grip * gripAnteil * (1 + 0.4 * (bl + br)));
+      const grip = GLEITER.grip * (dr.aktiv ? (VB.an ? VB.driftGrip : GEFUEHL.driftGrip) : 1) * (steuerlos ? 0.3 : 1);
+      // Gleiten (Vorlage): ohne Drift richtet sich die Bahn mit gezogener Luftbremse langsamer aus (Zeitkonstante VB.rutsch s)
+      const bw = Math.max(this.blW, this.brW);
+      const gripB = VB.an && !dr.aktiv ? grip + (1 / VB.rutsch - grip) * bw : grip * (1 + 0.4 * (this.blW + this.brW));
+      addSk(a, a, _l, -vq * gripB * gripAnteil);
     }
 
     // --- Drehung ---
     const kappe = Math.min(GLEITER.gierMax, GLEITER.querMax / Math.max(tempo, 1)) * lenkFaktor(tempo / vmaxK);
     const innen = lenk > 0 ? bl : lenk < 0 ? br : 0;
-    let gierZiel = (lenk + 0.35 * (bl - br)) * kappe * (1 + GLEITER.luftbremseGier * innen);
+    const innenW = lenk > 0 ? this.blW : lenk < 0 ? this.brW : 0;
+    let gierZiel = (lenk + 0.35 * (this.blW - this.brW)) * kappe * (1 + GLEITER.luftbremseGier * innenW);
+    void innen;
     if (!amBoden) gierZiel *= GLEITER.luftGier;
     // Drehmomente der Federn in Körper-Winkelbeschleunigung umrechnen
     const tv = dot(tau, this.vor) / TRAEGHEIT.vor, tl = dot(tau, this.links) / TRAEGHEIT.links, to = dot(tau, this.oben) / TRAEGHEIT.oben;
@@ -222,7 +248,17 @@ export class Gleiter {
     addSk(this.w, this.w, this.oben, to * dt);
     // Gieren: Winkelgeschwindigkeit um die eigene Hochachse zum Ziel führen
     const wo = dot(this.w, this.oben);
-    addSk(this.w, this.w, this.oben, (gierZiel - wo) * Math.min(1, 14 * dt));
+    let dGier = (gierZiel - wo) * Math.min(1, 14 * dt);
+    const VG = VORLAGE.gier;
+    if (VG.an) {
+      // Gier-Beschleunigung begrenzt; Gegenlenken (Ziel gegen die laufende Drehung) baut doppelt so schnell um
+      gierZiel = clamp(gierZiel, -VG.max, VG.max);
+      dGier = (gierZiel - wo) * Math.min(1, 14 * dt);
+      const gegen = wo * gierZiel < 0 || (Math.abs(gierZiel) < Math.abs(wo) && Math.abs(lenk) > 0.05);
+      const m = VG.beschl * (gegen ? VG.gegen : 1) * dt;
+      dGier = clamp(dGier, -m, m);
+    }
+    addSk(this.w, this.w, this.oben, dGier);
     if (amBoden) {
       // Nicken/Rollen: Federn richten aus; Restdämpfung + sanftes Ausrichten an der Fahrflächen-Normale
       const wv = dot(this.w, this.vor), wl = dot(this.w, this.links);
@@ -374,6 +410,12 @@ export class Gleiter {
     if (sp && this.luftZeit > 1.5 && (q.flags & F_LANDEZONE) && GEFUEHL.landebonus > 0) {
       addSk(this.v, this.v, this.v, GEFUEHL.landebonus); this.statistik.landebonus++;
     }
+    // Landungs-Nicken (Vorlage): Nase mehr als VORLAGE.nicken.grad° gegen die Fahrfläche = harte Landung (Tempo, Funken)
+    const VN = VORLAGE.nicken;
+    if (VN.an && Math.abs(Math.asin(clamp(dot(this.vor, q.Us), -1, 1))) > VN.grad * RAD) {
+      addSk(this.v, this.v, this.v, -VN.verlust); this.statistik.hartLandungen++;
+      this.ereignis('aufsetzer', 1); this.ereignis('hartLandung', 1);
+    }
     this.ereignis('landung', clamp(this.luftZeit / 5, 0, 1), { luft: this.luftZeit, weite, landezone: !!(q.flags & F_LANDEZONE) });
   }
 
@@ -386,11 +428,34 @@ export class Gleiter {
     const vn = dot(this.v, _n);
     if (vn < 0) {
       const vi = -vn;
+      // neuer Einschlag: erster Kontakt bzw. kräftig (> 4 m/s); mit Vorlage-Wand höchstens einer je VW.sperre s (Nachstöße
+      // desselben Einschlags – Nase zeigt noch zur Wand – kosten nicht noch einmal)
+      const VW = VORLAGE.wand, neu = (this.wandKontakt === 0 || vi > 4) && (!VW.an || this.zeit - this.wandZeit > VW.sperre);
+      if (neu) this.wandZeit = this.zeit;
+      const v0 = this.tempo || Math.sqrt(dot(this.v, this.v));
       addSk(this.v, this.v, _n, vi * (1 + WAND.abprall));
       const anteil = clamp(vi / 25, 0, 1);
-      addSk(this.v, this.v, this.v, -WAND.verlust * anteil);
-      this.schild = Math.max(0, this.schild - WAND.schild * clamp(vi / 20, 0.15, 1.5));
-      if (this.wandKontakt === 0 || vi > 4) { this.statistik.wandTreffer++; this.ereignis('wand', anteil, { seite: sgn }); }
+      if (VW.an) {
+        // Vorlage: nur echte Einschläge kosten – Tempo −10…−30 % je Aufprallwinkel (gesamt, inkl. Abprall), Energie ∝ Quertempo
+        if (neu) {
+          const winkel = Math.asin(clamp(vi / Math.max(v0, 1), 0, 1)) / RAD;
+          const verlust = winkel < VW.w0 ? VW.v0 * winkel / VW.w0 : VW.v0 + (VW.v1 - VW.v0) * clamp((winkel - VW.w0) / (VW.w1 - VW.w0), 0, 1);
+          const vn2 = Math.sqrt(dot(this.v, this.v)) || 1;
+          addSk(this.v, this.v, this.v, v0 * (1 - verlust) / vn2 - 1);
+          this.schild = Math.max(0, this.schild - Math.max(VW.min, VW.energie * vi));
+          // Abgleiten: Nase parallel zur Wand drehen (leicht weg), sonst zöge die Seitenhaftung ihn gleich wieder hinein
+          const zurWand = -dot(this.vor, _n);
+          if (zurWand > 0) {
+            kreuz(_t, this.vor, _n); norm(_t, _t);
+            const w = Math.asin(clamp(zurWand, 0, 1)) + VW.weg * RAD;
+            dreheRahmen(this.vor, this.links, this.oben, _t.x * w, _t.y * w, _t.z * w);
+          }
+        }
+      } else {
+        addSk(this.v, this.v, this.v, -WAND.verlust * anteil);
+        this.schild = Math.max(0, this.schild - WAND.schild * clamp(vi / 20, 0.15, 1.5));
+      }
+      if (neu) { this.statistik.wandTreffer++; this.ereignis('wand', anteil, { seite: sgn }); }
       if (vi > 3) this.drift.abbrechen();
       // Nase von der Wand weg drehen
       addSk(this.w, this.w, this.oben, -sgn * 0.8 * anteil);
@@ -502,7 +567,7 @@ export class Gleiter {
       while (n < 2000 && (b.flags[i % b.N] & F_LUECKE)) { i++; n++; }
       s = ((i % b.N) * b.ds) + 30;
     }
-    this.setzeAuf(s, 0, GLEITER.vmax * 0.45);
+    this.setzeAuf(s, 0, GLEITER.vmax * (VORLAGE.bergung.zeit > 0 ? VORLAGE.bergung.tempo : 0.45));
     this.respawns = (this.respawns || 0) + 1;
     this.neustartFenster = 1.5;   // Neustart-Rhythmus auch nach einem Abflug
     this.ereignis('respawn', 1);

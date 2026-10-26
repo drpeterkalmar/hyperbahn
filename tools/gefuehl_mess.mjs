@@ -4,6 +4,7 @@
 // Browser-Größen (#6 Start-Boost-Quote bei Testern) bleiben für den Heavy-Job; #13/#14 (Kamera) rechnet hier die reine
 // Kamera-Mathe (gfx/kamera.js) ohne Bild.
 import { ZEIT, GLEITER, leseRegler } from '../src/config.js';
+import { leseGefuehl } from '../src/physics/fahrgefuehl.js';
 import { GEFUEHL, KLASSEN_LISTE } from '../src/physics/fahrgefuehl.js';
 import { baueBahn } from '../src/track/bahn.js';
 import { strecke1 } from '../src/track/strecke1.js';
@@ -206,8 +207,8 @@ export function mess13() {
 function f(x, n = 2) { return x == null ? '–' : typeof x === 'number' ? x.toFixed(n).replace('.', ',') : String(x); }
 
 if (process.argv[1] && process.argv[1].endsWith('gefuehl_mess.mjs')) {
-  leseRegler('');
   const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
+  leseRegler(arg('--regler', '')); leseGefuehl(arg('--regler', ''));   // z. B. --regler "?bremse=0&lenk=alt
   const nur = (arg('--nur', '') || '').split(',').filter(Boolean);
   const an = (k) => !nur.length || nur.includes(String(k));
   const zeilen = [];

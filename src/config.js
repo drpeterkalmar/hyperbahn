@@ -98,6 +98,31 @@ export const ACTION = {
   bulletTempo: 0.04, // ≤ 0,05× Zeit fast eingefroren
 };
 
+// Vorlagen-Mechaniken (P1b, Datenblatt ~/.hermes/plans/vorlagen/hyperbahn.md, Abschnitt 3) – alle Werte in EINER Gruppe,
+// jede Mechanik mit eigenem URL-Regler; 0 bzw. „alt“ = Verhalten bis 0.1.4.
+export const VORLAGE = {
+  // 1/h-Schwebe-Feder (?schwebe=0 alt): Kraft je Punkt ∝ (soll/h − 1) – weich oben, sehr hart nah am Boden; Ruhelage ergibt
+  // sich aus Gewicht und soll (1,3 m → ≈ 1,2 m); unter `min` m wird nicht weiter gerechnet (harter Aufsetzer)
+  schwebe: { an: 1, soll: 1.3, min: 0.25, zeta: 0.9 },
+  // Luftbremse (?bremse=0 alt, ?rutsch=s): Wirkung baut sich in `aufbau` s auf; Widerstand so, dass Dauer-Halten (ohne Drift)
+  // das Tempo auf ≈ 80 % (eine) bzw. 45 % (beide) senkt; ohne Drift gleitet der Gleiter mit Bremse (Ausricht-Zeit `rutsch` s
+  // statt der Seitenhaftung), Drift behält seine eigenen Werte (fahrgefuehl.js)
+  // Drift-Seitenhaftung 0,45 → 0,5: Schiebewinkel im Bremsen-Drift max. ≈ 25° (Ziel 15–25°, vorher 33°), Mini-Turbo-Gewinn bleibt
+  bremse: { an: 1, aufbau: 0.2, zug: 18, zugBeide: 40, rutsch: 1.2, driftGrip: 0.5 },
+  // Gegenlenken (?lenk=alt): Gier-Beschleunigung höchstens `beschl` rad/s², gegen die Drehung ×`gegen`, Gierrate ≤ `max` rad/s
+  gier: { an: 1, beschl: 3.5, gegen: 2, max: 1.75 },
+  // Wandtreffer (?wand=0 alt): Energie ∝ Quertempo (Anteil je m/s, mind. `min`), Tempo −`v0`…−`v1` je Aufprallwinkel
+  // (`w0`…`w1`°), Nachstöße desselben Einschlags (innerhalb `sperre` s) kosten nichts; die Nase gleitet ab (parallel zur Wand
+  // + `weg`°). Datenblatt-Startwert 0,6 %/(m/s)
+  // widerspricht seiner eigenen Ziel-Messgröße (30° bei Top = 4–8 %) → Messung entscheidet: 0,13 %/(m/s)
+  wand: { an: 1, energie: 0.0013, min: 0.01, v0: 0.10, v1: 0.30, w0: 5, w1: 60, sperre: 0.4, weg: 3 },
+  // Bergung nach Abflug (?bergung=s, 0 = alt 1,6 s / 45 %): Drohne holt den Gleiter in `zeit` s, nach einem Sprung hinter der
+  // Lücke abgesetzt mit `tempo` × Höchsttempo
+  bergung: { zeit: 1.5, tempo: 0.4 },
+  // Landungs-Nicken (?nicken=0 aus): Landung mit Nase > `grad`° gegen die Fahrfläche kostet `verlust` Tempo + Funken
+  nicken: { an: 1, grad: 20, verlust: 0.15 },
+};
+
 export const BLITZE = { reduziert: false, maxProSek: 3, strobeDaempfung: 0.35 };
 // unschaerfe: Tempo (m/s) → Kino-Look-Bewegungsunschärfe (P1-Abnahme: 0,4 verschmierte Sprünge/Boost zu stark) – ?blur=
 export const KAMERA = { horizontHalten: false, rollFolge: 0.85, rollTraeg: 0.18, unschaerfe: 0.3 };
@@ -117,6 +142,15 @@ export function leseRegler(search) {
   BOOST.gewinn = zahl('boost', BOOST.gewinn);
   LUFT.faktor = zahl('air', zahl('sprung', LUFT.faktor));
   NASE.modus = q.get('nase') === 'alt' ? 'alt' : 'neu';
+  // Vorlagen-Regler (P1b)
+  const V = VORLAGE;
+  V.schwebe.an = q.get('schwebe') === '0' ? 0 : 1;
+  V.bremse.an = q.get('bremse') === '0' ? 0 : 1;
+  V.bremse.rutsch = zahl('rutsch', 1.2);
+  V.gier.an = q.get('lenk') === 'alt' ? 0 : 1;
+  V.wand.an = q.get('wand') === '0' ? 0 : 1;
+  V.bergung.zeit = zahl('bergung', 1.5);
+  V.nicken.an = q.get('nicken') === '0' ? 0 : 1;
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';

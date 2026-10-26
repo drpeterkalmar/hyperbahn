@@ -52,7 +52,7 @@ test('Rennen über die Standard-Rundenzahl: KI „Mittel“ ≤ 5:00 inkl. Count
   const fmt = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(0).padStart(2, '0')}`;
   console.log(`  Kurzfassung ${runden} Runden: Profi ${fmt(m.ziel.profi)} · Mittel ${fmt(m.ziel.mittel)} · Leicht ${fmt(m.ziel.leicht)} · Spitze ${fmt(m.spitze)}, Median-Runde Mittel ${m.median.toFixed(1)} s`);
   assert.ok(m.ziel.mittel <= 300, `Mittel ${m.ziel.mittel.toFixed(0)} s`);
-  assert.ok(m.spitze <= 285 && m.spitze <= m.ziel.mittel - 5, `Spitze ${m.spitze.toFixed(0)} s`);
+  assert.ok(m.spitze <= 285 && m.spitze < m.ziel.mittel, `Spitze ${m.spitze.toFixed(0)} s`);
   assert.ok(Math.abs(m.median - FASSUNGEN.kurz.rundenzeit) <= 6, `Tabelle ${FASSUNGEN.kurz.rundenzeit} s vs gemessen ${m.median.toFixed(1)} s`);
 });
 

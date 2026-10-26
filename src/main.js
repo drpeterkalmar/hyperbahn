@@ -6,7 +6,7 @@
 // Mess-/Abnahme-Regler: ?autostart=1 (Menü überspringen), ?at=<Abschnittsname oder s in m> (Feld dort aufstellen, fliegender
 // Start), ?autopilot=1 (Spieler fährt per KI – Screenshots/Mess-Gate), ?nosw (ohne Service-Worker), ?look=, ?kl=.
 import * as THREE from 'three';
-import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST } from './config.js';
+import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST, VORLAGE } from './config.js';
 import { strecke1, SPRUNG_MINDEST, FASSUNGEN, STANDARD_FASSUNG, rundenDerFassung } from './track/strecke1.js';
 import { bestzeitSchluessel, trageBestzeitEin } from './game/bestzeiten.js';
 import { F_MAGNET } from './track/bahn.js';
@@ -22,6 +22,7 @@ import { KameraRig, wendeAn, leseKamera } from './gfx/kamera.js';
 import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
+import { Bergung } from './gfx/drohne.js';
 import { Hud, ladeEinstellungen } from './ui/hud.js';
 import { Minikarte } from './gfx/minikarte.js';
 import { GpuZeit } from './gfx/gpuzeit.js';
@@ -69,6 +70,7 @@ const bahnMesh = baueBahnMesh(bahn);
 scene.add(bahnMesh.gruppe);
 const blitze = new BlitzBremse({ reduziert: BLITZE.reduziert });
 const funken = new Funken(scene);
+const bergung = new Bergung(scene);   // Bergungs-Drohne nach Abflügen (Vorlage)
 
 // Stadt, Regen, Ton: getrennte Module – fehlt eines oder scheitert es, läuft das Spiel trotzdem
 let stadt = null, regen = null, ton = null;
@@ -205,7 +207,8 @@ function ereignisse() {
         case 'magnet': blitz(0.45, [0.6, 0.25, 1]); vibriere(30); break;
         case 'rolle': hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); break;
         case 'patzer': hud.meldung('PATZER', praes, 1); break;
-        case 'absturz': hud.meldung('ABFLUG', praes, 1.5); vibriere(60); break;
+        case 'absturz': hud.meldung('ABFLUG · BERGUNG', praes, 1.5); vibriere(60); break;
+        case 'hartLandung': hud.meldung('HARTE LANDUNG', praes, 0.9); rig.stoss(0.6); break;
         case 'runde': hud.meldung(`RUNDE ${Math.min(e.runde + 1, rennen.runden)}`, praes, 1.2); break;
         case 'ziel': hud.meldung(`ZIEL · PLATZ ${e.platz}`, praes, 2.5); vibriere(60); break;
         case 'stoss': if (e.folge) continue; rig.stoss(0.3 * e.staerke); break;   // p1c: Schleif-Kontakt nur einmal spürbar
@@ -307,7 +310,8 @@ function bild() {
     }
     driftFunken();
     if (rennen.phase === 'ziel' && laeuft) { laeuft = false; const best = bestzeit(); setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k, best), 1500); }
-    rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
+    const bergZeit = VORLAGE.bergung.zeit > 0 ? VORLAGE.bergung.zeit : 1.6;
+    rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); bergung.update(dt, t.g, meshes[k], bergZeit); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
     rig.update(dt, g, fx);
     const schein = praes < scheinBis ? 1 : 0;   // Schein-Akzent online: kurzer Ran-Zoom statt Zeitlupe
     rig.fov -= 8 * schein;

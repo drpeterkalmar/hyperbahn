@@ -2,6 +2,20 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P1b Etappe A: Fahrphysik nach dem Vorlagen-Datenblatt)
+- **Schwebe-Feder nach dem 1/h-Gesetz** (`?schwebe=0` = bisher): weich oben, sehr hart nah am Boden, Ruhelage 1,20 m;
+  Landung aus 10 m federt 0,36 m ein und ist nach 0,36 s ruhig (vorher bretthart 0,03 m). Drift-Hüpfer nur aus der Ruhelage.
+- **Luftbremse** (`?bremse=0`, `?rutsch=1.2`): Wirkung baut sich in 0,2 s auf; Dauer-Halten ohne Drift senkt das Tempo
+  auf 80 % (eine) bzw. 46 % (beide) – vorher 98 %/93 %; ohne Drift gleitet der Gleiter mit Bremse (Ausricht-Zeit 1,2 s);
+  im Drift max. Schiebewinkel 25° (vorher 33°), Mini-Turbo-Gewinn unverändert (0,38/0,50 s).
+- **Gegenlenken** (`?lenk=alt`): Gier-Beschleunigung begrenzt (3,5 rad/s², gegen die Drehung doppelt), Gierrate ≤ 100°/s.
+- **Wandtreffer** (`?wand=0`): nur echte Einschläge kosten (Tempo −10…−30 % je Winkel, Energie ∝ Quertempo), Nase gleitet
+  an der Wand ab – 30° bei Top: −19 % Tempo / −6 % Energie (vorher −46 % / −16 % durch Schleifen).
+- **Bergung** (`?bergung=1.5`, 0 = bisher): Neon-Drohne mit Zugstrahl holt den Gleiter nach einem Abflug in 1,5 s, nach
+  einem Sprung hinter der Lücke abgesetzt (40 % Tempo) – Zeitverlust 2,2 s (Ziel 2–3 s).
+- **Landungs-Nicken** (`?nicken=0`): Landung mit Nase > 20° = „HARTE LANDUNG“ (−15 % Tempo, Funken).
+- Schräglage des Modells folgt der Gierrate (`?schraeg=0` = bisher). Messwerkzeug `node tools/vorlagen_mess.mjs`.
+
 ## 0.1.4 – 26.10.2026 (P1b Etappe 0: kein Abschmieren in der Luft, Rennen ≤ 5 min)
 - **Gehaltenes ↑ senkt in der Luft nie mehr die Nase** (Peter: „kein Abschmieren in der Luft, wenn ich Pfeil hinauf
   halte“): wer über den Absprung Gas hält, fliegt wie ohne Taste. Nicken nur nach einem NEUEN Druck in der Luft (↑ = Nase

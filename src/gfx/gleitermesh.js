@@ -19,6 +19,8 @@ export const BAUFORMEN = {
     datei: 'stachel.glb', farbton: 0.72 },
 };
 export const BAUFORM_LISTE = Object.keys(BAUFORMEN);
+// Schräglage des Modells: voll (`max` rad) bei Gierrate `voll` rad/s, Folge-Anteil je Bild (Vorlage: 12 %)
+export const SCHRAEG = { an: typeof location === 'undefined' || new URLSearchParams(location.search).get('schraeg') !== '0', voll: 0.9, max: 0.32, folge: 0.12 };
 const SPUR_N = 40;
 const vorlagen = {};   // bauform → { szene } nach ladeGleiterModelle()
 
@@ -213,8 +215,14 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
       flammen.material.uniforms.uKraft.value = 0.55 + 0.45 * schub + 0.5 * Math.min(1, g.boost);
       halo.material.uniforms.uKraft.value = 0.5 + 0.4 * schub + 0.6 * Math.min(1, g.boost);
       unter.material.uniforms.uKraft.value = g.boden ? 0.9 : 0.45;
+      // Schräglage (Vorlage): folgt der Gierrate (nicht dem Lenk-Knopf) mit 12 % je Bild (60 Hz) – sichtbar auch im Drift
+      // und beim Abgleiten an der Wand; ?schraeg=0 = bisher (Lenk-Eingabe)
       const lenk = ein ? ein.lenk : 0;
-      koerper.rotation.z += ((-lenk * 0.22) - koerper.rotation.z) * Math.min(1, dt * 6);
+      if (SCHRAEG.an && g.w && g.oben) {
+        const gier = g.w.x * g.oben.x + g.w.y * g.oben.y + g.w.z * g.oben.z;
+        const ziel = -Math.max(-1, Math.min(1, gier / SCHRAEG.voll)) * SCHRAEG.max;
+        koerper.rotation.z += (ziel - koerper.rotation.z) * (1 - Math.pow(1 - SCHRAEG.folge, dt * 60));
+      } else koerper.rotation.z += ((-lenk * 0.22) - koerper.rotation.z) * Math.min(1, dt * 6);
       // Treffer-Dreher: Modell dreht sich um die Hochachse (die Physik behält die Fahrtrichtung)
       koerper.rotation.y = g.drehWinkel || 0;
       if (!spurGefuellt) { for (let k = 0; k < SPUR_N; k++) schreibeSpur(k, g); spurGefuellt = true; }
