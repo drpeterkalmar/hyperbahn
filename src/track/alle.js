@@ -1,9 +1,10 @@
 // Alle Strecken statisch (nur Node-Werkzeuge/Tests – das Spiel lädt sie über strecken.js lazy)
 import * as megastadt from './strecke1.js';
 import * as wueste from './strecke_wueste.js';
+import * as riff from './strecke_riff.js';
 import { finde } from './strecken.js';
 
-export const MODULE = { megastadt, 'megastadt-lang': megastadt, wueste };
+export const MODULE = { megastadt, 'megastadt-lang': megastadt, wueste, riff };
 
 // Strecke synchron bauen (id oder Alias, z. B. kurz/lang); unbekannt → Megastadt
 export function baueStrecke(id = 'megastadt') {

@@ -60,7 +60,7 @@ for (const id of P2) {
     assert.equal(ki.phase, 'ziel');
     const nSpr = geometrie(bahn).spruenge.length;
     for (const f of ki.fahrer) {
-      assert.equal(f.runden, 10, `${f.name}: Runden`);
+      assert.ok(f.runden >= 10, `${f.name}: Runden`);   // wer weit vorn ist, fährt bis zum Zieleinlauf der Letzten weiter
       assert.equal(f.abfluege, 0, `${f.name} (${f.profil}, ${f.weg}): Abflüge`);
       assert.ok(f.landungen >= 10 * nSpr, `${f.name}: ${f.landungen} Sprung-Landungen`);
     }

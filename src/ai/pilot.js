@@ -45,26 +45,6 @@ export function bauePlan(bahn, opt = {}) {
     if (bahn.flags[i] & F_OFFEN_L) hi[i] = Math.min(hi[i], bahn.hw[i] - RAND - 1.5);
     if (bahn.flags[i] & F_OFFEN_R) lo[i] = Math.max(lo[i], -bahn.hw[i] + RAND + 1.5);
   }
-  // P2 Gabelungen: Linie auf eine Seite des Teilers – Weg „schnell“ = Seite tschnell (riskanter), „sicher“ = die andere;
-  // schon 150 m vor der Teiler-Spitze auf der Seite
-  const weg = opt.weg || 'sicher';
-  const seiteBei = (i) => (bahn.tschnell[i] || 1) * (weg === 'schnell' ? 1 : -1);
-  for (let i = 0; i < N; i++) {
-    if (!(bahn.flags[i] & F_TEILER)) continue;
-    const g = spurGrenzen(bahn, i, 0, RAND, seiteBei(i));
-    lo[i] = Math.max(lo[i], g[0]); hi[i] = Math.min(hi[i], g[1]);
-    if (lo[i] > hi[i]) lo[i] = hi[i] = (g[0] + g[1]) / 2;
-    const vor = (i - 1 + N) % N;
-    if (!(bahn.flags[vor] & F_TEILER)) {
-      const sg = seiteBei(i), grenze = bahn.tu[i] + sg * (RAND + 1.5);
-      for (let k = 1; k <= 75; k++) {
-        const j = (i - k + N) % N;
-        if (sg > 0) lo[j] = Math.min(hi[j], Math.max(lo[j], grenze)); else hi[j] = Math.max(lo[j], Math.min(hi[j], grenze));
-      }
-    }
-  }
-  // Absprung-Rampe mittig
-  for (let i = 0; i < N; i++) if (bahn.flags[i] & F_SPRUNG) { lo[i] = Math.max(lo[i], -2); hi[i] = Math.min(hi[i], 2); }
   // P2-Strecken (bahn.padsWeich): Landezone vorn mittig (±4 m bis 400 m hinter der Lücke) – sonst lenkt die KI im langen Flug
   // schon zur nächsten Kurve und landet an der Bande; danach weitet sich der Korridor über 200 m
   if (bahn.padsWeich) {
@@ -104,6 +84,9 @@ export function bauePlan(bahn, opt = {}) {
   if (lose.length) relax();
   const uFrei = Float64Array.from(u);
   for (const p of bahn.pads) {
+    // Pads an einer Gabelung zählen nur auf der Seite des eigenen Wegs
+    const ip = ((Math.round((p.s0 + p.s1) / 2 / ds) % N) + N) % N;
+    if (bahn.flags[ip] & F_TEILER && Math.sign(p.u - bahn.tu[ip]) !== (bahn.tschnell[ip] || 1) * ((opt.weg || 'sicher') === 'schnell' ? 1 : -1)) continue;
     if (lose.includes(p)) {
       const im = ((Math.round((p.s0 + p.s1) / 2 / ds) % N) + N) % N;
       if (Math.abs(uFrei[im] - p.u) > p.b + 4) { if (opt.log) opt.log(p, uFrei[im]); continue; }
@@ -112,6 +95,25 @@ export function bauePlan(bahn, opt = {}) {
       const i = ((Math.round(s / ds) % N) + N) % N;
       lo[i] = Math.max(lo[i], p.u - p.b + 1); hi[i] = Math.min(hi[i], p.u + p.b - 1);
       if (lo[i] > hi[i]) lo[i] = hi[i] = p.u;
+    }
+  }
+  // P2 Gabelungen: Linie auf eine Seite des Teilers – Weg „schnell“ = Seite tschnell (riskanter), „sicher“ = die andere;
+  // Vorrang vor den Pads (Pads auf der anderen Seite zählen nicht); 150 m vor der Teiler-Spitze weich auf die Seite (der
+  // Korridor wird zur Spitze hin linear enger, sonst entstünde ein Knick)
+  const weg = opt.weg || 'sicher';
+  const seiteBei = (i) => (bahn.tschnell[i] || 1) * (weg === 'schnell' ? 1 : -1);
+  for (let i = 0; i < N; i++) {
+    if (!(bahn.flags[i] & F_TEILER)) continue;
+    const g = spurGrenzen(bahn, i, 0, RAND, seiteBei(i));
+    const pl = Math.max(lo[i], g[0]), ph = Math.min(hi[i], g[1]);
+    if (pl <= ph) { lo[i] = pl; hi[i] = ph; } else { lo[i] = g[0]; hi[i] = g[1]; }
+    const vor = (i - 1 + N) % N;
+    if (!(bahn.flags[vor] & F_TEILER)) {
+      const sg = seiteBei(i), grenze = bahn.tu[i] + sg * (RAND + 1.5);
+      for (let k = 1; k <= 75; k++) {
+        const j = (i - k + N) % N, w = grenze - sg * (k / 75) * 2 * bahn.hw[j];
+        if (sg > 0) lo[j] = Math.min(hi[j], Math.max(lo[j], w)); else hi[j] = Math.max(lo[j], Math.min(hi[j], w));
+      }
     }
   }
   relax();

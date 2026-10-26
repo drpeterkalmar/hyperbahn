@@ -34,6 +34,15 @@ export function bahnRaster(bahn, zelle = 120) {
   return { naechste, box: { x0, x1, z0, z1, y0, y1 } };
 }
 
+// Geländehöhe wie im Gitter (mit Deckel unter der Bahn) – für Objekte, die auf dem Boden stehen sollen
+export function bodenHoehe(raster, hoehe, { frei = 10, flanke = 0.55 } = {}) {
+  return (x, z) => {
+    const h = hoehe(x, z), q = raster.naechste(x, z, 260);
+    if (!q) return h;
+    return Math.min(h, q.y - frei + Math.max(0, q.d - q.hw - 12) * flanke);
+  };
+}
+
 // Gelände-Gitter: hoehe(x, z) → m; unter der Bahn (und rund um sie) gedeckelt, damit die Bahn nie im Boden steckt.
 // farbe(x, z, h, steil) → [r, g, b] (linear). Rückgabe Mesh (MeshStandardMaterial mit Vertexfarben).
 export function gelaende(bahn, raster, { rand = 2500, n = 140, hoehe, farbe, frei = 10, flanke = 0.55, mat = {} }) {

@@ -2,6 +2,13 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P2: Riff-Röhre)
+- **Neue Strecke „Riff-Röhre“** (Technik): unter Wasser – Glasröhren durch ein Korallenriff, Lichtstrahlen von oben,
+  wogender Seetang, Fischschwärme, Luftblasen. Korkenzieher, Doppel-Korkenzieher, Röhren-Schlange, lange
+  Magnet-Überkopf-Röhre, **Gabelung**: innen schmal, ohne Bande und mit Boost-Pads (≈ 2 s je Runde schneller, aber wer
+  über die Kante fährt, stürzt ins Riff), außen breit und sicher; Riesensprung über den Riffgraben. Runde 1:30, 3 Runden.
+- KI wählt an Gabelungen je nach Stärke den schnellen oder den sicheren Weg; die Fahrhilfe folgt dem Weg, den du fährst.
+
 ## 0.1.10 – 26.10.2026 (P2: Streckenwahl + Wüsten-Raumhafen)
 - **Streckenwahl im Menü:** Karten mit drehender 3D-Vorschau der Strecke (Höhen, Magnet/Röhre/Landezone farbig, Pads gelb),
   Name, Charakter, Rundenzahl und Bestzeit; „🎲 Zufällig“ (nie zweimal hintereinander dieselbe), 🔗 Teilen-Link je Strecke.

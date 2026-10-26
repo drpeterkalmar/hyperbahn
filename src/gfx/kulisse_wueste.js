@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { rng } from '../core/util.js';
 import { Regen } from './regen.js';
-import { bahnRaster, gelaende, streuen, instanzen, leuchtpunkte, abschnitt, anBahn, entsorgen } from './kulisse_kern.js';
+import { bahnRaster, gelaende, streuen, instanzen, leuchtpunkte, abschnitt, anBahn, entsorgen, bodenHoehe } from './kulisse_kern.js';
 
 const SONNE = [-0.75, 0.1, 0.32];   // Richtung zur Sonne (tief im Westen; Startbahn und Sprung fahren auf sie zu)
 
@@ -42,6 +42,7 @@ export function baueKulisse(bahn, { scene } = {}) {
     const g = Math.sin(x * 0.0007 + 1.3) * Math.cos(z * 0.0009 - 0.4);
     return w * w * 22 + g * 26 + Math.sin(z * 0.011 + x * 0.003) * 2.5 - 6;
   };
+  const amBoden = bodenHoehe(raster, huegel, { frei: 9, flanke: 0.4 });
   gruppe.add(gelaende(bahn, raster, {
     rand: 3200, n: 150, hoehe: huegel, frei: 9, flanke: 0.4,
     farbe: (x, z, h, steil) => {
@@ -71,7 +72,7 @@ export function baueKulisse(bahn, { scene } = {}) {
   const rakete = new THREE.Group(); rakete.name = 'rakete';
   if (ls) {
     const p = anBahn(bahn, ls.s0 + 160, 75, 0);   // vorn links der Flugbahn: im Flug gut im Bild
-    const boden = Math.min(0, huegel(p.x, p.z)) - 4;
+    const boden = amBoden(p.x, p.z) - 4;
     const weiss = new THREE.MeshStandardMaterial({ color: 0xd8d4cc, roughness: 0.4, metalness: 0.3, emissive: 0x201510 });
     const rumpf = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 130, 20), weiss); rumpf.position.set(0, 65 + 18, 0);
     const spitze = new THREE.Mesh(new THREE.ConeGeometry(7, 26, 20), weiss); spitze.position.set(0, 130 + 18 + 13, 0);
@@ -96,7 +97,7 @@ export function baueKulisse(bahn, { scene } = {}) {
     // Leuchtschrift-Masten entlang der Lücke (Anflug-Orientierung im langen Flug)
     for (let k = 0; k <= 6; k++) for (const sg of [1, -1]) {
       const q = anBahn(bahn, ls.s0 - 250 + k * 100, sg * 45, 0);
-      const y0 = Math.min(0, huegel(q.x, q.z)) - 2;
+      const y0 = amBoden(q.x, q.z) - 2;
       bauten.push({ x: q.x, y: y0 + 30, z: q.z, sx: 2, sy: 60, sz: 2, farbe: 0x2a2a2e });
       leucht.push({ x: q.x, y: y0 + 61, z: q.z, g: 2.4, farbe: k % 2 ? [3.5, 1.4, 0.3] : [0.4, 2.4, 3.6] });
     }
@@ -120,7 +121,7 @@ export function baueKulisse(bahn, { scene } = {}) {
   // Weitere Raumhafen-Bauten abseits (Hangars, Kontrolltürme, Tanks) mit roten Dachlichtern
   for (const p of streuen(bahn, raster, r, 40, { dMin: 90, dMax: 700 })) {
     const art = r();
-    const y0 = Math.min(huegel(p.x, p.z), p.y - 12) - 2;
+    const y0 = amBoden(p.x, p.z) - 2;
     if (art < 0.5) {
       const w = r.range(30, 70), h = r.range(12, 28), t = r.range(40, 90);
       bauten.push({ x: p.x, y: y0 + h / 2, z: p.z, sx: w, sy: h, sz: t, ry: r.range(0, 3.14), farbe: r.pick([0x5a4c40, 0x6a5a4a, 0x4a4440]) });
