@@ -1,6 +1,6 @@
 # Hyperbahn – Bericht P3: Tempo, Boost, Windschatten (Etappe 1) · Ruckeln und Start (Etappe 2)
 
-Stand 26.10.2026 · Auftrag `hyperbahn-p3-tempo-boost` · Peter: „Mehr Boost und Windschatten-Ansaugen, sonst wird's
+Stand 26.10.2026 · Auftrag `hyperbahn-p3-tempo-boost` · Etappe 1 = 0.1.18 (live), Etappe 2 = 0.1.19 · Peter: „Mehr Boost und Windschatten-Ansaugen, sonst wird's
 langweilig, weil immer alle genau gleich schnell dahingleiten. Das mit der Energie ist doof.“ – Nachtrag: „Hyperbahn soll von
 Natur aus etwas schneller werden und schärfere Kurven haben. Ich verwende die Airbrakes nie.“
 
@@ -120,4 +120,94 @@ Die Meldung „ROLLE ✓ – TURBO BEI DER LANDUNG“ ist im Hochformat breiter 
 
 ## Etappe 2 – Ruckeln und langsamer Start
 
-(folgt)
+Peter: „ruckeln zeitweise und starten langsam“ (Android, Mittelklasse). Gesucht waren **Hänger**, nicht mittlere Bildraten.
+Profil wie im Mess-Gate: Hochformat 412×915, DPR 2,6, Touch/Mobil-UA, **CPU ×4 gedrosselt** (CDP), WebGL über Metal, beim
+Kaltstart zusätzlich **Netz „Fast 4G“** (170 ms, 9 Mbit/s). Werkzeug `python3 tests/p3_ruckeln.py start|rennen` (ein Browser,
+stumm, per `open` gestartet), Rohdaten `tests/perf/2026-10-26_p3_*.json`. Am Mac misst das die CPU-Seite realistisch; die
+GPU (Shader-Übersetzung im Treiber) ist am Handy deutlich langsamer – deshalb zählt das Werkzeug auch jedes **erste Auftauchen**
+eines Shaders/einer Textur/Geometrie im Rennen, das am Mac noch unter 50 ms bleibt, am Handy aber der typische Hänger ist.
+
+### Messung vorher (0.1.18)
+
+**Kaltstart live** (https://drpeterkalmar.github.io/hyperbahn/, gzip wie bei Peter):
+
+| | leerer Cache, erster Besuch | mit Service-Worker-Cache |
+|---|---|---|
+| bis Menü mit 3D-Strecke | 3,99 s | 1,87 s |
+| bis Rennen fährt (sofort geklickt) | 4,75 s | 2,38 s |
+| Start-Klick → Rennen läuft | 0,73 s | 0,51 s |
+| erstes Countdown-Bild | 300 ms (Long Task 117–209 ms) | 233 ms |
+
+Lade-Wasserfall (erster Besuch): 71 Anfragen, 2,2 MB übertragen. Größte: Musik 983 KB (lädt erst beim Rennstart – blockiert
+nichts), Gleiter-Modelle 354/251/91/85 KB (beginnen erst bei 2,4 s, weil sie am Ende des Modul-Baums hängen), three.js 103 +
+91 KB. **Was blockiert:** der Import-Baum wird Ebene für Ebene geladen (index → main.js → 30 Module → three.core …, je Ebene
+eine Rundreise ≈ 170 ms); danach im Hauptfaden KI-Pläne (CPU ×4: 350–790 ms je Strecke, Riff/Gebirge mit Gabelung doppelt),
+Kulisse (Megastadt-Stadtplan ≈ 600 ms, Gebirge ≈ 590 ms) und das erste Bild mit Shader-Übersetzung (≈ 260 ms). Doppelt
+geladen: nur `icons/icon-192.png` (Manifest + Link, 36 KB, harmlos). Der Service-Worker lud beim ersten Besuch seine 4,2 MB
+gleichzeitig mit dem Spiel.
+
+**Rennen** (Autopilot + 7 Gegner, CPU ×4):
+
+| | Megastadt 150 s | Gebirge 120 s | Riff 120 s |
+|---|---|---|---|
+| Bildzeit Median / p95 / p99 ms | 16,7 / 16,7 / 16,8 | 16,7 / 16,7 / 16,8 | 16,7 / 16,7 / 16,8 |
+| Bilder > 50 ms / > 100 ms | 2 / 1 | 1 / 1 | 1 / 1 |
+| längster Hänger | **350 ms** bei t = 0 (Countdown-Start: Aufbau + Shader, Long Task 134 ms) | **367 ms** (dito) | **333 ms** (dito) |
+| weitere | 83 ms bei 98,6 s, Hafenkurve: CPU-Profil 72 % „(program)“ = Treiber/GPU, kein JS | – | – |
+| Erstauftritte im Rennen (Shader/Textur/Geometrie) | 8 | 11 | 23 |
+| Wechsel der Renderskala (Auflösungs-Regler) | 4 | 7 | 4 |
+
+Start-Klick im Detail (CPU ×4, Marken im Code): `starte()` 188 ms – davon Audio-Kontext anlegen 76 ms, HUD-Layout nach dem
+Einblenden 69 ms, 8 Gleiter bauen 21 ms –, danach erstes Rennbild 114 ms (Shader + Hochladen). Speicher: ≈ 7,5 MB/s
+Allokation, davon das meiste in der Physik (`Gleiter.schritt`, `Pilot.steuer`, Rangliste/Gummiband je Physik-Schritt).
+
+### Was geändert wurde (jede Maßnahme mit Regler)
+
+| Maßnahme | Regler |
+|---|---|
+| **Vorwärmen im Menü**: Gleiter der Standard-Aufstellung, Funken, Schlieren, Drohne, Minikarte, Kino-Look-Renndurchgang einmal unsichtbar rechnen (`renderer.compileAsync` + 2 Bilder) | `?vorwaermen=0` |
+| Gleiter für das Rennen aus diesem Vorrat; Audio-Kontext im Menü (Leerlauf) statt im Start-Klick; HUD im Menü `visibility: hidden` statt `display: none` | (mit `?vorwaermen=0` wird neu gebaut) |
+| **KI-Pläne + Stadt-Plan im Worker** (`src/ai/plan_worker.js`), Menü zeigt die Strecke schon vorher; Ergebnis bitgleich geprüft (Linie, Tempoplan, 7229 Türme) | `?planworker=0` |
+| **modulepreload** aller Start-Module + der zuletzt gewählten Strecke (aus `tools/update_sw.py`); Gleiter-Modelle bewusst nicht vorab (gemessen: verdrängen three.js) | – |
+| Service-Worker registriert erst, wenn Menü + Modelle bereit sind (spätestens 20 s nach `load`) | `?nosw` wie bisher |
+| Weniger Speicherbereinigung: Rangliste an Ort und Stelle, Gummiband/KI/Drift ohne neue Objekte je Schritt | – |
+| Auflösungs-Regler mit Ruhe (runter nach 2 s, rauf nach 4 s, nicht in den ersten 3 s) | `?skalaruhe=0` |
+
+### Messung nachher (Gate)
+
+**Rennen** (gleiches Profil):
+
+| | Megastadt 150 s | Gebirge 120 s | Riff 120 s | Summe vorher → nachher |
+|---|---|---|---|---|
+| Bilder > 50 ms | 1 | 0 | 0 | **4 → 1** (Gate: halbiert ✓) |
+| Bilder > 100 ms | 0 | 0 | 0 | **3 → 0** |
+| längster Hänger | 50,1 ms (Hafenkurve, Treiber/GPU) | 33,3 ms | 33,4 ms | **367 → 50 ms** (Ziel < 100 ms ✓) |
+| p95 ms | 16,7 | 16,8 | 16,7 | gleich ✓ |
+| Erstauftritte im Rennen | 1 | 0 | 5 | 42 → 6 |
+| Renderskala-Wechsel | 2 | 2 | 2 | 15 → 6 |
+
+**Start** (CPU ×4): Start-Klick → erstes Rennbild **302 → 38 ms** (`starte()` 188 → 7 ms, erstes Bild 114 → 31 ms); erstes
+Menübild mit Strecke **1,57 → 0,70 s** (ohne Netz). Kaltstart lokal mit Fast 4G (ohne gzip, gleicher Rechner, gleiche
+Drossel): Menü **4,14 → 2,91 s**, Klick bis Rennen läuft 0,56 → 0,23 s, Countdown-Hänger 350 → 33 ms.
+
+**Optik:** Standbild hoch an derselben Stelle (Megastadt, Grafikstufe fest) alt/neu nebeneinander angesehen – gleiche
+Stadt, Schilder, Bahn, Farben; die Pixel-Abweichung ist Zeit-/Kamera-Versatz, keine Material- oder Licht-Änderung (an Shadern
+und Materialien wurde nichts geändert, nur *wann* sie übersetzt werden).
+
+Prüfungen: `npm run test:node` 141/141, `tests/smoke.py`, `tests/p2_cup.py` (alle 5 Strecken nacheinander, mit Worker),
+`tests/p3_bilder.py` – 0 Fehler.
+
+### Handy-Test für Peter (Etappe 2)
+
+1. App einmal neu laden: Wie schnell steht das Menü, wie schnell fährt man nach „RENNEN STARTEN“? Hängt der Countdown noch?
+2. Zwei, drei Rennen auf verschiedenen Strecken: kommen noch Ruckler? Wenn ja: Strecke + Stelle merken (z. B. „Megastadt
+   Hafenkurve“) – mit `?vorwaermen=0` bzw. `?skalaruhe=0` lässt sich vergleichen, ob es vorher schlimmer war.
+
+### Grenzen Etappe 2
+
+- Gemessen am Mac (Metal) mit gedrosselter CPU, nicht am echten Android; die GPU-Seite (Shader-Übersetzung) ist am Handy
+  langsamer – deshalb die zusätzliche Zählung der Erstauftritte (42 → 6).
+- Der verbleibende Hänger in der Megastadt-Hafenkurve (50 ms) liegt im Treiber/GPU (kein JS) – nicht weiter verfolgt.
+- Gebirge-Kulisse (≈ 590 ms bei CPU ×4) läuft weiter im Hauptfaden beim Strecken-Wechsel (Menü/Cup), nicht im Rennen.
+- Die Allokationsrate der Physik ist weiter hoch (kurze, häufige Bereinigungen); große Umbauten (Physik ohne Objekte) wären
+  ein eigener Auftrag.

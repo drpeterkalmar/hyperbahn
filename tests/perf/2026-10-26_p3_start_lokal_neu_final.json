@@ -1,0 +1,631 @@
+{
+ "leer": {
+  "menu_s": 2.91,
+  "rennen_s": 3.28,
+  "start_klick_bis_rennen_s": 0.23,
+  "sw_aktiv": false,
+  "anfragen": 72,
+  "kb_gesamt": 3813,
+  "groesste": [
+   {
+    "url": "assets/musik/cyber_runner.m4a",
+    "kb": 982.8,
+    "ab_ms": 6054,
+    "dauer_ms": 1065,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/hammer.glb",
+    "kb": 474.6,
+    "ab_ms": 2272,
+    "dauer_ms": 1534,
+    "sw": false
+   },
+   {
+    "url": "lib/three.core.min.js",
+    "kb": 380.7,
+    "ab_ms": 194,
+    "dauer_ms": 1834,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/klinge.glb",
+    "kb": 375.0,
+    "ab_ms": 2271,
+    "dauer_ms": 1441,
+    "sw": false
+   },
+   {
+    "url": "lib/three.module.min.js",
+    "kb": 367.6,
+    "ab_ms": 189,
+    "dauer_ms": 696,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/stachel.glb",
+    "kb": 343.6,
+    "ab_ms": 2272,
+    "dauer_ms": 1381,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/pfeil.glb",
+    "kb": 242.2,
+    "ab_ms": 2271,
+    "dauer_ms": 1096,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kinolook.js",
+    "kb": 55.8,
+    "ab_ms": 191,
+    "dauer_ms": 862,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/loaders/GLTFLoader.js",
+    "kb": 44.5,
+    "ab_ms": 194,
+    "dauer_ms": 1477,
+    "sw": false
+   },
+   {
+    "url": "src/physics/gleiter.js",
+    "kb": 42.0,
+    "ab_ms": 192,
+    "dauer_ms": 1081,
+    "sw": false
+   }
+  ],
+  "doppelt": [
+   "icons/icon-192.png"
+  ],
+  "start_haenger": {
+   "n": 260,
+   "dauer_s": 4.3,
+   "fps": 60.0,
+   "p50": 16.7,
+   "p95": 16.7,
+   "p99": 16.8,
+   "ueber50": 0,
+   "ueber100": 0,
+   "max": 33.4,
+   "groesster": null,
+   "haenger": [],
+   "programme": 42,
+   "skalen": [
+    0.84
+   ],
+   "erstauftritte": [
+    {
+     "t": 1.11,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.13,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    }
+   ],
+   "skala_wechsel": [],
+   "gc": 4,
+   "heap_mb": 58.9
+  },
+  "wasserfall": [
+   {
+    "url": "index.html?nosw",
+    "kb": 6.3,
+    "ab_ms": 0,
+    "dauer_ms": 179,
+    "sw": false
+   },
+   {
+    "url": "css/style.css",
+    "kb": 17.3,
+    "ab_ms": 188,
+    "dauer_ms": 240,
+    "sw": false
+   },
+   {
+    "url": "src/main.js",
+    "kb": 41.4,
+    "ab_ms": 188,
+    "dauer_ms": 290,
+    "sw": false
+   },
+   {
+    "url": "lib/three.module.min.js",
+    "kb": 367.6,
+    "ab_ms": 189,
+    "dauer_ms": 696,
+    "sw": false
+   },
+   {
+    "url": "src/config.js",
+    "kb": 18.1,
+    "ab_ms": 189,
+    "dauer_ms": 246,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecken.js",
+    "kb": 4.4,
+    "ab_ms": 189,
+    "dauer_ms": 195,
+    "sw": false
+   },
+   {
+    "url": "src/game/bestzeiten.js",
+    "kb": 1.7,
+    "ab_ms": 189,
+    "dauer_ms": 188,
+    "sw": false
+   },
+   {
+    "url": "src/track/bahn.js",
+    "kb": 22.7,
+    "ab_ms": 189,
+    "dauer_ms": 420,
+    "sw": false
+   },
+   {
+    "url": "src/ai/pilot.js",
+    "kb": 29.2,
+    "ab_ms": 189,
+    "dauer_ms": 443,
+    "sw": false
+   },
+   {
+    "url": "src/ui/vorschau.js",
+    "kb": 3.8,
+    "ab_ms": 189,
+    "dauer_ms": 425,
+    "sw": false
+   },
+   {
+    "url": "src/core/util.js",
+    "kb": 2.8,
+    "ab_ms": 189,
+    "dauer_ms": 427,
+    "sw": false
+   },
+   {
+    "url": "src/game/rennen.js",
+    "kb": 17.3,
+    "ab_ms": 190,
+    "dauer_ms": 489,
+    "sw": false
+   },
+   {
+    "url": "src/game/fahrhilfe.js",
+    "kb": 4.7,
+    "ab_ms": 190,
+    "dauer_ms": 602,
+    "sw": false
+   },
+   {
+    "url": "src/game/eingabe.js",
+    "kb": 8.1,
+    "ab_ms": 190,
+    "dauer_ms": 618,
+    "sw": false
+   },
+   {
+    "url": "src/game/momente.js",
+    "kb": 4.2,
+    "ab_ms": 190,
+    "dauer_ms": 610,
+    "sw": false
+   },
+   {
+    "url": "src/core/zeit.js",
+    "kb": 9.4,
+    "ab_ms": 190,
+    "dauer_ms": 633,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/bahnmesh.js",
+    "kb": 14.6,
+    "ab_ms": 190,
+    "dauer_ms": 684,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/gleitermesh.js",
+    "kb": 17.0,
+    "ab_ms": 190,
+    "dauer_ms": 801,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kamera.js",
+    "kb": 11.6,
+    "ab_ms": 191,
+    "dauer_ms": 804,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kinolook.js",
+    "kb": 55.8,
+    "ab_ms": 191,
+    "dauer_ms": 862,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/himmel.js",
+    "kb": 9.0,
+    "ab_ms": 191,
+    "dauer_ms": 821,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/funken.js",
+    "kb": 2.1,
+    "ab_ms": 191,
+    "dauer_ms": 858,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/drohne.js",
+    "kb": 3.3,
+    "ab_ms": 191,
+    "dauer_ms": 867,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/sog.js",
+    "kb": 3.5,
+    "ab_ms": 191,
+    "dauer_ms": 974,
+    "sw": false
+   },
+   {
+    "url": "src/ui/hud.js",
+    "kb": 21.4,
+    "ab_ms": 191,
+    "dauer_ms": 997,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/minikarte.js",
+    "kb": 15.0,
+    "ab_ms": 192,
+    "dauer_ms": 1008,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/gpuzeit.js",
+    "kb": 1.9,
+    "ab_ms": 192,
+    "dauer_ms": 1031,
+    "sw": false
+   },
+   {
+    "url": "src/physics/fahrgefuehl.js",
+    "kb": 11.1,
+    "ab_ms": 192,
+    "dauer_ms": 1048,
+    "sw": false
+   },
+   {
+    "url": "src/physics/gleiter.js",
+    "kb": 42.0,
+    "ab_ms": 192,
+    "dauer_ms": 1081,
+    "sw": false
+   },
+   {
+    "url": "src/version.js",
+    "kb": 0.3,
+    "ab_ms": 192,
+    "dauer_ms": 1145,
+    "sw": false
+   },
+   {
+    "url": "src/game/gvignette.js",
+    "kb": 0.7,
+    "ab_ms": 192,
+    "dauer_ms": 1169,
+    "sw": false
+   },
+   {
+    "url": "src/track/runden.js",
+    "kb": 0.8,
+    "ab_ms": 192,
+    "dauer_ms": 1181,
+    "sw": false
+   },
+   {
+    "url": "src/core/vec.js",
+    "kb": 3.1,
+    "ab_ms": 192,
+    "dauer_ms": 1206,
+    "sw": false
+   },
+   {
+    "url": "src/ai/gummiband.js",
+    "kb": 3.6,
+    "ab_ms": 193,
+    "dauer_ms": 1222,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/bahn_geo.js",
+    "kb": 11.7,
+    "ab_ms": 193,
+    "dauer_ms": 1262,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/utils/BufferGeometryUtils.js",
+    "kb": 13.4,
+    "ab_ms": 193,
+    "dauer_ms": 1330,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kern/taau.js",
+    "kb": 23.2,
+    "ab_ms": 193,
+    "dauer_ms": 1370,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kern/taau_mathe.js",
+    "kb": 15.8,
+    "ab_ms": 194,
+    "dauer_ms": 1374,
+    "sw": false
+   },
+   {
+    "url": "lib/three.core.min.js",
+    "kb": 380.7,
+    "ab_ms": 194,
+    "dauer_ms": 1834,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/loaders/GLTFLoader.js",
+    "kb": 44.5,
+    "ab_ms": 194,
+    "dauer_ms": 1477,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/utils/SkeletonUtils.js",
+    "kb": 4.2,
+    "ab_ms": 194,
+    "dauer_ms": 1442,
+    "sw": false
+   },
+   {
+    "url": "src/audio/ton.js",
+    "kb": 7.9,
+    "ab_ms": 194,
+    "dauer_ms": 1514,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke1.js",
+    "kb": 9.7,
+    "ab_ms": 433,
+    "dauer_ms": 1320,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kulisse_megastadt.js",
+    "kb": 1.8,
+    "ab_ms": 433,
+    "dauer_ms": 1312,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/stadt.js",
+    "kb": 24.2,
+    "ab_ms": 433,
+    "dauer_ms": 1422,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/regen.js",
+    "kb": 4.4,
+    "ab_ms": 433,
+    "dauer_ms": 1419,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/stadt_plan.js",
+    "kb": 21.0,
+    "ab_ms": 433,
+    "dauer_ms": 1484,
+    "sw": false
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 35.7,
+    "ab_ms": 2267,
+    "dauer_ms": 330,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/pfeil.glb",
+    "kb": 242.2,
+    "ab_ms": 2271,
+    "dauer_ms": 1096,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/klinge.glb",
+    "kb": 375.0,
+    "ab_ms": 2271,
+    "dauer_ms": 1441,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/hammer.glb",
+    "kb": 474.6,
+    "ab_ms": 2272,
+    "dauer_ms": 1534,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/stachel.glb",
+    "kb": 343.6,
+    "ab_ms": 2272,
+    "dauer_ms": 1381,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke_wueste.js",
+    "kb": 5.4,
+    "ab_ms": 2398,
+    "dauer_ms": 201,
+    "sw": false
+   },
+   {
+    "url": "src/ai/plan_worker.js",
+    "kb": 0.0,
+    "ab_ms": 2411,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 2796,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke_riff.js",
+    "kb": 5.0,
+    "ab_ms": 2926,
+    "dauer_ms": 198,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke_gebirge.js",
+    "kb": 5.1,
+    "ab_ms": 3245,
+    "dauer_ms": 192,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke_orbit.js",
+    "kb": 5.2,
+    "ab_ms": 3496,
+    "dauer_ms": 186,
+    "sw": false
+   },
+   {
+    "url": "blob:d08f72d6-a550-4896-8312-75d766e6e31c",
+    "kb": 0.0,
+    "ab_ms": 3663,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:c4ddc020-3e84-4567-8bb1-5dc552287a62",
+    "kb": 0.0,
+    "ab_ms": 3663,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:eb32aff9-8521-4746-b10a-7c3a76e17baa",
+    "kb": 0.0,
+    "ab_ms": 3664,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:5e239068-eeb1-4aca-ae61-679e4b048a84",
+    "kb": 0.0,
+    "ab_ms": 3819,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:afb42996-ba02-4676-b59b-9192763f9691",
+    "kb": 0.0,
+    "ab_ms": 3819,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:812f40bb-6e2e-47fe-ad1b-aa1a8eaa1679",
+    "kb": 0.0,
+    "ab_ms": 3819,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:3d34f9be-a36d-4bfc-ac4a-5919b787d489",
+    "kb": 0.0,
+    "ab_ms": 3819,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:98ecb213-6048-4cfd-a6fc-6b62ec0568d6",
+    "kb": 0.0,
+    "ab_ms": 3820,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:5d39744a-80a7-4606-904f-f431175e2061",
+    "kb": 0.0,
+    "ab_ms": 3820,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:44057bd9-768f-4781-b647-d04dd95dced2",
+    "kb": 0.0,
+    "ab_ms": 3820,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:f59535f7-3ee5-4673-868b-750a1d66c4a8",
+    "kb": 0.0,
+    "ab_ms": 3820,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:0de0c7bb-a7cf-4c01-a61b-c48c5e580744",
+    "kb": 0.0,
+    "ab_ms": 3821,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 5176,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "assets/musik/cyber_runner.m4a",
+    "kb": 982.8,
+    "ab_ms": 6054,
+    "dauer_ms": 1065,
+    "sw": false
+   }
+  ]
+ }
+}
