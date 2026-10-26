@@ -9,7 +9,7 @@ HOCH = dict(PIXEL7_LAND, viewport={"width": 412, "height": 915})
 OUT = os.path.join(ROOT, 'tests', 'shots', 'p1b')
 ZUSTAND = """(() => { const g = __hb.spieler, r = __hb.rennen; if (!g) return null;
   return { phase: r.phase, zustand: g.zustand, boden: g.boden, luft: +g.luftZeit.toFixed(2), tempo: +g.tempo.toFixed(1), h: +g.h.toFixed(2),
-    energie: +(g.energie ?? g.schild).toFixed(3), boost: +g.boost.toFixed(2), s: Math.round(g.s), runde: __hb.rennen.alle.find((t) => t.g === g).runde }; })()"""
+    energie: +(g.energie ?? g.schild).toFixed(3), taste: document.querySelector('[data-k=rolle]').textContent, boost: +g.boost.toFixed(2), s: Math.round(g.s), runde: __hb.rennen.alle.find((t) => t.g === g).runde }; })()"""
 
 
 def collage(name, bilder, breite=420):
@@ -51,7 +51,7 @@ def szene(pw, srv, name, q, vorbereiten, warten, n=12, pause=0.18, text=None, ge
         s.pg.wait_for_function("__hb.rennen && __hb.spieler && __hb.rennen.phase === 'rennen'", timeout=60000)
         if vorbereiten: s.ev(vorbereiten)
         if warten: s.pg.wait_for_function(warten, timeout=60000)
-        bilder = folge(s, name, n, pause, text or (lambda z: f"{z['zustand']} · {z['tempo']} m/s · h {z['h']}"))
+        bilder = folge(s, name, n, pause, text or (lambda z: f"{z['zustand']} · {z['tempo']} m/s · h {z['h']} · E {round(z['energie'] * 100)} %"))
         collage(name, bilder)
         print(name, 'ok', json.dumps(s.ev(ZUSTAND)), 'Fehler', s.errors[:5])
         return dict(fehler=s.errors[:5], ende=s.ev(ZUSTAND))
@@ -67,6 +67,10 @@ SZENEN = {
     'wand': ('&at=Start-Ziel', "(() => { dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowLeft' })); setTimeout(() => dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowLeft' })), 1600); })()", None, 12, 0.15),
     # Landung nach dem Riesensprung: Federweg der Schwebe-Feder
     'landung': ('&at=H%C3%A4userschlucht%20Anlauf', None, "!__hb.spieler.boden && __hb.spieler.luftZeit > 4.6", 12, 0.12),
+    # Boxengasse: mit 15 % Energie auf die Lade-Spur (Fahrhilfe Profi, damit kein Lenkzug zur Ideallinie), Balken füllt sich
+    'box': ('&hilfe=profi&at=Start-Ziel', "(() => { const g = __hb.spieler, x = __hb.bahn.box; g.setzeAuf(x.s0 - 30, x.u, 40); g.schild = 0.15; })()", None, 12, 0.2),
+    # Energie-Warnung: 18 % → Gleiter glüht rot (Puls), Balken rot; danach Energie-Boost (Taste) mit Freigabe
+    'warnung': ('&at=Start-Ziel', "(() => { const g = __hb.spieler; g.schild = 0.18; g.boostFrei = true; setTimeout(() => { dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); setTimeout(() => dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' })), 200); }, 1200); })()", None, 12, 0.2),
 }
 
 if __name__ == '__main__':

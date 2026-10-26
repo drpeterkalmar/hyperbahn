@@ -2,6 +2,17 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P1b Etappe B: Energie = Schild = Boost, Boxengasse)
+- **Ein Energie-Balken** (HUD „ENERGIE“, vorher „SCHILD“): Wandtreffer/Rempler kosten wie bisher, dazu **manueller Boost**
+  am Boden (Leertaste/ROLLE-Taste, die am Boden „⚡ BOOST“ zeigt; Gamepad A/X) ab Runde 2 (1-Runden-Rennen: ab der Hälfte):
+  +35 % Höchsttempo für 1,6 s, kostet 12 %, nie unter 1 % – 8 Boosts aus vollem Balken.
+- **Boxengasse**: grüne Lade-Spur mit wandernden „+“ rechts auf der Start-Ziel-Geraden, lädt 35 %/s (leer → voll 2,9 s).
+- **Notlauf** bei leerem Balken (70 % Höchsttempo, Funken), **Rot-Warnung** unter 25 % (Gleiter-Lichter + Balken rot,
+  2 Hz Puls – mit „Blitze reduzieren“ ruhig rot – und Warnton).
+- **Barrel-Roll kostet 10 %** (nur ab 25 % Rest), nur 1× je Sprung, der Turbo (+30 %, 1,2 s) zündet erst bei der Landung.
+- KI nutzt Boost (Geraden, genug Energie) und Boxengasse (unter 35–60 % je Stärke).
+- Regler: `?energie=0` (alles bisher), `?boostkosten=12`, `?box=35`, `?rollkosten=10` (0 = Rolle frei wie bisher).
+
 ## 0.1.5 – 26.10.2026 (P1b Etappe A: Fahrphysik nach dem Vorlagen-Datenblatt)
 - **Schwebe-Feder nach dem 1/h-Gesetz** (`?schwebe=0` = bisher): weich oben, sehr hart nah am Boden, Ruhelage 1,20 m;
   Landung aus 10 m federt 0,36 m ein und ist nach 0,36 s ruhig (vorher bretthart 0,03 m). Drift-Hüpfer nur aus der Ruhelage.

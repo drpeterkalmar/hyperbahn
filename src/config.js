@@ -121,6 +121,13 @@ export const VORLAGE = {
   bergung: { zeit: 1.5, tempo: 0.4 },
   // Landungs-Nicken (?nicken=0 aus): Landung mit Nase > `grad`° gegen die Fahrfläche kostet `verlust` Tempo + Funken
   nicken: { an: 1, grad: 20, verlust: 0.15 },
+  // Energie = Schild = Boost (?energie=0 aus, ?boostkosten=12, ?box=35, ?rollkosten=10): ein Balken 0…1; manueller Boost
+  // (Leertaste/ROLLE-Taste am Boden, Gamepad A/X) ab Runde `abRunde` (1-Runden-Rennen: ab der Hälfte) kostet `kosten`, gibt
+  // +`gewinn` Höchsttempo für `dauer` s, nie unter `rest`; Boxengasse lädt `box` je s; leer = Notlauf (Höchsttempo ×`notlauf`);
+  // unter `warnung` rot + Warnton; Barrel-Roll kostet `rolle`, nur ab `rolleMin` Rest, 1× je Sprung, Turbo +`rolleGewinn` für
+  // `rolleDauer` s erst nach der Landung
+  energie: { an: 1, kosten: 0.12, gewinn: 0.35, dauer: 1.6, rest: 0.01, abRunde: 2, box: 0.35, notlauf: 0.7, warnung: 0.25,
+    rolle: 0.10, rolleMin: 0.15, rolleGewinn: 0.30, rolleDauer: 1.2 },
 };
 
 export const BLITZE = { reduziert: false, maxProSek: 3, strobeDaempfung: 0.35 };
@@ -151,6 +158,10 @@ export function leseRegler(search) {
   V.wand.an = q.get('wand') === '0' ? 0 : 1;
   V.bergung.zeit = zahl('bergung', 1.5);
   V.nicken.an = q.get('nicken') === '0' ? 0 : 1;
+  V.energie.an = q.get('energie') === '0' ? 0 : 1;
+  V.energie.kosten = zahl('boostkosten', 12) / 100;
+  V.energie.box = zahl('box', 35) / 100;
+  V.energie.rolle = zahl('rollkosten', 10) / 100;
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';

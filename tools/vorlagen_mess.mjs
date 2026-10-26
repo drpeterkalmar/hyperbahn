@@ -6,6 +6,7 @@ import { leseGefuehl } from '../src/physics/fahrgefuehl.js';
 import { baueBahn } from '../src/track/bahn.js';
 import { strecke1, SPRUNG_MINDEST } from '../src/track/strecke1.js';
 import { Gleiter } from '../src/physics/gleiter.js';
+import { kiRennen } from './ki_rennen.mjs';
 
 const dt = ZEIT.schritt;
 const RAD = 180 / Math.PI;
@@ -149,6 +150,38 @@ export function mL() {
   return { voll, anlenken: t90an, wechselNull: tNull, wechsel90: t90 };
 }
 
+// 5) Energie: Boosts aus vollem Balken (Gerade, Taste je 2 s), Boxengasse leer → voll; dazu KI-Rennen (2 Runden):
+// Energie-Boosts, Boxen-Durchfahrten, Notlauf-Zeit je Gleiter
+export function m5() {
+  const b = ebene(30, 20000);
+  const g = new Gleiter(b, { s: 100, v0: GLEITER.vmax });
+  g.boostFrei = true;
+  let boosts = 0, minE = 1;
+  for (let i = 0; i < 40 / dt; i++) {
+    const tick = i % Math.round(2 / dt) === 0;
+    g.schritt(dt, { ...AUS, gas: 1, boost: tick ? 1 : 0 });
+    for (const e of g.ereignisse) if (e.art === 'energieBoost') boosts++;
+    g.ereignisse.length = 0;
+    minE = Math.min(minE, g.schild);
+  }
+  // Boxengasse auf Strecke 1: leer hineinfahren (Mitte der Lade-Spur), Zeit bis voll
+  const bahn = strecke1(), x = bahn.box;
+  const g2 = new Gleiter(bahn, { s: x.s0 - 5, u: x.u, v0: 25 });
+  g2.schild = 0;
+  let t = 0, voll = -1;
+  for (let i = 0; i < 12 / dt && voll < 0; i++) {
+    g2.schritt(dt, { ...AUS, gas: g2.tempo < 25 ? 1 : 0, lenk: Math.max(-1, Math.min(1, 0.3 * (x.u - g2.u))) });
+    if (g2.imBox) t += dt;
+    if (g2.schild >= 0.999) voll = t;
+  }
+  return { boosts, minE, boxVoll: voll };
+}
+export function m5ki() {
+  const { r } = kiRennen(2, '');
+  const zeilen = r.alle.map((t) => ({ name: t.name, boosts: t.g.statistik.energieBoosts, box: +t.g.statistik.boxZeit.toFixed(1), notlauf: +t.g.statistik.notlaufZeit.toFixed(1), energie: +t.g.schild.toFixed(2) }));
+  return { zeilen, boosts: zeilen.reduce((a, z) => a + z.boosts, 0) / zeilen.length, boxen: zeilen.filter((z) => z.box > 0).length, notlauf: zeilen.reduce((a, z) => a + z.notlauf, 0) };
+}
+
 const MESS = {
   1: ['Schwebe-Ruhelage & Federweg nach Landung aus 10 m', '1,15–1,25 m; Einfedern ≤ 0,4 m, ruhig ≤ 0,5 s, kein Durchschlag',
     (r) => `Ruhe ${r.ruhe.toFixed(2)} m · Einfedern ${r.einfedern.toFixed(2)} m (tiefste ${r.hMin.toFixed(2)} m) · ruhig nach ${r.ruhig.toFixed(2)} s · Aufsetzer ${r.durchschlag}`, m1],
@@ -158,6 +191,10 @@ const MESS = {
     (r) => `eine ${(r.eine * 100).toFixed(0)} % · beide ${(r.beide * 100).toFixed(0)} %`, m3],
   4: ['Gleitwinkel beim Bremsen-Drift', 'max. 15–25°, zurück ≤ 1,2 s',
     (r) => `max. ${r.slipMax.toFixed(1)}° · zurück nach ${r.zurueck.toFixed(2)} s`, m4],
+  5: ['Boosts aus vollem Balken · Boxengasse leer → voll', '8 Boosts (12 %); Boxengasse 2,5–3,5 s',
+    (r) => `${r.boosts} Boosts (Energie nie unter ${(r.minE * 100).toFixed(0)} %) · Boxengasse voll nach ${r.boxVoll.toFixed(2)} s`, m5],
+  K: ['KI-Rennen 2 Runden: Energie-Nutzung', 'KI nutzt Boost und Boxengasse, kein Notlauf',
+    (r) => `Ø ${r.boosts.toFixed(1)} Boosts je Gleiter · ${r.boxen}/8 durch die Boxengasse · Notlauf gesamt ${r.notlauf.toFixed(1)} s · ${r.zeilen.map((z) => `${z.name} ${z.boosts}/${z.box}s/${Math.round(z.energie * 100)}%`).join(' ')}`, m5ki],
   8: ['Wandtreffer 30° bei Top', '−15…−25 % Tempo, −4…−8 % Energie',
     (r) => `Tempo ${(r.tempo * 100).toFixed(0)} % · Energie ${(r.energie * 100).toFixed(1)} %`, m8],
   L: ['Lenkwechsel bei 60 m/s (Gegenlenken)', 'Gegenlenken ≈ doppelt so schnell wie Anlenken (Vorlage), Gierrate ≤ 100°/s',

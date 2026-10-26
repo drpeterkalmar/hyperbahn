@@ -7,6 +7,7 @@
 import { Gleiter } from '../physics/gleiter.js';
 import { GEFUEHL, startWertung } from '../physics/fahrgefuehl.js';
 import { gummiband } from '../ai/gummiband.js';
+import { VORLAGE } from '../config.js';
 
 export const START = { reihe: 22, quer: 5.5, vorStrich: 12, countdown: 3 };
 
@@ -100,6 +101,8 @@ export class Rennen {
       t.respawnsAlt = g.respawns || 0;
       if (Math.abs(d) > 80 && !resp) continue;
       t.fortschritt += d;
+      // manueller Energie-Boost (P1b) ab Runde 2, bei 1-Runden-Rennen ab der Hälfte
+      g.boostFrei = this.runden > 1 ? t.runde >= VORLAGE.energie.abRunde - 1 : t.fortschritt >= L / 2;
       const r = Math.floor(t.fortschritt / L);
       if (r > t.runde && r >= 1) {
         const rz = this.zeit - t.rundenStart;

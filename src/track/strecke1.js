@@ -59,7 +59,8 @@ export function strecke1Abschnitte(sch = SCHLUSS, fassung = 'lang') {
 function abschnitteLang(sch) {
   return [
     // --- Nordseite ---
-    { typ: 'gerade', name: 'Start-Ziel', len: 560, pads: kette(2, 420, 50, 0, 5) },
+    // Boxengasse (P1b): Lade-Spur rechts auf der Start-Ziel-Geraden (vor den Pads, innerhalb des Störfeld-Rands)
+    { typ: 'gerade', name: 'Start-Ziel', len: 560, pads: kette(2, 420, 50, 0, 5), box: { at: 40, len: 300, u: -7.2, b: 2.8 } },
     { typ: 'kurve', name: 'Hochbahn-S rechts', len: 320, gier: -32, bank: [-14, -14, 0] },
     { typ: 'kurve', name: 'Hochbahn-S links', len: 320, gier: 32, bank: [14, 14, 0] },
     { typ: 'gerade', name: 'Anlauf Looping', len: 400, pads: kette(3, 160, 55, 0, 6) },

@@ -20,6 +20,10 @@ export const BAUFORMEN = {
 };
 export const BAUFORM_LISTE = Object.keys(BAUFORMEN);
 // Schräglage des Modells: voll (`max` rad) bei Gierrate `voll` rad/s, Folge-Anteil je Bild (Vorlage: 12 %)
+// Energie-Warnung (P1b): unter `schwelle` glühen Unterboden, Düsenflamme, Halo und Lichtspuren rot, Puls `hz` (ruhig = ohne Puls,
+// für „Blitze reduzieren“ – setzt main.js); aus mit ?energie=0
+export const WARNLICHT = { an: typeof location === 'undefined' || new URLSearchParams(location.search).get('energie') !== '0', schwelle: 0.25, hz: 2, ruhig: false };
+const ROT = new THREE.Color(3.0, 0.15, 0.12);
 export const SCHRAEG = { an: typeof location === 'undefined' || new URLSearchParams(location.search).get('schraeg') !== '0', voll: 0.9, max: 0.32, folge: 0.12 };
 const SPUR_N = 40;
 const vorlagen = {};   // bauform → { szene } nach ladeGleiterModelle()
@@ -197,6 +201,8 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
   let spurGefuellt = false;
 
   const m = new THREE.Matrix4(), xa = new THREE.Vector3(), ya = new THREE.Vector3(), za = new THREE.Vector3();
+  const farben0 = [unter, halo, spur, flammen].map((o) => o.material.uniforms.uFarbe.value.clone());
+  let warnZeit = 0, warnAlt = 0;
   return {
     gruppe, spur, bauform: f.name, modell: !!vorlage,
     setzeLage(g) {
@@ -229,6 +235,14 @@ export function baueGleiter(farbe = 0x00e5ff, bauform = 'pfeil', opt = {}) {
       spurPos.copyWithin(6, 0, (SPUR_N - 1) * 6);
       spurPos.copyWithin(SPUR_N * 6 + 6, SPUR_N * 6, SPUR_N * 6 + (SPUR_N - 1) * 6);
       schreibeSpur(0, g);
+      // Energie-Warnung: Leucht-Teile zur Signalfarbe rot (2 Hz Puls)
+      const warn = WARNLICHT.an && g.schild != null && g.schild < WARNLICHT.schwelle ? 1 : 0;
+      warnZeit = warn ? warnZeit + dt : 0;
+      const w = warn ? (WARNLICHT.ruhig ? 0.8 : 0.55 + 0.45 * Math.sin(warnZeit * Math.PI * 2 * WARNLICHT.hz)) : 0;
+      if (w !== warnAlt) {
+        [unter, halo, spur, flammen].forEach((o, k) => o.material.uniforms.uFarbe.value.copy(farben0[k]).lerp(ROT, w));
+        warnAlt = w;
+      }
       const t = 0.15 + 0.85 * Math.min(1, g.tempo / 120);
       for (let k = 0; k < SPUR_N; k++) {
         const a = Math.pow(1 - k / SPUR_N, 1.8) * t * (k < 2 ? k / 2 : 1);

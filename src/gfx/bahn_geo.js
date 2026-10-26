@@ -81,7 +81,7 @@ function band(b, bahn, i0, i1, profilFn, { schritt = GEO.schritt, geschlossen = 
 }
 
 export function baueBahnGeometrie(bahn) {
-  const teile = { fahrbahn: puffer(), deck: puffer(), wand: puffer(), kante: puffer(), magnet: puffer(), roehre: puffer(), pads: puffer(), stoerfeld: puffer() };
+  const teile = { fahrbahn: puffer(), deck: puffer(), wand: puffer(), kante: puffer(), magnet: puffer(), roehre: puffer(), pads: puffer(), stoerfeld: puffer(), box: puffer() };
   const C = GEO.spalten;
   const fahrbar = bereiche(bahn, (i) => !(bahn.flags[i] & F_LUECKE));
   for (const [i0, i1] of fahrbar) {
@@ -148,6 +148,11 @@ export function baueBahnGeometrie(bahn) {
   for (const p of bahn.pads) {
     const b = teile.pads, i0 = Math.floor(p.s0 / bahn.ds), i1 = Math.ceil(p.s1 / bahn.ds);
     band(b, bahn, i0, i1, () => [[p.u - p.b, 0.05], [p.u + p.b, 0.05]], { schritt: 1, vSkala: 1 / (p.s1 - p.s0) });
+  }
+  // Boxengasse (P1b): Lade-Spur, v läuft entlang
+  if (bahn.box) {
+    const x = bahn.box, i0 = Math.floor(x.s0 / bahn.ds), i1 = Math.ceil(x.s1 / bahn.ds);
+    band(teile.box, bahn, i0, i1, () => [[x.u - x.b, 0.04], [x.u + x.b, 0.04]], { schritt: 1, vSkala: 1 / (x.s1 - x.s0) });
   }
   return teile;
 }

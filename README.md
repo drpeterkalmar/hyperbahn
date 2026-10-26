@@ -16,7 +16,8 @@ P1b (Vorlagen-Nachträge): Änderungen je Version in `CHANGELOG.md`, Bericht `P1
 | Gas | ↑ (W) – auf „Leicht“ automatisch | automatisch | RT |
 | Gas weg | ↓ (S) | – | – |
 | Luftbremse links / rechts | Q / E | Tasten „◀︎ BREMSE“ / „BREMSE ▶︎“ | LB / RB |
-| Barrel-Roll im Sprung (= Turbo) | Leertaste | Taste „⟲ ROLLE“ | A |
+| Barrel-Roll im Sprung (Turbo nach der Landung, kostet 10 % Energie) | Leertaste | Taste „⟲ ROLLE“ | A |
+| Energie-Boost am Boden (ab Runde 2, kostet 12 %) | Leertaste | dieselbe Taste („⚡ BOOST“) | A / X |
 | Nase heben / senken (in der Luft) | ↓ / ↑ neu drücken (über den Absprung gehaltenes ↑ bleibt Gas) | – | linker Stick zurück/vor |
 
 **Drift + Mini-Turbo:** In der Kurve die Luftbremse auf der Innenseite halten = Rutschen. Kurz lösen und wieder ziehen
@@ -29,6 +30,11 @@ den Gleiter ab; im Dreher 5× schnell Gas tippen = Neustart-Schub. **Gleiter-Kla
 **In der Luft:** Gas einfach halten – die Nase bleibt dann auf der Flugbahn, der Gleiter landet sauber. Wer nicken will,
 drückt in der Luft neu: ↓ = Nase hoch (weiter), ↑ = Nase runter (kürzer). Eine Hülle verhindert Sturzflug und Absturz in
 die Schlucht, kurz vor dem Aufsetzen richtet die Landehilfe die Nase zur Bahn aus.
+
+**Energie:** Ein Balken ist Schild und Boost zugleich. Wandtreffer und Rempler kosten Energie, ab Runde 2 gibt die
+Boost-Taste am Boden +35 % Tempo für 1,6 s (12 %), eine Barrel-Roll im Sprung kostet 10 % und zündet bei der Landung einen
+Turbo. Aufladen in der grünen Boxengasse rechts auf der Start-Ziel-Geraden (leer → voll ≈ 3 s). Unter 25 % glüht der Gleiter
+rot, bei 0 % läuft er nur noch im Notlauf (70 % Tempo).
 
 **Abflug:** Eine Bergungs-Drohne holt den Gleiter in 1,5 s zurück; wer einen Sprung nicht schafft, wird hinter der Lücke
 abgesetzt. Wandtreffer bremsen je nach Winkel (−10…−30 %), der Gleiter gleitet an der Wand ab. Luftbremse geradeaus
@@ -66,7 +72,7 @@ Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle
 `?items=hb|ref` (Phase 2).
 Vorlagen-Mechaniken (P1b, je 0/alt = bisher): `?schwebe=0` (1/h-Feder) · `?bremse=0` / `?rutsch=1.2` (Luftbremse) ·
 `?lenk=alt` (Gegenlenken) · `?wand=0` (Wandschaden) · `?bergung=1.5` (Bergungs-Drohne, s) · `?nicken=0` (harte Landung) ·
-`?schraeg=0` (Schräglage).
+`?schraeg=0` (Schräglage) · `?energie=0` (Energie/Boxengasse aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10`.
 Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Start), `?autopilot=1`, `?nosw`.
 
 ## Tests (ohne Browser)

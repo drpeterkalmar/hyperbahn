@@ -10,7 +10,8 @@ export const LOOK = {
   fahrbahn: { farbe: 0x07090d, rau: 0.2, metall: 0.4, linie: [0.0, 0.9, 1.0], linieStaerke: 1.6 },
   kante: { links: [0.0, 0.95, 1.0], rechts: [1.0, 0.15, 0.8], staerke: 3.2, lauf: 38, abstand: 24, strobo: 1.5 },
   magnet: { a: [0.62, 0.2, 1.0], b: [0.0, 0.9, 1.0], staerke: 3.0, puls: 7 },
-  pad: { farbe: [0.2, 1.0, 1.0], staerke: 2.0, lauf: 2.6, grund: 0.07 },   // P1-Abnahme: Grund 0,25 → Pad-Ketten überstrahlten weiß
+  pad: { farbe: [0.2, 1.0, 1.0], staerke: 2.0, lauf: 2.6, grund: 0.07 },
+  box: { farbe: [0.25, 1.0, 0.35], staerke: 1.6, lauf: 0.8 },   // Boxengasse: grüne Lade-Spur mit wandernden „+“   // P1-Abnahme: Grund 0,25 → Pad-Ketten überstrahlten weiß
   ring: { farbe: 0xff2bd6, staerke: 3.5 },
   licht: { farbe: [1.0, 0.55, 0.1], staerke: 5.0, lauf: 9 },
   roehre: { glas: 0x0b1a2e, deckkraft: 0.22, ring: 0x00e5ff },
@@ -153,6 +154,21 @@ export function baueBahnMesh(bahn, opt = {}) {
     }`);
   padMat.polygonOffset = true; padMat.polygonOffsetFactor = -2;
   gruppe.add(new THREE.Mesh(geo(teile.pads), padMat));
+
+  // Boxengasse (P1b): grüne Lade-Spur, Randlinien + wandernde Plus-Zeichen („hier wird geladen“)
+  if (teile.box.pos.length) {
+    const x = LOOK.box;
+    const boxMat = leuchtMaterial(`
+      void main() {
+        vec2 z = vec2(vUv.x, fract(vUv.y * 24.0 - uZeit * ${x.lauf.toFixed(2)}));
+        float plus = max(step(abs(z.x - 0.5), 0.06) * step(abs(z.y - 0.5), 0.3), step(abs(z.y - 0.5), 0.06) * step(abs(z.x - 0.5), 0.3));
+        float rand = 1.0 - smoothstep(0.0, 0.08, min(vUv.x, 1.0 - vUv.x));
+        gl_FragColor = vec4(vec3(${x.farbe.join(', ')}) * (0.06 + plus * 0.9 + rand * 0.9) * ${x.staerke.toFixed(2)}, 1.0);
+        ${ENDE}
+      }`);
+    boxMat.polygonOffset = true; boxMat.polygonOffsetFactor = -2;
+    gruppe.add(new THREE.Mesh(geo(teile.box), boxMat));
+  }
 
   // Boost-Ringe in der Luft
   if (ins.ringe.length) {

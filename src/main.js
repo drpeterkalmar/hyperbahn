@@ -17,7 +17,7 @@ import { Eingabe } from './game/eingabe.js';
 import { MomentWaechter } from './game/momente.js';
 import { Uhr, ActionRegie, BlitzBremse, bus } from './core/zeit.js';
 import { baueBahnMesh } from './gfx/bahnmesh.js';
-import { baueGleiter, BAUFORM_LISTE, ladeGleiterModelle } from './gfx/gleitermesh.js';
+import { baueGleiter, BAUFORM_LISTE, ladeGleiterModelle, WARNLICHT } from './gfx/gleitermesh.js';
 import { KameraRig, wendeAn, leseKamera } from './gfx/kamera.js';
 import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
@@ -205,7 +205,14 @@ function ereignisse() {
           if (!uhr.akzent() && SPIEL.online && ZEIT.slowmo) scheinBis = praes + ZEIT.slowmoDauer;
           break;
         case 'magnet': blitz(0.45, [0.6, 0.25, 1]); vibriere(30); break;
-        case 'rolle': hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); break;
+        case 'rolle': if (VE.an && VE.rolle > 0) hud.meldung('ROLLE ✓ – TURBO BEI DER LANDUNG', praes, 1); else { hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); } break;
+        case 'rolleTurbo': hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); rig.stoss(0.3); break;
+        case 'rolleNein': hud.meldung(e.grund === 'einmal' ? 'NUR EINE ROLLE JE SPRUNG' : 'ROLLE: ZU WENIG ENERGIE', praes, 0.9); break;
+        case 'energieBoost': hud.meldung('BOOST', praes, 0.7); blitz(0.4, [1, 0.85, 0.2]); rig.stoss(0.25); break;
+        case 'boostNein': hud.meldung(e.grund === 'runde' ? (rennen.runden > 1 ? 'BOOST AB RUNDE 2' : 'BOOST AB DER HÄLFTE') : 'ZU WENIG ENERGIE', praes, 0.9); break;
+        case 'box': hud.meldung('BOXENGASSE – LADEN', praes, 1.2); break;
+        case 'notlauf': hud.meldung('ENERGIE LEER – NOTLAUF', praes, 1.6); vibriere(40); break;
+        case 'energieWarnung': hud.meldung('ENERGIE NIEDRIG – BOXENGASSE!', praes, 1.4); break;
         case 'patzer': hud.meldung('PATZER', praes, 1); break;
         case 'absturz': hud.meldung('ABFLUG · BERGUNG', praes, 1.5); vibriere(60); break;
         case 'hartLandung': hud.meldung('HARTE LANDUNG', praes, 0.9); rig.stoss(0.6); break;
@@ -271,6 +278,16 @@ function bestzeit() {
   return { ...r.neu, neuRennen: r.neuRennen && !!r.alt, neuRunde: r.neuRunde && !!r.alt, titel: `Bestzeit ${FASSUNGEN[bahn.fassung].kurz} · ${rundenText(rennen.runden)}` };
 }
 
+// ROLLE-Taste (P1b): am Boden Energie-Boost (ab Runde 2, genug Energie), in der Luft Rolle (1× je Sprung, genug Energie)
+const VE = VORLAGE.energie;
+const tasteAus = { boden: true, moeglich: false };
+function tasteZustand(g) {
+  tasteAus.boden = g.boden;
+  tasteAus.moeglich = g.boden ? g.boostFrei && g.schild >= VE.kosten + VE.rest
+    : !g.rolle && (VE.rolle <= 0 || (!g.gerollt && g.schild >= VE.rolle + VE.rolleMin));
+  return tasteAus;
+}
+
 // --- Hauptschleife ---
 let tAlt = performance.now() / 1000;
 window.__app = { ready: true, frames: 0 };   // wie Stuntbahn: tests/util.py wartet auf ready + frames
@@ -309,6 +326,8 @@ function bild() {
       ereignisse();
     }
     driftFunken();
+    // Notlauf (P1b): leere Energie sprüht Funken
+    for (const t of rennen.alle) if (t.g.notlauf && t.g.zustand === 'fahrt') funken.spruehe(t.g.p, t.g.v, t === spielerT ? 2 : 1, 8, [3, 0.6, 0.2]);
     if (rennen.phase === 'ziel' && laeuft) { laeuft = false; const best = bestzeit(); setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k, best), 1500); }
     const bergZeit = VORLAGE.bergung.zeit > 0 ? VORLAGE.bergung.zeit : 1.6;
     rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); bergung.update(dt, t.g, meshes[k], bergZeit); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
@@ -320,7 +339,10 @@ function bild() {
       tempo: g.tempo, platz: spielerT.platz, von: rennen.alle.length, runde: spielerT.runde, runden: rennen.runden,
       zeit: rennen.zeit - spielerT.rundenStart, beste: spielerT.beste, schild: g.schild, boost: Math.min(1, (g.boost + g.mt) / BOOST.deckel),
       magnet: !!(g.q.flags & F_MAGNET), speedOk: speedOk(g), countdown: rennen.countdown,
+      warn: VE.an && g.schild < VE.warnung, taste: VE.an ? tasteZustand(g) : null,
     }, praes);
+    document.body.classList.toggle('ruhig', blitze.reduziert);
+    WARNLICHT.ruhig = blitze.reduziert;
     if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {
     if (ton) ton.ruhe();

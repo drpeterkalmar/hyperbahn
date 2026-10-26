@@ -23,7 +23,7 @@ import { clamp, smootherstep } from '../core/util.js';
 export const DS = 2;              // m Abstand der Stützstellen
 const DS_INT = 0.5;               // m Integrationsschritt
 export const BREITE_STD = 13;     // m Halbbreite (26 m Fahrbahn für 8 Gleiter)
-export const F_MAGNET = 1, F_LUECKE = 2, F_ROEHRE = 4, F_PAD = 8, F_LANDEZONE = 16, F_SPRUNG = 32;
+export const F_MAGNET = 1, F_LUECKE = 2, F_ROEHRE = 4, F_PAD = 8, F_LANDEZONE = 16, F_SPRUNG = 32, F_BOX = 64;
 const RAD = Math.PI / 180;
 
 // Fensterfunktion: Rampe hoch (smootherstep), Plateau, Rampe runter. Integral über [0, len] = len − r.
@@ -178,6 +178,10 @@ export function baueBahn(abschnitte, opt = {}) {
     for (let i = Math.floor(p.s0 / ds); i <= Math.ceil(p.s1 / ds); i++) b.flags[((i % N) + N) % N] |= F_PAD;
   }
   b.pads.sort((x, y) => x.s0 - y.s0);
+  // Boxengasse (P1b): Lade-Spur auf der Fahrfläche { at, len, u, b } – höchstens eine je Strecke
+  b.box = null;
+  abschnitte.forEach((a, k) => { if (a.box) b.box = { s0: seg0[k] + a.box.at, s1: seg0[k] + a.box.at + a.box.len, u: a.box.u, b: a.box.b }; });
+  if (b.box) for (let i = Math.floor(b.box.s0 / ds); i <= Math.ceil(b.box.s1 / ds); i++) b.flags[((i % N) + N) % N] |= F_BOX;
   b.abfrage = (p, hint, out) => abfrage(b, p, hint, out);
   b.suche = (p) => sucheGlobal(b, p);
   b.punkt = (s, u, h, out) => punktBei(b, s, u, h, out);
@@ -307,6 +311,12 @@ export function kruemmungen(b) {
     laengs[i] = dx * b.sux[i] + dy * b.suy[i] + dz * b.suz[i];
   }
   return { quer, laengs };
+}
+
+// In der Boxengasse (s, u)?
+export function inBox(b, s, u) {
+  const x = b.box;
+  return !!x && s >= x.s0 && s <= x.s1 && Math.abs(u - x.u) <= x.b;
 }
 
 // Ist (s, u) auf einem Boost-Pad? Liefert Pad-Index oder −1. Pads sind nach s0 sortiert.

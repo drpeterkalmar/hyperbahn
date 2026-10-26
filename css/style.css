@@ -31,6 +31,13 @@ body[data-mode="menu"] .hud { display: none; }
 .balken i { position: absolute; inset: 0; transform-origin: left; transition: transform 0.12s linear; }
 .balken b { position: absolute; right: 4px; top: -15px; font-size: 10px; letter-spacing: 0.2em; font-weight: 600; transform: skewX(18deg); opacity: 0.8; }
 .schild i { background: linear-gradient(90deg, var(--cyan), #7ff3ff); box-shadow: var(--glow-c); }
+/* P1b: Energie unter 25 % rot pulsierend (2 Hz); mit „Blitze reduzieren“ ruhig rot */
+.schild.warn i { background: linear-gradient(90deg, #ff2b3b, #ff7a5a); box-shadow: 0 0 8px #ff2b3b; animation: warnPuls 0.5s ease-in-out infinite alternate; }
+.schild.warn b { color: #ff5a5a; }
+body.ruhig .schild.warn i { animation: none; }
+@keyframes warnPuls { from { opacity: 0.45; } to { opacity: 1; } }
+.tk.rolle.boost { border-color: rgba(255, 212, 0, 0.8); color: var(--gelb); }
+.tk.rolle.gesperrt { opacity: 0.4; }
 .boost i { background: linear-gradient(90deg, var(--magenta), var(--gelb)); box-shadow: var(--glow-m); }
 .hinweis { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 800; letter-spacing: 0.25em; font-size: clamp(14px, 3.2vmin, 22px); opacity: 0; transition: opacity 0.2s; }
 .hinweis.an { opacity: 1; }

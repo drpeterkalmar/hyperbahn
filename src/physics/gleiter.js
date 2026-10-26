@@ -12,7 +12,7 @@
 // Ereignisse (für Effekte/Ton/HUD/Action-Momente) landen in `ereignisse` und werden vom Spiel abgeholt.
 import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE, VORLAGE } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
-import { neueAbfrage, padBei, F_MAGNET, F_LUECKE, F_LANDEZONE } from '../track/bahn.js';
+import { neueAbfrage, padBei, inBox, F_MAGNET, F_LUECKE, F_LANDEZONE } from '../track/bahn.js';
 import { clamp, smoothstep } from '../core/util.js';
 
 const RAD = Math.PI / 180;
@@ -37,13 +37,17 @@ export class Gleiter {
     // weicher Stoß (game/rennen.js) und Reset: Felder von Anfang an anlegen – nachträglich angehängte Felder ändern die
     // Objektform mitten im Rennen und bremsen die JS-Engine (p1c-Messung: +50 % Rechenzeit in Gleiter.schritt)
     this.stossRest = v3(); this.stossN = 0; this.resetZeit = -Infinity; this.respawns = 0;
+    // Energie = Schild = Boost (P1b): boostFrei setzt das Rennen (ab Runde 2); Felder hier anlegen (feste Objektform)
+    this.boostFrei = false; this.boostTaste = false; this.rolleTaste = false; this.imBox = false; this.notlauf = false;
+    this.warnung = false; this.gerollt = false; this.rolleBonus = false;
     this.p = v3(); this.v = v3(); this.w = v3();
     this.vor = v3(0, 0, -1); this.links = v3(-1, 0, 0); this.oben = v3(0, 1, 0);
     this.q = neueAbfrage(); this.qp = [neueAbfrage(), neueAbfrage(), neueAbfrage(), neueAbfrage()];
     this.hint = 0;
     this.ereignisse = [];
     this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
-      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0, hartLandungen: 0 };
+      miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0, hartLandungen: 0,
+      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0 };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 
@@ -198,7 +202,15 @@ export class Gleiter {
     // vz = Klassen-Höchsttempo × (1 + Boost + Mini-Turbo) × Kurven-Abzug × Störfeld-Abzug. Boost = „Sollwert sofort voll“
     // (Gas wirkt voll) und schaltet den Kurven-Abzug ab, den Störfeld-Abzug nur zur Hälfte.
     const vmax = GLEITER.vmax;
-    let vz = vmaxK * (1 + this.boost + this.mt);
+    // Energie (P1b): manueller Boost (Taste am Boden, ab Runde 2), Notlauf bei leerem Balken
+    const VE = VORLAGE.energie;
+    const knopf = !!ein.boost || (amBoden && !!ein.rolle);
+    if (knopf && !this.boostTaste && VE.an && amBoden && !steuerlos) this.energieBoost();
+    this.boostTaste = knopf;
+    const leer = VE.an && this.schild <= 0.001;
+    if (leer && !this.notlauf) this.ereignis('notlauf', 1);
+    this.notlauf = leer;
+    let vz = vmaxK * (1 + this.boost + this.mt) * (leer ? VE.notlauf : 1);
     if (this.boost <= 0) vz *= kurvenFaktor(lenk, dr.aktiv);
     this.imRand = aufBahn && amBoden && Math.abs(q.u) > q.hw - GEFUEHL.randBreite;
     if (this.imRand && !this.randImmun) vz *= 1 - GEFUEHL.rand * (this.kl.rand / 0.30) * (this.boost > 0 ? 0.5 : 1);
@@ -290,6 +302,14 @@ export class Gleiter {
       this.letztesPad = kp;
     }
     this.ringe(sAlt, q);
+    // Boxengasse: lädt, solange man drin ist (am Boden)
+    const box = VE.an && amBoden && inBox(b, q.s, q.u);
+    if (box) { this.schild = Math.min(1, this.schild + VE.box * dt); this.statistik.boxZeit += dt; if (!this.imBox) this.ereignis('box', 1); }
+    this.imBox = box;
+    if (leer) this.statistik.notlaufZeit += dt;
+    // Warnung unter VE.warnung (einmal je Unterschreiten, neu erst ab +5 %)
+    if (VE.an && !this.warnung && this.schild < VE.warnung) { this.warnung = true; this.ereignis('energieWarnung', 1); }
+    else if (this.warnung && this.schild > VE.warnung + 0.05) this.warnung = false;
     // Boost: volle Dauer, dann Abklingen in BOOST.abklingen
     if (this.boostZeit > 0) { this.boostZeit -= dt; if (this.boostZeit <= 0) this.boostAbbau = this.boost / BOOST.abklingen; }
     else if (this.boost > 0) this.boost = Math.max(0, this.boost - dt * Math.max(this.boostAbbau, 0.5));
@@ -297,6 +317,7 @@ export class Gleiter {
     // --- Boden/Luft-Buchhaltung, Sprünge, Absturz ---
     if (amBoden) {
       if (this.luftZeit > 0.4) this.gelandet(q);
+      this.gerollt = false;
       this.luftZeit = 0; this.absprung = null;
       if (aufBahn) { this.sicherZeit += dt; if (this.sicherZeit > 0.5) this.sicherS = q.s; }
     } else {
@@ -359,7 +380,15 @@ export class Gleiter {
     // nur auf neuen Tastendruck (Flanke), sonst rollte gehaltene Taste endlos
     const neu = ein.rolle && !this.rolleTaste;
     this.rolleTaste = !!ein.rolle;
-    if (!this.rolle && neu && this.luftZeit > 0.15) this.rolle = { richt: Math.sign(ein.rolle), winkel: 0 };
+    // Rolle kostet Energie (P1b, ?rollkosten=0 = frei wie bisher): nur 1× je Sprung und nur mit genug Rest
+    const VE = VORLAGE.energie, kostet = VE.an && VE.rolle > 0;
+    if (!this.rolle && neu && this.luftZeit > 0.15) {
+      if (!kostet) this.rolle = { richt: Math.sign(ein.rolle), winkel: 0 };
+      else if (!this.gerollt && this.schild >= VE.rolle + VE.rolleMin) {
+        this.schild -= VE.rolle; this.gerollt = true;
+        this.rolle = { richt: Math.sign(ein.rolle), winkel: 0 };
+      } else this.ereignis('rolleNein', 1, { grund: this.gerollt ? 'einmal' : 'energie' });
+    }
     if (this.rolle) {
       const rate = 2 * Math.PI / GLEITER.rolleDauer;
       addSk(this.w, this.w, this.vor, (this.rolle.richt * rate - wv));
@@ -367,8 +396,9 @@ export class Gleiter {
       if (this.rolle.winkel >= 2 * Math.PI) {
         this.rolle = null;
         addSk(this.w, this.w, this.vor, -dot(this.w, this.vor));
-        this.boost = Math.min(BOOST.deckel, this.boost + BOOST.rolle);
-        this.boostZeit = Math.max(this.boostZeit, BOOST.dauer);
+        // mit Rollkosten gibt es den Turbo erst nach der Landung (gelandet), sonst sofort wie bisher
+        if (kostet) this.rolleBonus = true;
+        else { this.boost = Math.min(BOOST.deckel, this.boost + BOOST.rolle); this.boostZeit = Math.max(this.boostZeit, BOOST.dauer); }
         this.statistik.rollen++;
         this.ereignis('rolle', 1);
       }
@@ -396,13 +426,20 @@ export class Gleiter {
 
   rolleAbbrechen() {
     // Landung mitten in der Rolle: Patzer (Tempo weg), kein Turbo
-    this.rolle = null;
+    this.rolle = null; this.rolleBonus = false;
     addSk(this.v, this.v, this.v, -0.3);
     this.ereignis('patzer', 1);
   }
 
   gelandet(q) {
     const sp = this.absprung;
+    // Turbo nach sauber vollendeter Rolle (P1b): erst jetzt, nach der Landung
+    if (this.rolleBonus) {
+      const VE = VORLAGE.energie;
+      this.rolleBonus = false;
+      this.boost = Math.min(BOOST.deckel, this.boost + VE.rolleGewinn); this.boostZeit = Math.max(this.boostZeit, VE.rolleDauer);
+      this.ereignis('rolleTurbo', 1);
+    }
     this.statistik.sprungLandungen += sp && this.luftZeit > 1.5 ? 1 : 0;
     const weite = sp ? Math.hypot(this.p.x - sp.x, this.p.z - sp.z, this.p.y - sp.y) : 0;
     if (sp && this.luftZeit > 1.5) this.statistik.sprunge.push({ s: sp.s, luft: this.luftZeit, weite, v: sp.v, landeS: q.s });
@@ -479,6 +516,21 @@ export class Gleiter {
         this.ereignis('ring', 1);
       }
     }
+  }
+
+  get energie() { return this.schild; }
+
+  // Manueller Boost aus der Energie (P1b): ab Runde 2 (boostFrei), kostet VE.kosten, nie unter VE.rest
+  energieBoost() {
+    const VE = VORLAGE.energie;
+    if (!this.boostFrei) { this.ereignis('boostNein', 1, { grund: 'runde' }); return false; }
+    if (this.schild < VE.kosten + VE.rest) { this.ereignis('boostNein', 1, { grund: 'energie' }); return false; }
+    this.schild -= VE.kosten;
+    this.boost = Math.min(BOOST.deckel, this.boost + VE.gewinn);
+    this.boostZeit = Math.max(this.boostZeit, VE.dauer);
+    this.statistik.energieBoosts++;
+    this.ereignis('energieBoost', 1);
+    return true;
   }
 
   // Boost-Pad / Start-Boost / Item (Phase 2): stapelt bis BOOST.deckel, volle Dauer neu

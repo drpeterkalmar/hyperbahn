@@ -34,7 +34,7 @@ export class Hud {
       </div>
       <div class="hud-tempo">
         <div class="tempo"><span class="gross" data-k="tempo">0</span><span class="einheit">km/h</span></div>
-        <div class="balken schild"><i data-k="schild"></i><b>SCHILD</b></div>
+        <div class="balken schild" data-k="schildBalken"><i data-k="schild"></i><b>ENERGIE</b></div>
         <div class="balken boost"><i data-k="boost"></i><b>BOOST</b></div>
       </div>
       <div class="hinweis magnet" data-k="magnet">⟁ MAGNET</div>
@@ -121,7 +121,8 @@ export class Hud {
     const st = this.menue.querySelector('.start'); if (st && st.textContent !== 'NOCHMAL') st.textContent = an && pause ? 'NEU STARTEN' : 'RENNEN STARTEN';
   }
 
-  // z = { tempo (m/s), platz, von, runde, runden, zeit, beste, schild, boost, magnet, speedOk (null|true|false), countdown }
+  // z = { tempo (m/s), platz, von, runde, runden, zeit, beste, schild (= Energie), warn, boost, magnet, speedOk, countdown,
+  //       taste: { boden, moeglich } }
   update(z, t) {
     const k = this.k;
     k.tempo.textContent = Math.round(z.tempo * 3.6 * ANZEIGE.faktor);
@@ -130,6 +131,14 @@ export class Hud {
     k.zeit.textContent = fmtTime(z.zeit);
     k.beste.textContent = isFinite(z.beste) ? 'BESTE ' + fmtTime(z.beste) : '';
     k.schild.style.transform = `scaleX(${Math.max(0, Math.min(1, z.schild))})`;
+    k.schildBalken.classList.toggle('warn', !!z.warn);
+    // ROLLE-Taste (P1b): am Boden Energie-Boost, in der Luft Barrel-Roll; grau, wenn gerade nicht möglich
+    if (z.taste) {
+      const txt = z.taste.boden ? '⚡ BOOST' : '⟲ ROLLE';
+      if (k.rolle.textContent !== txt) k.rolle.textContent = txt;
+      k.rolle.classList.toggle('boost', z.taste.boden);
+      k.rolle.classList.toggle('gesperrt', !z.taste.moeglich);
+    }
     k.boost.style.transform = `scaleX(${Math.max(0, Math.min(1, z.boost))})`;
     this.hud.classList.toggle('boostet', z.boost > 0.05);
     k.magnet.classList.toggle('an', !!z.magnet);

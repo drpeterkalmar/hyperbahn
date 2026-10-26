@@ -105,6 +105,12 @@ export class Ton {
       case 'stotterer': ton(140, 90, 0.4, 'square', 0.5); break;
       case 'magnet': ton(300, 450, 0.2, 'sine', 0.5); break;
       case 'absturz': ton(300, 60, 0.6, 'sawtooth', 0.7); break;
+      // P1b: Energie
+      case 'energieBoost': case 'rolleTurbo': ton(392, 784, 0.3, 'sawtooth', 0.7); break;
+      case 'energieWarnung': ton(880, 560, 0.35, 'square', 0.35); break;
+      case 'box': ton(330, 990, 0.5, 'sine', 0.5); break;
+      case 'notlauf': ton(220, 110, 0.5, 'square', 0.5); break;
+      case 'boostNein': case 'rolleNein': ton(200, 180, 0.08, 'square', 0.25); break;
       case 'stoss': if (staerke > 0.3) ton(180, 120, 0.12, 'square', 0.5 * staerke); break;
       default: break;
     }

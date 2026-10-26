@@ -9,16 +9,18 @@
 //  4. Stärke-Profile mit menschlichen Fehlern (Linienrauschen, Tempofaktor, Wackler), deterministisch per Seed.
 //  5. Fahrgefühl (Datenblatt): Drift mit Pump-Rhythmus in langen Kurven (Mini-Turbo), Start-Tipp im Countdown,
 //     Gummiband-Modus (`gummi` von ai/gummiband.js: Tempo raus bzw. „schnell“ = volles Profil, kein Störfeld-Abzug).
-import { GLEITER } from '../config.js';
+import { GLEITER, VORLAGE } from '../config.js';
 import { clamp, rng } from '../core/util.js';
 import { v3, setze, dot } from '../core/vec.js';
 import { F_LUECKE, F_SPRUNG, F_MAGNET, rahmenBei, neueAbfrage } from '../track/bahn.js';
 import { lenkFaktor } from '../physics/fahrgefuehl.js';
 
 export const PROFILE = {
-  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15 },
-  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4 },
-  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7 },
+  // boost = Anteil der Gelegenheiten (Gerade, genug Energie), bei denen der manuelle Energie-Boost gezogen wird; box = unter
+  // diesem Energie-Stand fährt die KI durch die Boxengasse (P1b)
+  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15, boost: 0.3, box: 0.35 },
+  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4, boost: 0.6, box: 0.5 },
+  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7, boost: 0.9, box: 0.6 },
 };
 
 const RAND = 3.2;   // m Abstand der Linie zur Bahnkante
@@ -115,7 +117,8 @@ export class Pilot {
     this.wackel = 0; this.wackelT = 0;
     this.ausweich = 0;
     this.q = neueAbfrage();
-    this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 };
+    this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0 };
+    this.boostT = 0; this.zurBox = false;
     this.rolleGeplant = false;
     this.gummi = null;
     this.driftT = 0; this.driftKurve = -1;
@@ -141,7 +144,7 @@ export class Pilot {
   // Eingaben für einen Physik-Schritt; `andere` = Liste anderer Gleiter (Ausweichen)
   steuer(g, dt, andere = []) {
     const e = this.ein, b = this.bahn, pr = this.profil;
-    e.rolle = 0; e.nase = 0;
+    e.rolle = 0; e.nase = 0; e.boost = 0;
     if (g.zustand !== 'fahrt') { e.gas = 0; e.lenk = 0; return e; }
     const v = Math.max(g.tempo, 5);
     // menschliche Fehler: langsames Linienrauschen + seltene Wackler
@@ -190,7 +193,15 @@ export class Pilot {
     const sv = g.s + la;
     const i = ((Math.floor(sv / b.ds) % b.N) + b.N) % b.N;
     const imSprung = (b.flags[i] & (F_LUECKE | F_SPRUNG)) || (b.flags[Math.floor(g.hint) % b.N] & (F_LUECKE | F_SPRUNG));
-    const uz = clamp(this.linieBei(sv) + (imSprung ? 0 : this.rausch + this.ausweich), -(b.hw[i] - 2.4), b.hw[i] - 2.4);
+    let uz = clamp(this.linieBei(sv) + (imSprung ? 0 : this.rausch + this.ausweich), -(b.hw[i] - 2.4), b.hw[i] - 2.4);
+    // Boxengasse (P1b): mit wenig Energie ab 250 m davor auf die Lade-Spur, bis zu ihrem Ende
+    const bx = b.box, VE = VORLAGE.energie;
+    if (bx && VE.an && VE.box > 0) {
+      let d = bx.s0 - g.s; if (d < -b.L / 2) d += b.L; if (d > b.L / 2) d -= b.L;
+      if (d > 0 && d < 250 && g.schild < (pr.box ?? 0.5)) this.zurBox = true;
+      if (this.zurBox && (d < -(bx.s1 - bx.s0) || g.schild > 0.97)) this.zurBox = false;
+      if (this.zurBox) uz = bx.u;
+    }
     const r = rahmenBei(b, sv, this.q);
     setze(_f, r.P.x + r.Ls.x * uz + r.Us.x * 1.4, r.P.y + r.Ls.y * uz + r.Us.y * 1.4, r.P.z + r.Ls.z * uz + r.Us.z * 1.4);
     setze(_d, _f.x - g.p.x, _f.y - g.p.y, _f.z - g.p.z);
@@ -224,6 +235,15 @@ export class Pilot {
     e.bremseR = (zuSchnell || sat) && lenk < 0 ? clamp((v - vz) / 10 + (sat ? 0.6 : 0), 0, 1) : 0;
     if (zuSchnell && Math.abs(lenk) < 0.2) { e.bremseL = e.bremseR = clamp((v - vz) / 12, 0, 1); }
     this.driften(g, dt, e, v, imSprung);
+    // Energie-Boost (P1b): auf Geraden (Plan hat dort Höchsttempo, 300 m voraus keine enge Kurve), genug Energie übrig,
+    // nicht in der Boxengasse, höchstens alle 2 s eine Entscheidung
+    this.boostT -= dt;
+    if (VE.an && g.boostFrei && g.boden && this.boostT <= 0 && !this.zurBox && g.boost < 0.05 && g.schild > (pr.box ?? 0.5) + VE.kosten && v > GLEITER.vmax * 0.75) {
+      this.boostT = 2;
+      let gerade = true;
+      for (let k = 0; k <= 300 && gerade; k += 30) gerade = this.zielBei(g.s + k) >= GLEITER.vmax * 1.2;
+      if (gerade && this.r() < (pr.boost ?? 0)) e.boost = 1;
+    }
     // Luft: Barrel-Roll, wenn noch genug Flugzeit bleibt (Stärke-abhängig, einmal je Sprung)
     if (!g.boden && g.luftZeit > 0.3 && g.luftZeit < 1.2) {
       if (!this.rolleGeplant) {
