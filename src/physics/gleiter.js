@@ -12,7 +12,7 @@
 // Ereignisse (für Effekte/Ton/HUD/Action-Momente) landen in `ereignisse` und werden vom Spiel abgeholt.
 import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE, VORLAGE } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
-import { neueAbfrage, padBei, inBox, F_MAGNET, F_LUECKE, F_LANDEZONE } from '../track/bahn.js';
+import { neueAbfrage, padBei, inBox, F_MAGNET, F_LUECKE, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, F_TEILER } from '../track/bahn.js';
 import { clamp, smoothstep } from '../core/util.js';
 
 const RAD = Math.PI / 180;
@@ -155,7 +155,8 @@ export class Gleiter {
     this.magnet = clamp(this.magnet + clamp(magZiel - this.magnet, -dt / MAGNET.rampe, dt / MAGNET.rampe), 0, 1);
     if (magAlt === 0 && this.magnet > 0 && magZiel) this.ereignis('magnet', 1);
     // Schwerkraft: Welt (in der Luft × LUFT.faktor) gemischt mit Magnet (−Normale · magG)
-    const gw = G * (amBoden || kontakte > 0 ? 1 : LUFT.faktor) * (1 - this.magnet);
+    // P2: schwache Schwerkraft-Zonen (q.schwere < 1, z. B. Orbital-Ring) wirken am Boden und in der Luft
+    const gw = G * (amBoden || kontakte > 0 ? 1 : LUFT.faktor) * (1 - this.magnet) * q.schwere;
     a.y -= gw;
     addSk(a, a, q.Us, -MAGNET.g * G * this.magnet);
 
@@ -344,7 +345,9 @@ export class Gleiter {
       const unter = aufBahn && q.h < -4;
       const schlucht = (q.flags & F_LUECKE) && q.h < -14;
       const weg = Math.abs(q.u) > q.hw + 45 || q.h > ((q.flags & (F_LUECKE | F_LANDEZONE)) ? 160 : 70);
-      if (unter || schlucht || weg || this.luftZeit > 12) return this.abgestuerzt(unter ? 'unter' : schlucht ? 'schlucht' : weg ? 'weg' : 'luft');
+      // P2: über eine offene Kante (ohne Bande) gefahren und schon unter die Fahrfläche gesackt
+      const kante = !aufBahn && (q.flags & (q.u > 0 ? F_OFFEN_L : F_OFFEN_R)) && q.h < -5;
+      if (unter || schlucht || weg || kante || this.luftZeit > 12) return this.abgestuerzt(unter ? 'unter' : schlucht ? 'schlucht' : weg ? 'weg' : kante ? 'kante' : 'luft');
     }
     this.boden = amBoden;
   }
@@ -434,7 +437,7 @@ export class Gleiter {
     const vh = (this.v.x * dx + this.v.z * dz) / Math.max(d, 1e-6);
     if (vh < 1) return -Infinity;
     const t = d / vh;
-    return this.p.y + this.v.y * t - 0.5 * G * LUFT.faktor * t * t - E.y;
+    return this.p.y + this.v.y * t - 0.5 * G * LUFT.faktor * q.schwere * t * t - E.y;
   }
 
   rolleAbbrechen() {
@@ -484,12 +487,36 @@ export class Gleiter {
   }
 
   wand(dt, q) {
-    const rand = q.hw - GLEITER.breite / 2;
-    if (q.flags & F_LUECKE || q.h > WAND.hoehe || q.h < -2 || Math.abs(q.u) <= rand) { this.wandKontakt = 0; return; }
-    const sgn = Math.sign(q.u);
-    setze(_n, -q.Ls.x * sgn, -q.Ls.y * sgn, -q.Ls.z * sgn);   // nach innen
-    addSk(this.p, this.p, _n, Math.abs(q.u) - rand);
-    const vn = dot(this.v, _n);
+    let kontakt = false;
+    if (!(q.flags & F_LUECKE) && q.h <= WAND.hoehe && q.h >= -2) {
+      // Bande links/rechts (P2: nicht an offenen Kanten – dort fällt man hinunter)
+      const rand = q.hw - GLEITER.breite / 2, sgn = Math.sign(q.u);
+      if (Math.abs(q.u) > rand && !(q.flags & (sgn > 0 ? F_OFFEN_L : F_OFFEN_R))) {
+        setze(_n, -q.Ls.x * sgn, -q.Ls.y * sgn, -q.Ls.z * sgn);   // nach innen
+        this.wandStoss(dt, q, _n, Math.abs(q.u) - rand, sgn);
+        kontakt = true;
+      }
+      // Gabelungs-Teiler (P2): Mittel-Wand, wegdrücken auf die Seite, auf der der Gleiter ist
+      if (q.flags & F_TEILER && q.tb > 0) {
+        const d = q.u - q.tu, pen = q.tb + GLEITER.breite / 2 - Math.abs(d);
+        if (pen > 0) {
+          const sg = d >= 0 ? 1 : -1;
+          setze(_n, q.Ls.x * sg, q.Ls.y * sg, q.Ls.z * sg);   // vom Teiler weg
+          this.wandStoss(dt, q, _n, pen, -sg);
+          kontakt = true;
+        }
+      }
+    }
+    if (!kontakt) { this.wandKontakt = 0; return; }
+    this.reibung(dt, 0.6);
+    this.wandKontakt += dt;
+  }
+
+  // Wandkontakt: n = Normale von der Wand weg (Welt), pen = Eindringtiefe (m), sgn = Seite der Wand (+ links)
+  wandStoss(dt, q, n, pen, sgn) {
+    void dt; void q;
+    addSk(this.p, this.p, n, pen);
+    const vn = dot(this.v, n);
     if (vn < 0) {
       const vi = -vn;
       // neuer Einschlag: erster Kontakt bzw. kräftig (> 4 m/s); mit Vorlage-Wand höchstens einer je VW.sperre s (Nachstöße
@@ -497,7 +524,7 @@ export class Gleiter {
       const VW = VORLAGE.wand, neu = (this.wandKontakt === 0 || vi > 4) && (!VW.an || this.zeit - this.wandZeit > VW.sperre);
       if (neu) this.wandZeit = this.zeit;
       const v0 = this.tempo || Math.sqrt(dot(this.v, this.v));
-      addSk(this.v, this.v, _n, vi * (1 + WAND.abprall));
+      addSk(this.v, this.v, n, vi * (1 + WAND.abprall));
       const anteil = clamp(vi / 25, 0, 1);
       if (VW.an) {
         // Vorlage: nur echte Einschläge kosten – Tempo −10…−30 % je Aufprallwinkel (gesamt, inkl. Abprall), Energie ∝ Quertempo
@@ -508,9 +535,9 @@ export class Gleiter {
           addSk(this.v, this.v, this.v, v0 * (1 - verlust) / vn2 - 1);
           this.schild = Math.max(0, this.schild - Math.max(VW.min, VW.energie * vi));
           // Abgleiten: Nase parallel zur Wand drehen (leicht weg), sonst zöge die Seitenhaftung ihn gleich wieder hinein
-          const zurWand = -dot(this.vor, _n);
+          const zurWand = -dot(this.vor, n);
           if (zurWand > 0) {
-            kreuz(_t, this.vor, _n); norm(_t, _t);
+            kreuz(_t, this.vor, n); norm(_t, _t);
             const w = Math.asin(clamp(zurWand, 0, 1)) + VW.weg * RAD;
             dreheRahmen(this.vor, this.links, this.oben, _t.x * w, _t.y * w, _t.z * w);
           }
@@ -524,8 +551,6 @@ export class Gleiter {
       // Nase von der Wand weg drehen
       addSk(this.w, this.w, this.oben, -sgn * 0.8 * anteil);
     }
-    this.reibung(dt, 0.6);
-    this.wandKontakt += dt;
   }
 
   ringe(sAlt, q) {

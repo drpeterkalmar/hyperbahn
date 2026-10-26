@@ -11,6 +11,7 @@
 // Die Schließ-Parameter (SCHLUSS) stimmt tools/strecke_schliessen.mjs ab (Test: test_bahn.mjs prüft den Restfehler).
 import { baueBahn } from './bahn.js';
 import { SPIEL } from '../config.js';
+import { rundenFuer } from './runden.js';
 
 // a = Länge Hochstraße (Nord-Süd-Schluss), b = Länge Ostgerade (Ost-West-Schluss), c = Gierwinkel der letzten Kurve,
 // d = Steigung Aufstieg/Kuppe (Höhen-Schluss)
@@ -127,16 +128,15 @@ export function strecke1(fassung = SPIEL.strecke) {
   const b = baueBahn(strecke1Abschnitte(FASSUNGEN[f].schluss, f), { start: { p: { x: 0, y: 160, z: 0 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 } } });
   b.name = FASSUNGEN[f].name;
   b.fassung = f;
+  b.id = f === 'lang' ? 'megastadt-lang' : 'megastadt';
+  b.sprungMindest = SPRUNG_MINDEST;
   return b;
 }
+// Strecken-Register (P2): einheitlicher Einstieg baue(fassung) für alle Strecken
+export const baue = (fassung) => strecke1(fassung);
 
-// Rundenzahl aus der Median-Rundenzeit (KI „Mittel“): so viele Runden, dass Countdown + Startverlust (stehender Start,
-// erste Runde) + n Runden ≤ ziel Sekunden bleiben; mindestens 1
-export const RENNDAUER = { ziel: 300, countdown: 3, start: 5 };
-export function rundenFuer(rundenzeit, r = RENNDAUER) {
-  if (!(rundenzeit > 0)) return 2;
-  return Math.max(1, Math.floor((r.ziel - r.countdown - r.start) / rundenzeit));
-}
+// Rundenzahl aus der Median-Rundenzeit: jetzt in runden.js (gilt für alle Strecken), hier weitergereicht
+export { RENNDAUER, rundenFuer } from './runden.js';
 export function rundenDerFassung(fassung) {
   const f = FASSUNGEN[fassung] || FASSUNGEN[STANDARD_FASSUNG];
   return rundenFuer(f.rundenzeit);

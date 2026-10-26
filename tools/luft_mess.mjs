@@ -7,12 +7,15 @@
 //   kurz T        ↑ gehalten, in der Luft kurz los (0,25 s) und NEU gedrückt für T s (Nase senken = kürzer)
 //   weit T        ↓ in der Luft für T s (Nase heben = weiter); T aus einem Raster, bestes sauberes Ergebnis zählt
 // Je Sprung: Absturz, Bauchlandung (Nase > 20° gegen die Fahrfläche, schief > 45°, Patzer), harte Landung, Airtime, Weite.
-// Aufruf: node tools/luft_mess.mjs [url-regler]      z. B. node tools/luft_mess.mjs "?nase=alt"
+// Aufruf: node tools/luft_mess.mjs [url-regler] [strecke]   z. B. node tools/luft_mess.mjs "?nase=alt"  ·  node tools/luft_mess.mjs wueste
+// P2: andere Strecken – Sprünge aus den Abschnitten (typ 'sprung', Anlauf = Abschnitt vor der Absprung-Rampe), je mit und
+// ohne Pads (seitlich an der Kette vorbei)
 import { leseRegler, GLEITER, ZEIT } from '../src/config.js';
-import { strecke1 } from '../src/track/strecke1.js';
+import { baueStrecke } from '../src/track/alle.js';
 import { Gleiter } from '../src/physics/gleiter.js';
 import { Eingabe } from '../src/game/eingabe.js';
 import { bauePlan, Pilot, PROFILE as PROFILE_KI } from '../src/ai/pilot.js';
+import { F_PAD } from '../src/track/bahn.js';
 
 const dt = ZEIT.schritt;
 
@@ -84,11 +87,29 @@ export const SPRUENGE = [
 ];
 export const RASTER = [0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0, 3.0, 5.0];
 
-export function luftMessung(regler = '') {
+// Sprünge einer Strecke: Megastadt wie bisher (feste Liste), sonst aus den Abschnitten abgeleitet
+export function spruengeVon(bahn) {
+  if (bahn.id === 'megastadt' || bahn.id === 'megastadt-lang') return SPRUENGE;
+  const out = [];
+  bahn.abschnitte.forEach((a, k) => {
+    if (a.typ !== 'sprung') return;
+    const anlauf = bahn.abschnitte[k - 2].name;
+    // seitlicher Versatz neben die Pads: größter |u| ohne Pad im Anlauf (Pads liegen meist mittig)
+    const s0 = bahn.segStart[k - 2], pads = bahn.pads.filter((p) => p.s0 >= s0 - 1 && p.s0 < bahn.segStart[k]);
+    const hw = bahn.hw[Math.round(s0 / bahn.ds) % bahn.N];
+    const u = pads.length ? (Math.max(...pads.map((p) => p.u + p.b)) + 2 < hw - 2 ? Math.min(hw - 2.5, Math.max(...pads.map((p) => p.u + p.b)) + 2.5) : Math.max(-hw + 2.5, Math.min(...pads.map((p) => p.u - p.b)) - 2.5)) : 0;
+    out.push({ name: `${a.name} mit Pads`, anlauf, sprung: a.name, u: pads.length ? pads[0].u : 0 });
+    if (pads.length) out.push({ name: `${a.name} ohne Pads`, anlauf, sprung: a.name, u });
+  });
+  void F_PAD;
+  return out;
+}
+
+export function luftMessung(regler = '', strecke = 'megastadt') {
   leseRegler(regler);
-  const bahn = strecke1();
+  const bahn = baueStrecke(strecke);
   const zeilen = [];
-  for (const sp of SPRUENGE) {
+  for (const sp of spruengeVon(bahn)) {
     const neutral = sprungMessen(bahn, { ...sp, tasten: PROFILE.neutral() });
     const hoch = sprungMessen(bahn, { ...sp, tasten: PROFILE.hoch() });
     // Kürzer/Weiter-Spanne: bestes sauberes Ergebnis über das Halte-Raster
@@ -109,9 +130,9 @@ export function luftMessung(regler = '') {
 
 // ganze Runden mit dem KI-Fahrer als Lenker (Pads, Kurven, Kuppen, Drift-Hüpfer) und ↑ dauerhaft durch die echte Eingabe:
 // alle Luft-Phasen > 0,4 s, Abflüge, schiefe Landungen
-export function rundenMessung(regler = '', runden = 2, profil = 'mittel') {
+export function rundenMessung(regler = '', runden = 2, profil = 'mittel', strecke = 'megastadt') {
   leseRegler(regler);
-  const bahn = strecke1(), plan = bauePlan(bahn);
+  const bahn = baueStrecke(strecke), plan = bauePlan(bahn);
   const g = new Gleiter(bahn, { s: 5, v0: 0 }), pi = new Pilot(bahn, plan, PROFILE_KI[profil], 7), ein = new Eingabe(null);
   ein.tasten.add('ArrowUp');
   const erg = { luft: 0, abfluege: 0, schief: 0, maxLuft: 0, zeit: 0 };
@@ -135,8 +156,10 @@ export function rundenMessung(regler = '', runden = 2, profil = 'mittel') {
 }
 
 if (process.argv[1] && process.argv[1].endsWith('luft_mess.mjs')) {
-  const regler = process.argv[2] || '';
-  const z = luftMessung(regler);
+  const args = process.argv.slice(2);
+  const regler = args.find((a) => a.startsWith('?')) || '', strecke = args.find((a) => !a.startsWith('?')) || 'megastadt';
+  const z = luftMessung(regler, strecke);
+  console.log(`Strecke ${strecke}`);
   const f = (r) => r ? `${r.absturz ? 'ABSTURZ(' + r.grund + ')' : r.bauch ? 'BAUCH' : r.hart ? 'ok (hart)' : 'ok'} ${r.luft.toFixed(2)} s ${r.weite.toFixed(0)} m${r.landung ? ` (Nase ${r.landung.pitch.toFixed(0)}°)` : ''}` : '–';
   console.log(`Luft-Messung ${regler || '(Standard)'}`);
   let abst = 0, bauch = 0, spanne = 0;
@@ -154,7 +177,7 @@ if (process.argv[1] && process.argv[1].endsWith('luft_mess.mjs')) {
   }
   console.log(`\nSumme ↑ dauerhaft: ${abst} Abstürze, ${bauch} Bauchlandungen; Spanne gesamt ${spanne.toFixed(0)} m`);
   for (const p of ['mittel', 'profi']) {
-    const r = rundenMessung(regler, 2, p);
+    const r = rundenMessung(regler, 2, p, strecke);
     console.log(`2 Runden, KI-Lenker ${p}, ↑ dauerhaft: ${r.luft} Luft-Phasen > 0,4 s (längste ${r.maxLuft.toFixed(1)} s), ${r.abfluege} Abflüge, ${r.schief} schiefe Landungen (> 20°), ${r.zeit.toFixed(0)} s`);
   }
 }

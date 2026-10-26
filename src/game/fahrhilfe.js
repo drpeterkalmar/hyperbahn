@@ -6,6 +6,7 @@
 //    (In der Luft richtet die Physik die Nase ohne Eingabe ohnehin sanft nach der Flugbahn aus.)
 import { clamp } from '../core/util.js';
 import { Pilot, PROFILE } from '../ai/pilot.js';
+import { F_TEILER } from '../track/bahn.js';
 
 export const HILFE = {
   leicht: { name: 'Leicht', autoGas: true, zug: 0.6 },
@@ -17,11 +18,17 @@ export const AUS_ZEIT = 0.25;     // s bis der Zug ganz weg ist (≤ 0,3 s)
 export const ZURUECK_ZEIT = 1.2;  // s bis er nach dem Loslassen wieder voll zieht
 
 export class Fahrhilfe {
+  // plan = Plan oder { sicher, schnell } (P2 Gabelungen: der Lenkzug folgt dem Weg, auf dem der Spieler gerade ist)
   constructor(bahn, plan, stufe = 'leicht') {
     this.stufe = stufe;
     this.cfg = HILFE[stufe] || HILFE.leicht;
+    this.bahn = bahn;
     // gleicher Pilot wie die KI, aber ohne menschliche Fehler – liefert nur die „Wunsch-Lenkung“
-    this.pilot = new Pilot(bahn, plan, { ...PROFILE.profi, linie: 0, wackler: 0, rolle: 0 }, 1);
+    const pr = { ...PROFILE.profi, linie: 0, wackler: 0, rolle: 0 };
+    const plaene = plan.sicher ? plan : { sicher: plan, schnell: plan };
+    this.piloten = { sicher: new Pilot(bahn, plaene.sicher, pr, 1), schnell: new Pilot(bahn, plaene.schnell, pr, 1) };
+    this.pilot = this.piloten.sicher;
+    this.gabel = plaene.sicher !== plaene.schnell;
     this.gewicht = 1;
     this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0, strafe: 0 };
   }
@@ -40,10 +47,24 @@ export class Fahrhilfe {
     this.gewicht = deutlich ? Math.max(0, this.gewicht - dt / AUS_ZEIT) : Math.min(1, this.gewicht + dt / ZURUECK_ZEIT);
     let lenk = clamp(roh.lenk || 0, -1, 1);
     if (c.zug > 0 && g.zustand === 'fahrt') {
+      if (this.gabel) this.pilot = this.piloten[this.wegBei(g)];
       const wunsch = this.pilot.steuer(g, dt, andere).lenk;
       lenk = clamp(lenk + this.gewicht * c.zug * wunsch, -1, 1);
     }
     e.lenk = lenk;
     return e;
+  }
+
+  // Gabelung am Gleiter oder ≤ 200 m voraus: Weg nach der Seite des Teilers, auf der der Spieler gerade fährt
+  wegBei(g) {
+    const b = this.bahn, i0 = Math.floor(g.s / b.ds);
+    for (let k = 0; k <= 100; k++) {
+      const i = ((i0 + k) % b.N + b.N) % b.N;
+      if (b.flags[i] & F_TEILER) {
+        const sg = g.u >= b.tu[i] ? 1 : -1, schnell = b.tschnell[i] || 1;
+        return sg === schnell ? 'schnell' : 'sicher';
+      }
+    }
+    return this.pilot === this.piloten.schnell ? 'schnell' : 'sicher';
   }
 }

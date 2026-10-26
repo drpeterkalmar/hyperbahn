@@ -10,7 +10,11 @@
 // Abschnitt (alle Winkel in Grad, Längen in Metern):
 //   { typ, len, gier (+ = links), nick (+ = hoch), roll (Rahmen-Rolle, für versetzte Loopings), bank: Zahl | [Stützwerte],
 //     rampe (Übergangslänge der Drehrate), breite (Halbbreite), magnet, roehre, luecke (keine Fahrbahn: Sprung),
-//     pads: [{ at, u, b, l }], ringe: [{ at, h, r }], name }
+//     pads: [{ at, u, b, l }], ringe: [{ at, h, r }], name,
+//     P2 (Strecken): offen ('l' | 'r' | true: keine Bande auf der Seite – wer über die Kante fährt, stürzt ab),
+//     teiler ({ u: Zahl | [Stützwerte], b, an, schnell }: Mittel-Wand einer Gabelung bei Querversatz u, Halbbreite b, auf den
+//     ersten/letzten `an` m spitz zulaufend; schnell = +1/−1 Seite des schnelleren, riskanteren Wegs),
+//     schwere (Faktor auf die Schwerkraft im Abschnitt, z. B. 0,25 = schwache Schwerkraft-Zone) }
 //   bank: Zahl b → am Abschnittsende b; Array [b1…bn] → gleichmäßig verteilte Stützstellen (Start = vorheriger Wert).
 //   Positive Querneigung kippt die Fahrfläche nach links (Innenseite einer Linkskurve tiefer).
 //
@@ -24,6 +28,8 @@ export const DS = 2;              // m Abstand der Stützstellen
 const DS_INT = 0.5;               // m Integrationsschritt
 export const BREITE_STD = 13;     // m Halbbreite (26 m Fahrbahn für 8 Gleiter)
 export const F_MAGNET = 1, F_LUECKE = 2, F_ROEHRE = 4, F_PAD = 8, F_LANDEZONE = 16, F_SPRUNG = 32, F_BOX = 64;
+// P2: offene Kante links/rechts (keine Bande), Gabelungs-Teiler, schwache Schwerkraft (flags sind 16 bit)
+export const F_OFFEN_L = 128, F_TEILER = 256, F_SCHWACH = 512, F_OFFEN_R = 1024;
 const RAD = Math.PI / 180;
 
 // Fensterfunktion: Rampe hoch (smootherstep), Plateau, Rampe runter. Integral über [0, len] = len − r.
@@ -163,6 +169,22 @@ export function baueBahn(abschnitte, opt = {}) {
     if (a.roehre) f |= F_ROEHRE;
     if (a.landezone) f |= F_LANDEZONE;
     if (a.absprung) f |= F_SPRUNG;
+    if (a.offen === 'l' || a.offen === true) f |= F_OFFEN_L;
+    if (a.offen === 'r' || a.offen === true) f |= F_OFFEN_R;
+    if (a.schwere != null && a.schwere !== 1) { f |= F_SCHWACH; b.schwere[i] = a.schwere; }
+    // Gabelungs-Teiler: Mittel-Wand, Querversatz über Stützwerte (weich), Spitze vorn und hinten
+    const t = a.teiler;
+    if (t) {
+      const ds0 = si - seg0[k], x = ds0 / a.len;
+      const arr = Array.isArray(t.u) ? t.u : [t.u || 0];
+      let tu = arr[0];
+      if (arr.length > 1) {
+        const y = x * (arr.length - 1), j = Math.min(arr.length - 2, Math.floor(y));
+        tu = arr[j] + (arr[j + 1] - arr[j]) * smootherstep(y - j);
+      }
+      const an = t.an ?? 40, tb = (t.b ?? 1.2) * Math.min(1, ds0 / an, (a.len - ds0) / an);
+      if (tb > 0.05) { f |= F_TEILER; b.tu[i] = tu; b.tb[i] = tb; b.tschnell[i] = t.schnell || 0; }
+    }
     b.flags[i] = f;
   }
   // Pads und Ringe in Bahn-Koordinaten
@@ -200,7 +222,8 @@ function neueBahnFelder(N) {
   return {
     px: f(), py: f(), pz: f(), tx: f(), ty: f(), tz: f(), lx: f(), ly: f(), lz: f(), ux: f(), uy: f(), uz: f(),
     sux: f(), suy: f(), suz: f(), slx: f(), sly: f(), slz: f(), hw: f(), bank: f(),
-    flags: new Uint8Array(N), seg: new Uint16Array(N),
+    flags: new Uint16Array(N), seg: new Uint16Array(N),
+    schwere: new Float32Array(N).fill(1), tu: new Float32Array(N), tb: new Float32Array(N), tschnell: new Int8Array(N),
   };
 }
 
@@ -228,7 +251,7 @@ function rahmenWinkel(T, L, U, T0, L0, U0) {
 const W = 80;
 export function neueAbfrage() {
   return {
-    ok: false, i: 0, s: 0, u: 0, h: 0, hw: BREITE_STD, flags: 0, bank: 0,
+    ok: false, i: 0, s: 0, u: 0, h: 0, hw: BREITE_STD, flags: 0, bank: 0, tu: 0, tb: 0, schwere: 1,
     P: v3(), T: v3(), Us: v3(), Ls: v3(), U: v3(),
   };
 }
@@ -268,6 +291,9 @@ function interp(b, i, j, t, out) {
   out.hw = m(b.hw);
   out.bank = b.bank[i] + (b.bank[j] - b.bank[i]) * t;
   out.flags = t < 0.5 ? b.flags[i] : b.flags[j];
+  // Teiler (P2): Lage/Halbbreite an der näheren Stützstelle (0 = keiner)
+  const k = t < 0.5 ? i : j;
+  out.tu = b.tu[k]; out.tb = b.tb[k]; out.schwere = b.schwere[k];
 }
 // Globale Suche (Start, Respawn ohne Vorwissen): nächste Stützstelle, dann lokal verfeinern
 export function sucheGlobal(b, p) {
@@ -327,4 +353,23 @@ export function padBei(b, s, u) {
     if (p.s0 > s) break;
   }
   return -1;
+}
+
+// Spur-Grenzen bei (Stützstelle i, Querversatz u): Bahnkanten, an einer Gabelung nur die Seite des Teilers, auf der u liegt
+// (seite > 0 = links vom Teiler, < 0 = rechts; 0 = aus u). Rückgabe [lo, hi] mit Abstand `rand` zu Kante/Teiler.
+export function spurGrenzen(b, i, u, rand = 0, seite = 0, out = [0, 0]) {
+  const hw = b.hw[i];
+  out[0] = -hw + rand; out[1] = hw - rand;
+  if (b.flags[i] & F_TEILER) {
+    const sg = seite || (u >= b.tu[i] ? 1 : -1);
+    if (sg > 0) out[0] = Math.max(out[0], b.tu[i] + b.tb[i] + rand);
+    else out[1] = Math.min(out[1], b.tu[i] - b.tb[i] - rand);
+    if (out[0] > out[1]) out[0] = out[1] = (out[0] + out[1]) / 2;
+  }
+  return out;
+}
+
+// Boost-Pad-Kette: n Pads ab at0 im Abstand `abstand` (m), Querversatz u, Halbbreite b, Länge l
+export function kette(n, at0, abstand, u = 0, b = 4, l = 12) {
+  return Array.from({ length: n }, (_, k) => ({ at: at0 + k * abstand, u, b, l }));
 }

@@ -1,16 +1,24 @@
-// Stimmt die Schließ-Parameter von Strecke 1 ab (Nelder-Mead): zwei Geraden-Längen (a, b), Gierwinkel der letzten
-// Kurve (c) und Steigung des Aufstiegs (d), damit Ende = Anfang (Lage + Rahmen). Ausgabe: SCHLUSS-Zeile für strecke1.js.
-// Aufruf: node tools/strecke_schliessen.mjs [kurz|lang]   (Standard lang = SCHLUSS, kurz = SCHLUSS_KURZ)
+// Stimmt die Schließ-Parameter einer Strecke ab (Nelder-Mead): bei Strecke 1 zwei Geraden-Längen (a, b), Gierwinkel der
+// letzten Kurve (c) und Steigung des Aufstiegs (d), damit Ende = Anfang (Lage + Rahmen); die P2-Strecken bringen ihre
+// Parameter selbst mit (SCHLUSS, SCHLUSS_SCHRITT, schlussOk, abschnitte(sch)). Ausgabe: SCHLUSS-Zeile für die Strecken-Datei.
+// Aufruf: node tools/strecke_schliessen.mjs [kurz|lang|wueste|riff|gebirge|orbit]   (Standard lang)
 import { baueBahn } from '../src/track/bahn.js';
-import { strecke1Abschnitte, SCHLUSS, SCHLUSS_KURZ } from '../src/track/strecke1.js';
+import { strecke1Abschnitte, SCHLUSS as S1, SCHLUSS_KURZ } from '../src/track/strecke1.js';
+import { MODULE } from '../src/track/alle.js';
 
-const fassung = process.argv[2] === 'kurz' ? 'kurz' : 'lang';
-const START = fassung === 'kurz' ? SCHLUSS_KURZ : SCHLUSS;
+const arg = process.argv[2] || 'lang';
+const fassung = arg === 'kurz' ? 'kurz' : 'lang';
+const mod = MODULE[arg] && arg !== 'megastadt' && arg !== 'megastadt-lang' ? MODULE[arg] : null;
+const START = mod ? mod.SCHLUSS : fassung === 'kurz' ? SCHLUSS_KURZ : S1;
+const KEYS = Object.keys(START);
+const alsSch = (x) => Object.fromEntries(KEYS.map((k, i) => [k, x[i]]));
+const abschnitteVon = (sch) => (mod ? mod.abschnitte(sch) : strecke1Abschnitte(sch, fassung));
+const startOpt = mod ? (mod.START ? { start: mod.START } : {}) : {};
 
 function fehler(x) {
-  const [a, b, c, d] = x;
-  if (a < 60 || b < 150 || d < 0 || d > 16) return 1e12;
-  const bahn = baueBahn(strecke1Abschnitte({ a, b, c, d }, fassung));
+  const sch = alsSch(x);
+  if (mod ? !mod.schlussOk(sch) : (sch.a < 60 || sch.b < 150 || sch.d < 0 || sch.d > 16)) return 1e12;
+  const bahn = baueBahn(abschnitteVon(sch), { ...startOpt, ohneSchluss: true });
   return bahn.schluss.m ** 2 + (bahn.schluss.grad * 20) ** 2;
 }
 
@@ -43,15 +51,17 @@ function nelderMead(f, x0, schritt, iter = 400) {
   return { x: pts[i0], f: val[i0] };
 }
 
-const x0 = [START.a, START.b, START.c, START.d];
-const vor = baueBahn(strecke1Abschnitte(START, fassung));
+const x0 = KEYS.map((k) => START[k]);
+const vor = baueBahn(abschnitteVon(START), startOpt);
 console.log('vorher', vor.schluss, 'L', vor.L.toFixed(0));
 let best = { x: x0, f: fehler(x0) };
-for (let r = 0; r < 4; r++) {
-  const e = nelderMead(fehler, best.x, [120, 120, 4, 1.5]);
+const schritt = mod ? mod.SCHLUSS_SCHRITT : [120, 120, 4, 1.5];
+for (let r = 0; r < 6; r++) {
+  const e = nelderMead(fehler, best.x, schritt.map((v) => v / (1 + r)));
   if (e.f < best.f) best = e;
 }
-const [a, b, c, d] = best.x;
-const nach = baueBahn(strecke1Abschnitte({ a, b, c, d }, fassung));
+const sch = alsSch(best.x);
+const nach = baueBahn(abschnitteVon(sch), startOpt);
 console.log('nachher', nach.schluss, 'L', nach.L.toFixed(0));
-console.log(`export const ${fassung === 'kurz' ? 'SCHLUSS_KURZ' : 'SCHLUSS'} = { a: ${a.toFixed(2)}, b: ${b.toFixed(2)}, c: ${c.toFixed(3)}, d: ${d.toFixed(3)} };`);
+const name = mod ? 'SCHLUSS' : fassung === 'kurz' ? 'SCHLUSS_KURZ' : 'SCHLUSS';
+console.log(`export const ${name} = { ${KEYS.map((k) => `${k}: ${sch[k].toFixed(k === 'c' || k === 'd' ? 3 : 2)}`).join(', ')} };`);

@@ -12,18 +12,19 @@
 import { GLEITER, VORLAGE } from '../config.js';
 import { clamp, rng } from '../core/util.js';
 import { v3, setze, dot } from '../core/vec.js';
-import { F_LUECKE, F_SPRUNG, F_MAGNET, F_ROEHRE, rahmenBei, neueAbfrage } from '../track/bahn.js';
+import { F_LUECKE, F_SPRUNG, F_MAGNET, F_ROEHRE, F_TEILER, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, rahmenBei, neueAbfrage, spurGrenzen } from '../track/bahn.js';
 import { lenkFaktor } from '../physics/fahrgefuehl.js';
 
 export const PROFILE = {
   // boost = Anteil der Gelegenheiten (Gerade, genug Energie), bei denen der manuelle Energie-Boost gezogen wird; box = unter
   // diesem Energie-Stand fährt die KI durch die Boxengasse (P1b)
-  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15, boost: 0.3, box: 0.35 },
-  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4, boost: 0.6, box: 0.5 },
-  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7, boost: 0.9, box: 0.6 },
+  // risiko (P2) = Anteil der KIs, die an Gabelungen den schnellen, riskanteren Weg nehmen
+  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15, boost: 0.3, box: 0.35, risiko: 0.2 },
+  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4, boost: 0.6, box: 0.5, risiko: 0.5 },
+  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7, boost: 0.9, box: 0.6, risiko: 0.85 },
 };
 
-const RAND = 3.2;   // m Abstand der Linie zur Bahnkante
+const RAND_STD = 3.2;   // m Abstand der Linie zur Bahnkante
 // Ausweichen seitlich (p1c): Gleiter innerhalb ±laengs m längs und quer näher als quer m → weg m zur Seite (?ausweich=0 aus)
 // Ausweichen nach vorn (p1c): nächster Gleiter voraus, Zeit bis zum Kontakt < ttc s → schneller zur freien Seite (vornWeg m)
 export const AUSWEICH = { seite: 1, laengs: 7, quer: 4.5, weg: 5, vorn: 1, ttc: 3, vornWeg: 6 };
@@ -33,38 +34,87 @@ export let DRIFT_RADIUS = 1000;   // m: Kurven enger als das (≥ 160 m lang) f�
 // Ideallinie + Tempoplan für eine Bahn (einmal je Strecke, ~50 ms)
 export function bauePlan(bahn, opt = {}) {
   const N = bahn.N, ds = bahn.ds;
+  // P2-Strecken dürfen einen eigenen Kantenabstand der Linie mitbringen (bahn.planRand), Megastadt wie bisher
+  const RAND = bahn.planRand || RAND_STD;
   const u = new Float64Array(N), lo = new Float64Array(N), hi = new Float64Array(N);
   for (let i = 0; i < N; i++) {
     const lim = Math.max(0, bahn.hw[i] - RAND);
     lo[i] = -lim; hi[i] = lim;
     if (bahn.flags[i] & F_LUECKE) { lo[i] = 0; hi[i] = 0; }
+    // P2: offene Kante (ohne Bande) – mehr Abstand zur Kante
+    if (bahn.flags[i] & F_OFFEN_L) hi[i] = Math.min(hi[i], bahn.hw[i] - RAND - 1.5);
+    if (bahn.flags[i] & F_OFFEN_R) lo[i] = Math.max(lo[i], -bahn.hw[i] + RAND + 1.5);
   }
-  // Pads: Linie durch die Pads (vor Sprüngen Pflicht, sonst wenn breit genug); Absprung-Rampe mittig
+  // P2 Gabelungen: Linie auf eine Seite des Teilers – Weg „schnell“ = Seite tschnell (riskanter), „sicher“ = die andere;
+  // schon 150 m vor der Teiler-Spitze auf der Seite
+  const weg = opt.weg || 'sicher';
+  const seiteBei = (i) => (bahn.tschnell[i] || 1) * (weg === 'schnell' ? 1 : -1);
+  for (let i = 0; i < N; i++) {
+    if (!(bahn.flags[i] & F_TEILER)) continue;
+    const g = spurGrenzen(bahn, i, 0, RAND, seiteBei(i));
+    lo[i] = Math.max(lo[i], g[0]); hi[i] = Math.min(hi[i], g[1]);
+    if (lo[i] > hi[i]) lo[i] = hi[i] = (g[0] + g[1]) / 2;
+    const vor = (i - 1 + N) % N;
+    if (!(bahn.flags[vor] & F_TEILER)) {
+      const sg = seiteBei(i), grenze = bahn.tu[i] + sg * (RAND + 1.5);
+      for (let k = 1; k <= 75; k++) {
+        const j = (i - k + N) % N;
+        if (sg > 0) lo[j] = Math.min(hi[j], Math.max(lo[j], grenze)); else hi[j] = Math.max(lo[j], Math.min(hi[j], grenze));
+      }
+    }
+  }
+  // Absprung-Rampe mittig
+  for (let i = 0; i < N; i++) if (bahn.flags[i] & F_SPRUNG) { lo[i] = Math.max(lo[i], -2); hi[i] = Math.min(hi[i], 2); }
+  // P2-Strecken (bahn.padsWeich): Landezone vorn mittig (±4 m bis 400 m hinter der Lücke) – sonst lenkt die KI im langen Flug
+  // schon zur nächsten Kurve und landet an der Bande; danach weitet sich der Korridor über 200 m
+  if (bahn.padsWeich) {
+    for (let i = 0, nach = 1e9; i < 2 * N; i++) {
+      const k = i % N;
+      if (bahn.flags[k] & F_LUECKE) nach = 0; else nach += ds;
+      if (nach < 600 && (bahn.flags[k] & F_LANDEZONE)) { const w = 4 + Math.max(0, nach - 400) * 0.06; lo[k] = Math.max(lo[k], -w); hi[k] = Math.min(hi[k], w); }
+    }
+  }
+  // Relaxation, grob → fein
+  const Q = new Float64Array(N * 3);
+  const setQ = (i) => {
+    Q[i * 3] = bahn.px[i] + bahn.slx[i] * u[i]; Q[i * 3 + 1] = bahn.py[i] + bahn.sly[i] * u[i]; Q[i * 3 + 2] = bahn.pz[i] + bahn.slz[i] * u[i];
+  };
+  const relax = () => {
+    u.fill(0);
+    for (let i = 0; i < N; i++) setQ(i);
+    // P2-Strecken: zwei feine Durchgänge mehr – sonst bleibt ein Sägezahn mit 5 Stützstellen Periode (±0,1 m), der dem
+    // Tempoplan scheinbare Kurven (Radius ≈ 200 m) vorgaukelt; die Megastadt bleibt wie bisher
+    for (const [k, it] of bahn.padsWeich ? [[40, 60], [20, 80], [10, 120], [5, 120], [2, 80], [1, 80]] : [[40, 60], [20, 80], [10, 120], [5, 120]]) {
+      for (let n = 0; n < it; n++) {
+        for (let i = 0; i < N; i++) {
+          const a = (i - k + N) % N, c = (i + k) % N;
+          const mx = (Q[a * 3] + Q[c * 3]) / 2 - bahn.px[i], my = (Q[a * 3 + 1] + Q[c * 3 + 1]) / 2 - bahn.py[i], mz = (Q[a * 3 + 2] + Q[c * 3 + 2]) / 2 - bahn.pz[i];
+          const z = mx * bahn.slx[i] + my * bahn.sly[i] + mz * bahn.slz[i];
+          u[i] = clamp(u[i] + (z - u[i]) * 0.8, lo[i], hi[i]);
+          setQ(i);
+        }
+      }
+    }
+  };
+  // Pads: Linie durch die Pads – vor Sprüngen (Kette ≤ 700 m vor einer Absprung-Rampe) Pflicht, sonst nur, wenn die freie
+  // Linie ohnehin nah (≤ Pad-Halbbreite + 4 m) vorbeiführt (P2-Strecken mit bahn.padsWeich: sonst erzwänge ein Pad dicht
+  // hinter einer Kurve einen Knick; die Megastadt bleibt wie bisher – alle Pads Pflicht)
+  const vorSprung = (s) => { for (let d = 0; d <= 700; d += ds) if (bahn.flags[((Math.round((s + d) / ds) % N) + N) % N] & F_SPRUNG) return true; return false; };
+  const lose = bahn.padsWeich ? bahn.pads.filter((p) => !vorSprung(p.s1)) : [];
+  if (lose.length) relax();
+  const uFrei = Float64Array.from(u);
   for (const p of bahn.pads) {
+    if (lose.includes(p)) {
+      const im = ((Math.round((p.s0 + p.s1) / 2 / ds) % N) + N) % N;
+      if (Math.abs(uFrei[im] - p.u) > p.b + 4) { if (opt.log) opt.log(p, uFrei[im]); continue; }
+    }
     for (let s = p.s0 - 30; s <= p.s1 + 10; s += ds) {
       const i = ((Math.round(s / ds) % N) + N) % N;
       lo[i] = Math.max(lo[i], p.u - p.b + 1); hi[i] = Math.min(hi[i], p.u + p.b - 1);
       if (lo[i] > hi[i]) lo[i] = hi[i] = p.u;
     }
   }
-  for (let i = 0; i < N; i++) if (bahn.flags[i] & F_SPRUNG) { lo[i] = Math.max(lo[i], -2); hi[i] = Math.min(hi[i], 2); }
-  // Relaxation, grob → fein
-  const Q = new Float64Array(N * 3);
-  const setQ = (i) => {
-    Q[i * 3] = bahn.px[i] + bahn.slx[i] * u[i]; Q[i * 3 + 1] = bahn.py[i] + bahn.sly[i] * u[i]; Q[i * 3 + 2] = bahn.pz[i] + bahn.slz[i] * u[i];
-  };
-  for (let i = 0; i < N; i++) setQ(i);
-  for (const [k, it] of [[40, 60], [20, 80], [10, 120], [5, 120]]) {
-    for (let n = 0; n < it; n++) {
-      for (let i = 0; i < N; i++) {
-        const a = (i - k + N) % N, c = (i + k) % N;
-        const mx = (Q[a * 3] + Q[c * 3]) / 2 - bahn.px[i], my = (Q[a * 3 + 1] + Q[c * 3 + 1]) / 2 - bahn.py[i], mz = (Q[a * 3 + 2] + Q[c * 3 + 2]) / 2 - bahn.pz[i];
-        const z = mx * bahn.slx[i] + my * bahn.sly[i] + mz * bahn.slz[i];
-        u[i] = clamp(u[i] + (z - u[i]) * 0.8, lo[i], hi[i]);
-        setQ(i);
-      }
-    }
-  }
+  relax();
   // Krümmung der Linie in der Fahrfläche (quer) → Grenztempo
   const vLim = new Float64Array(N), kQuer = new Float64Array(N), kSign = new Float64Array(N);
   const quer = opt.quer || GLEITER.querMax * 0.8;
@@ -104,10 +154,23 @@ export function bauePlan(bahn, opt = {}) {
       i0 = ok ? i : -1;
     }
   }
-  return { u, vZiel, vLim, kQuer, kSign, voll, kurven, kurveId };
+  return { u, vZiel, vLim, kQuer, kSign, voll, kurven, kurveId, weg };
 }
 
-const _d = v3(), _l = v3(), _f = v3();
+// P2: Pläne für beide Wege einer Gabelung ({ sicher, schnell }; ohne Gabelung derselbe Plan zweimal)
+export function bauePlaene(bahn, opt = {}) {
+  const sicher = bauePlan(bahn, { ...opt, weg: 'sicher' });
+  let gabel = false;
+  for (let i = 0; i < bahn.N && !gabel; i++) if (bahn.flags[i] & F_TEILER) gabel = true;
+  return { sicher, schnell: gabel ? bauePlan(bahn, { ...opt, weg: 'schnell' }) : sicher, gabel };
+}
+// Welchen Weg nimmt eine KI? Profi meist den schnellen, Leicht meist den sicheren (deterministisch per Seed)
+export function wegFuer(profil, seed) {
+  const p = profil.risiko ?? 0.5, r = rng(seed * 7 + 3)();
+  return r < p ? 'schnell' : 'sicher';
+}
+
+const _d = v3(), _l = v3(), _f = v3(), _g = [0, 0];
 
 export class Pilot {
   constructor(bahn, plan, profil = PROFILE.mittel, seed = 1) {
@@ -207,6 +270,16 @@ export class Pilot {
       this.boxU += (ziel - this.boxU) * Math.min(1, dt * 1.2);
       uz = clamp(uz + this.boxU, -(b.hw[i] - 2.4), b.hw[i] - 2.4);
     }
+    // P2 Gabelung: Ziel auf derselben Seite des Teilers bleiben (am Teiler die eigene Seite, davor die der Linie)
+    const ig = ((Math.floor(g.s / b.ds) % b.N) + b.N) % b.N;
+    if (b.flags[i] & F_TEILER) {
+      const sg = (b.flags[ig] & F_TEILER) ? (g.u >= b.tu[ig] ? 1 : -1) : (this.linieBei(sv) >= b.tu[i] ? 1 : -1);
+      const gr = spurGrenzen(b, i, 0, 2.4, sg, _g);
+      uz = clamp(uz, gr[0], gr[1]);
+    }
+    // offene Kante: Ziel nicht näher als 4 m an die Kante
+    if (b.flags[i] & F_OFFEN_L) uz = Math.min(uz, b.hw[i] - 4);
+    if (b.flags[i] & F_OFFEN_R) uz = Math.max(uz, -b.hw[i] + 4);
     const r = rahmenBei(b, sv, this.q);
     setze(_f, r.P.x + r.Ls.x * uz + r.Us.x * 1.4, r.P.y + r.Ls.y * uz + r.Us.y * 1.4, r.P.z + r.Ls.z * uz + r.Us.z * 1.4);
     setze(_d, _f.x - g.p.x, _f.y - g.p.y, _f.z - g.p.z);
