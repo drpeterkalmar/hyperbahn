@@ -12,7 +12,7 @@
 // Ereignisse (für Effekte/Ton/HUD/Action-Momente) landen in `ereignisse` und werden vom Spiel abgeholt.
 import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE, VORLAGE, SOG } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
-import { neueAbfrage, padBei, inBox, F_MAGNET, F_LUECKE, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, F_TEILER } from '../track/bahn.js';
+import { neueAbfrage, padBei, inBox, F_MAGNET, F_LUECKE, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, F_TEILER, F_ROEHRE, F_SPRUNG } from '../track/bahn.js';
 import { clamp, smoothstep } from '../core/util.js';
 
 const RAD = Math.PI / 180;
@@ -43,7 +43,7 @@ export class Gleiter {
     this.revanche = 0; this.strafeV = 0; this.gLast = 1;   // KI-Revanche (s), Seitwärts-Schub (m/s), G-Last (P1b)
     // Windschatten (P3, setzt das Rennen je Schritt): sog 0…1 (aufgebaut), sogNah 0,5…1 (Abstand), sogZeit (s im Kegel,
     // lädt den Schleuder-Boost), sogVor = Index des Vordermanns; kiTempo = Höchsttempo-Faktor der KI-Handschrift (Spieler 1)
-    this.sog = 0; this.sogNah = 0; this.sogZeit = 0; this.sogLos = 0; this.sogVor = -1; this.kiTempo = 1;
+    this.sog = 0; this.sogNah = 0; this.sogZeit = 0; this.sogLos = 0; this.sogVor = -1; this.kiTempo = 1; this.festT = 0;
     this.p = v3(); this.v = v3(); this.w = v3();
     this.vor = v3(0, 0, -1); this.links = v3(-1, 0, 0); this.oben = v3(0, 1, 0);
     this.q = neueAbfrage(); this.qp = [neueAbfrage(), neueAbfrage(), neueAbfrage(), neueAbfrage()];
@@ -51,7 +51,7 @@ export class Gleiter {
     this.ereignisse = [];
     this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
       miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0, hartLandungen: 0,
-      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0, flugBoosts: [0, 0, 0, 0], sogZeit: 0, schleuder: 0 };
+      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0, flugBoosts: [0, 0, 0, 0], sogZeit: 0, schleuder: 0, kiResets: 0 };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 
@@ -166,7 +166,8 @@ export class Gleiter {
     // --- Treffer (Schlingern → Dreher), Neustart-Rhythmus, Drift ---
     const tempo = Math.sqrt(dot(this.v, this.v));
     this.tempo = tempo;
-    const vmaxK = GLEITER.vmax * this.kl.top * this.kiTempo;
+    // KI-Handschrift (P3): mehr als das Grundtempo nur außerhalb von Magnet-Passagen
+    const vmaxK = GLEITER.vmax * this.kl.top * (this.magnet > 0 ? Math.min(1, this.kiTempo) : this.kiTempo);
     let gas = clamp(ein.gas || 0, 0, 1);
     let lenk = clamp(ein.lenk || 0, -1, 1);
     let bl = clamp(ein.bremseL || 0, 0, 1), br = clamp(ein.bremseR || 0, 0, 1);
@@ -219,8 +220,9 @@ export class Gleiter {
     this.notlauf = leer;
     // KI-Revanche (P1b): kurz mehr Höchsttempo und Beschleunigung nach einem Überholtwerden durch den Menschen
     const rev = this.revanche > 0 ? (this.revanche -= dt, VORLAGE.revanche) : null;
-    // Windschatten (P3): Sog hebt das Höchsttempo (nah voll, am Kegelende halb)
-    const sogPlus = SOG.staerke * this.sog * this.sogNah;
+    // Windschatten (P3): Sog hebt das Höchsttempo (nah voll, am Kegelende halb) – nicht in Magnet-Passagen (Wandfahrt,
+    // Überkopf, Röhre: dort hebt der Gleiter über ~110 m/s ab)
+    const sogPlus = SOG.staerke * this.sog * this.sogNah * (1 - this.magnet);
     let vz = vmaxK * (1 + this.boost + this.mt + sogPlus + (rev ? rev.deckel : 0)) * (leer ? VE.notlauf : 1);
     if (this.boost <= 0) vz *= kurvenFaktor(lenk, dr.aktiv);
     this.imRand = aufBahn && amBoden && Math.abs(q.u) > q.hw - GEFUEHL.randBreite;
@@ -593,7 +595,7 @@ export class Gleiter {
       this.sogZeit += dt; this.statistik.sogZeit += dt;
       return;
     }
-    if (this.sogZeit > 0 && seitlich && this.sogZeit >= SOG.lade) {
+    if (this.sogZeit > 0 && seitlich && this.sogZeit >= SOG.lade && this.schleuderFrei()) {
       this.boost = Math.min(BOOST.deckel, Math.max(this.boost, SOG.schleuder));
       this.boostZeit = Math.max(this.boostZeit, SOG.schleuderDauer);
       this.statistik.schleuder++;
@@ -602,6 +604,17 @@ export class Gleiter {
     }
     this.sogLos += dt;
     if (this.sogLos > SOG.gnade) { this.sogZeit = 0; this.sogVor = -1; }
+  }
+
+  // Schleuder-Boost nur, wenn die nächsten 400 m keine Magnet-/Röhren-/Sprung-Passage kommt (über ~120 m/s hebt der Gleiter
+  // dort ab – wie beim KI-Energie-Boost)
+  schleuderFrei() {
+    const b = this.bahn;
+    for (let d = 0; d <= 400; d += 20) {
+      const j = ((Math.round((this.s + d) / b.ds) % b.N) + b.N) % b.N;
+      if (b.flags[j] & (F_MAGNET | F_ROEHRE | F_SPRUNG | F_LUECKE)) return false;
+    }
+    return true;
   }
 
   // Manueller Boost aus der Energie (P1b): ab Runde 2 (boostFrei), kostet VE.kosten, nie unter VE.rest

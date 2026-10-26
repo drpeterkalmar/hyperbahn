@@ -202,7 +202,7 @@ export class Pilot {
     if (st > 0) {
       const r = rng(seed * 31 + 7), z = () => r() * 2 - 1;
       const P = this.persona = {
-        top: 1 + z() * KI.top * st, kurve: 1 + z() * KI.kurve * st,
+        top: 1 + (z() * 0.75 - 0.25) * KI.top * 1.33 * st, kurve: 1 + z() * KI.kurve * st,
         formAmp: KI.form * st * (0.5 + r() * 0.5), formPer: 25 + r() * 30, formPh: r() * 2 * Math.PI,
         sog: clamp((profil.sog ?? 0.6) + z() * 0.25, 0, 1), pads: clamp((profil.pads ?? 0.5) + z() * 0.3, 0, 1), geduld: 0.2 + r() * 1.2,
       };
@@ -238,7 +238,8 @@ export class Pilot {
     const v = Math.max(g.tempo, 5);
     const P = this.persona;
     // P3: Höchsttempo der Handschrift mit langsamer Form-Welle (Positionswechsel im Rennverlauf)
-    if (P) g.kiTempo = P.top * (1 + P.formAmp * Math.sin(2 * Math.PI * g.zeit / P.formPer + P.formPh));
+    const form = P ? Math.sin(2 * Math.PI * g.zeit / P.formPer + P.formPh) : 0;
+    if (P) g.kiTempo = P.top * (1 + P.formAmp * form);
     // menschliche Fehler: langsames Linienrauschen + seltene Wackler
     this.rauschT -= dt;
     if (this.rauschT <= 0) { this.rauschZiel = (this.r() * 2 - 1) * pr.linie; this.rauschT = 1.5 + this.r() * 2.5; }
@@ -251,7 +252,17 @@ export class Pilot {
     // P3 Windschatten: Vordermann 8–60 m voraus (±9 m quer) → je nach Lust dahinter einreihen, bis der Sog geladen ist
     // (SOG.lade + Geduld) oder er zu nah kommt; dann zum Überholen ausscheren (Schleuder-Boost) und 4 s draußen bleiben
     let saugt = false;
-    if (P && SOG.staerke > 0) {
+    // nicht in Röhren/Magnet-Passagen und nicht ≤ 250 m vor einem Absprung (dort zählt die Linie)
+    // und nur, wo der Tempoplan Vollgas erlaubt (keine Kurve/Bremszone, keine Gabelung, keine offene Kante)
+    const ruhig = (() => {
+      for (let d = 0; d <= 250; d += 25) {
+        const j = ((Math.floor((g.s + d) / b.ds) % b.N) + b.N) % b.N;
+        if (b.flags[j] & (F_ROEHRE | F_MAGNET | F_SPRUNG | F_LUECKE | F_TEILER | F_OFFEN_L | F_OFFEN_R) || this.plan.vZiel[j] < GLEITER.vmax * KI.sogPlan) return false;
+      }
+      return true;
+    })();
+    if (!ruhig) this.ueberholT = 0;
+    if (P && SOG.staerke > 0 && ruhig) {
       this.ueberholT -= dt;
       let vo = null, vds = Infinity;
       for (const o of andere) {
@@ -320,12 +331,13 @@ export class Pilot {
         if (d < -(p.s1 - p.s0) || d > 20 + 1.6 * v) continue;
         const off = p.u - this.linieBei((p.s0 + p.s1) / 2);
         if (Math.abs(off) < p.b - 1 || Math.abs(off) > 11) continue;
-        if (k !== this.padK) { this.padK = k; this.padJa = this.rp() < P.pads; }
+        // im laufenden Boost keine Risiko-Pads quer anfahren (mit +65 % reicht die Lenkung nicht zurück zur Linie)
+        if (k !== this.padK) { this.padK = k; this.padJa = this.rp() < P.pads && g.boost < 0.1; }
         if (this.padJa) padZiel = off;
         break;
       }
     }
-    this.padU += (padZiel - this.padU) * Math.min(1, dt * 1.6);
+    this.padU += (padZiel - this.padU) * Math.min(1, dt * (padZiel ? 1.6 : 3));   // nach dem Pad zügig zurück zur Linie
     let uz = clamp(this.linieBei(sv) + (imSprung ? 0 : this.rausch + this.ausweich + this.padU), -(b.hw[i] - 2.4), b.hw[i] - 2.4);
     // Boxengasse (P1b): mit wenig Energie ab 250 m davor auf die Lade-Spur, bis zu ihrem Ende
     const bx = b.box, VE = VORLAGE.energie;
@@ -376,7 +388,9 @@ export class Pilot {
     const gm = this.gummi;
     g.randImmun = !!(gm && gm.schnell);
     // P3: „schnell“ hebt das eigene Profil um 4 % (bis 0,995) statt alle auf 1 zu nageln – die Handschrift bleibt sichtbar
-    let vz = this.zielBei(g.s + v * 0.6) * (gm && gm.schnell ? Math.min(0.995, pr.tempo + 0.04) : pr.tempo);
+    // Form-Welle wirkt auch aufs Kurventempo (Positionswechsel auf kurvigen Strecken), nie über 0,995 des Plans
+    const kt = Math.min(0.995, (gm && gm.schnell ? pr.tempo + 0.04 : pr.tempo) * (1 + (P ? P.formAmp * KI.formKurve * form : 0)));
+    let vz = this.zielBei(g.s + v * 0.6) * kt;
     const voll = this.plan.voll[((Math.round(g.s / b.ds) % b.N) + b.N) % b.N];
     if (gm && gm.tempo < 1 && !voll) vz = Math.min(vz, GLEITER.vmax * gm.tempo * (1 + g.boost));
     e.gas = voll ? 1 : clamp((vz - v) / 6 + 0.6, 0, 1);

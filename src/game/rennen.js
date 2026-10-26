@@ -7,7 +7,7 @@
 import { Gleiter } from '../physics/gleiter.js';
 import { GEFUEHL, startWertung } from '../physics/fahrgefuehl.js';
 import { gummiband } from '../ai/gummiband.js';
-import { VORLAGE, SPIEL, BOOST, SOG } from '../config.js';
+import { VORLAGE, SPIEL, BOOST, SOG, GLEITER } from '../config.js';
 
 export const START = { reihe: 22, quer: 5.5, vorStrich: 12, countdown: 3 };
 
@@ -75,10 +75,20 @@ export class Rennen {
       else if (t.pilot && !(t.spieler && einSpieler)) ein = t.pilot.steuer(t.g, dt, this.gleiter);
       else ein = einSpieler || AUS;
       t.g.schritt(dt, ein);
+      if (t.pilot && !t.spieler) this.kiFest(t, dt);
     }
     this.stoesse();
     this.fortschritt();
     this.revancheSchritt();
+  }
+
+  // P3: KI steckt fest (an der Bande hängen geblieben, rückwärts, < 20 m/s länger als 2,5 s) → Reset wie der Spieler-Knopf
+  kiFest(t, dt) {
+    const g = t.g;
+    if (g.zustand !== 'fahrt' || t.ziel) { g.festT = 0; return; }
+    const vor = g.v.x * g.q.T.x + g.v.y * g.q.T.y + g.v.z * g.q.T.z;
+    g.festT = vor < 20 ? (g.festT || 0) + dt : 0;
+    if (g.festT > 2.5) { g.festT = 0; g.statistik.kiResets = (g.statistik.kiResets || 0) + 1; g.zuruecksetzen(GLEITER.vmax * 0.7); }
   }
 
   // KI-Revanche (P1b): eine KI „Mittel“/„Profi“, die der Mensch gerade überholt hat (Abstand < naehe m), bekommt für kurze

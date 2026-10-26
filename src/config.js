@@ -54,7 +54,8 @@ export const GLEITER = {
 };
 
 export const MAGNET = {
-  g: 1.8,            // Magnetkraft in g (?mag=) – zieht entlang −Bahn-Normale, unabhängig vom Tempo
+  g: 2.2,            // Magnetkraft in g (?mag=) – zieht entlang −Bahn-Normale, unabhängig vom Tempo (P3: 1,8 → 2,2 wegen
+                     // +10 % Grundtempo = +22 % Fliehkraft an Kuppen/Übergängen)
   rampe: 0.3,        // s Übergang Schwerkraft ↔ Magnet
   reichweite: 9,     // m darüber wirkt der Magnet nicht mehr (Abflug über die Kante bleibt möglich)
 };
@@ -63,7 +64,8 @@ export const BOOST = {
   gewinn: 0.5,       // +50 % Höchsttempo und Schub je Pad (?boost=)
   dauer: 1.3,        // s je Pad (Datenblatt Fahrgefühl: 1,3 s, dann Abklingen)
   abklingen: 0.3,    // s Abklingen nach der vollen Dauer
-  deckel: 0.8,       // höchstens +80 % gestapelt (Kette = immer schneller, gedeckelt)
+  deckel: 0.65,      // höchstens +65 % gestapelt (P3: bei 105 m/s Grundtempo ≈ 173 m/s wie bisher 95 × 1,8 – Sprünge/Landezonen
+                     // sind darauf gebaut; bis 0.1.17 +80 %)
   ring: 0.45,        // Boost-Ring in der Luft (P3: 0,35 → 0,45)
   rolle: 0.4,        // Barrel-Roll im Sprung = Turbo
 };
@@ -72,13 +74,16 @@ export const BOOST = {
 // `min`…`max` m dahinter) baut sich der Sog in `aufbau` s auf (Abbau `abbau` s): Höchsttempo +`staerke` × Sog, nah voll, am
 // Kegelende ×`fern`. Nach ≥ `lade` s Sog gibt seitliches Ausscheren einen Schleuder-Boost (+`schleuder` für `schleuderDauer` s).
 // ?sog=0 aus, ?sog=0.15 Stärke
-export const SOG = { staerke: 0.12, quer: 4, min: 5, max: 40, aufbau: 1.0, abbau: 0.5, fern: 0.5, lade: 1.5, gnade: 0.3,
+export const SOG = { staerke: 0.15, quer: 4, min: 5, max: 40, aufbau: 1.0, abbau: 0.5, fern: 0.5, lade: 1.5, gnade: 0.3,
   schleuder: 0.25, schleuderDauer: 0.9 };
 
-// KI-Streuung (P3): jede KI bekommt aus ihrem Seed eine eigene „Handschrift“ – Höchsttempo ±`top`, Kurventempo ±`kurve`,
+// KI-Streuung (P3): jede KI bekommt aus ihrem Seed eine eigene „Handschrift“ – Höchsttempo −`top`…+`top`/2 (schneller als
+// das Grundtempo höchstens wenig, sonst heben sie an Kuppen ab), Kurventempo ±`kurve`,
 // Linien-/Fehler-Faktoren, Form-Welle (±`form` Höchsttempo, Periode 25–55 s), Lust auf Windschatten und Risiko-Pads.
 // ?streuung=0 = alle gleich wie bis 0.1.17, ?streuung=1.5 stärker
-export const KI = { streu: 1, top: 0.035, kurve: 0.035, form: 0.025 };
+// sogPlan: Windschatten-/Überhol-Manöver nur, wo der Tempoplan ≥ sogPlan × Höchsttempo erlaubt; formKurve: Anteil der
+// Form-Welle, der auch aufs Kurventempo wirkt. Regler: ?kitop= ?kikurve= ?form= ?sogplan= ?formkurve=
+export const KI = { streu: 1, top: 0.035, kurve: 0.06, form: 0.05, sogPlan: 0.85, formKurve: 1 };
 
 // Strecken (P3, Peter 26.10.: „schärfere Kurven“ + „mehr Boost“): 2–3 Kurven je Strecke enger (gleiche Ein-/Ausfahrt-Linien,
 // kleinerer Radius im Scheitel, ?kurven=alt = bisherige Bögen) und zusätzliche Risiko-Pads auf ruhigen Stücken, im Wechsel
@@ -162,7 +167,7 @@ export const VORLAGE = {
   // Boost-Reserve + Ketten-Deckel (?reserve=4 s, 0 = bisher): Pads addieren Zeit (höchstens `max` s); jedes weitere Pad
   // in derselben Reserve hebt die Stufe um `kette` (Pad +50 % → +60 % → +70 % → Deckel +80 %); solange Reserve läuft,
   // zieht der Antrieb ×`beschl`
-  // P3: Kette spürbarer – je Pad +15 % statt +10 % (+50 → +65 → Deckel +80 %)
+  // P3: Kette spürbarer – je Pad +15 % statt +10 % (+50 → Deckel +65 % schon beim zweiten Pad)
   reserve: { an: 1, max: 4, kette: 0.15, beschl: 2 },
   // Flugzeit-Boost (?flugboost=0 aus): saubere Landung (Nase ≤ `sauber`° zur Fahrfläche) nach Flugzeit ≥ Schwelle gibt
   // Reserve und Stufe: [Flugzeit s, Reserve s, +Höchsttempo]; HUD-Flugmesser bleibt `messer` s nach der Landung stehen.
@@ -225,10 +230,10 @@ export function leseRegler(search) {
   V.revanche.an = q.get('revanche') === '0' ? 0 : 1;
   V.strafe.an = q.get('strafe') === '0' ? 0 : 1;
   V.gvignette.an = q.get('gvignette') === '0' ? 0 : 1;
-  SOG.staerke = zahl('sog', 0.12);
+  SOG.staerke = zahl('sog', 0.15);
   STRECKE.scharf = q.get('kurven') === 'alt' ? 0 : 1;
   STRECKE.pads = q.get('pads') === '0' ? 0 : 1;
-  KI.streu = zahl('streuung', 1);
+  KI.streu = zahl('streuung', 1); KI.form = zahl('form', 0.05); KI.top = zahl('kitop', 0.035); KI.kurve = zahl('kikurve', 0.06); KI.sogPlan = zahl('sogplan', 0.85); KI.formKurve = zahl('formkurve', 1);
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   if (q.get('momente') === 'alle') ACTION.nurZiel = 0;

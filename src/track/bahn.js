@@ -413,7 +413,7 @@ export function schaerfe(liste, faktoren) {
 // Kante von 40 m davor bis `nach` m danach, Kurvenradius dort ≥ `radius` m, keine Kuppe/Senke) Zweier-Ketten im Abstand
 // ≥ `abstand` m, im Wechsel links/rechts außen und Mitte – abseits der Ideallinie (p.extra: die KI-Linie erzwingt sie nicht).
 // STRECKE.pads = 0 (?pads=0): keine. Gibt die Zahl der neuen Pads zurück.
-export const ZUSATZ = { nach: 400, vor: 40, radius: 360, kuppe: 700, abstand: 260, nachbar: 120, paar: 45, rand: 5.5, nachEinzel: 220, radiusEinzel: 300, sprung: 2200 };
+export const ZUSATZ = { nach: 400, vor: 40, radius: 360, kuppe: 700, abstand: 260, nachbar: 120, paar: 45, rand: 7, nachEinzel: 220, radiusEinzel: 300, sprung: 2200 };
 export function zusatzPads(b, opt = {}) {
   if (!STRECKE.pads) return 0;
   const Z = { ...ZUSATZ, ...opt }, N = b.N, ds = b.ds;
