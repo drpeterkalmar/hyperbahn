@@ -9,6 +9,7 @@ ES-Module, PWA über GitHub Pages. Plan: Phasen 1–4 als Queue-Jobs (`~/.hermes
 3D-Minikarte, Musik) – Bericht: `PHASE1_BERICHT.md`. Nächste Phasen: Items/Waffen, Strecken-Generator + Cups, Online.
 P1b (Vorlagen-Nachträge): Änderungen je Version in `CHANGELOG.md`, Bericht `P1B_VORLAGEN_BERICHT.md`.
 **P2 (Strecken):** 4 neue Strecken, Streckenwahl mit Vorschau, Zufällig, Cup – Bericht `P2_STRECKEN_BERICHT.md`.
+**P3 (Tempo):** schneller, schärfere Kurven, mehr Boost, Windschatten, KI mit Handschrift, Energie aus – Bericht `P3_BERICHT.md`.
 
 ## Steuerung
 | Aktion | Tastatur | Touch | Gamepad |
@@ -16,9 +17,9 @@ P1b (Vorlagen-Nachträge): Änderungen je Version in `CHANGELOG.md`, Bericht `P1
 | Lenken | ← / → (A / D) | linke / rechte Bildschirmhälfte (weiter außen = stärker) | linker Stick |
 | Gas | ↑ (W) – auf „Leicht“ automatisch | automatisch | RT |
 | Gas weg | ↓ (S) | – | – |
-| Luftbremse links / rechts | Q / E | Tasten „◀︎ BREMSE“ / „BREMSE ▶︎“ | LB / RB |
-| Barrel-Roll im Sprung (Turbo nach der Landung, kostet 10 % Energie) | Leertaste | Taste „⟲ ROLLE“ | A |
-| Energie-Boost am Boden (ab Runde 2, kostet 12 %) | Leertaste | dieselbe Taste („⚡ BOOST“) | A / X |
+| Luftbremse links / rechts | Q / E | – (P3: ohne Knöpfe; `?airbrake=1` zeigt sie) | LB / RB |
+| Barrel-Roll im Sprung (1× je Sprung, Turbo nach der Landung) | Leertaste | Taste „⟲ ROLLE“ (unten mittig) | A |
+| Energie-Boost am Boden (nur mit `?energie=1`) | Leertaste | dieselbe Taste („⚡ BOOST“) | A / X |
 | Seitwärts-Schub | Y / X (QWERTY: Z / X) | – (Luftbremsen) | rechter Stick seitlich |
 | Nase heben / senken (in der Luft) | ↓ / ↑ neu drücken (über den Absprung gehaltenes ↑ bleibt Gas) | – | linker Stick zurück/vor |
 
@@ -34,7 +35,10 @@ den Gleiter ab; im Dreher 5× schnell Gas tippen = Neustart-Schub. **Gleiter-Kla
 drückt in der Luft neu: ↓ = Nase hoch (weiter), ↑ = Nase runter (kürzer). Eine Hülle verhindert Sturzflug und Absturz in
 die Schlucht, kurz vor dem Aufsetzen richtet die Landehilfe die Nase zur Bahn aus.
 
-**Energie:** Ein Balken ist Schild und Boost zugleich. Wandtreffer und Rempler kosten Energie, ab Runde 2 gibt die
+**Windschatten (P3):** Hinter einem Gegner (gleiche Spur, 5–40 m) saugt der Sog dich an (bis +15 % Tempo, HUD
+„WINDSCHATTEN“ mit Ladebalken). Ist der Balken voll, gibt Ausscheren einen Schleuder-Boost zum Überholen.
+
+**Energie (nur noch mit `?energie=1`, seit P3 standardmäßig aus):** Ein Balken ist Schild und Boost zugleich. Wandtreffer und Rempler kosten Energie, ab Runde 2 gibt die
 Boost-Taste am Boden +35 % Tempo für 1,6 s (12 %), eine Barrel-Roll im Sprung kostet 10 % und zündet bei der Landung einen
 Turbo. Aufladen in der grünen Boxengasse rechts auf der Start-Ziel-Geraden (leer → voll ≈ 3 s). Unter 25 % glüht der Gleiter
 rot, bei 0 % läuft er nur noch im Notlauf (70 % Tempo).
@@ -50,14 +54,13 @@ gehalten bremst kräftig (eine ≈ 80 %, beide ≈ 45 % Tempo).
 **Strecken (P2):** im Menü als Karten mit drehender Vorschau wählen (Tippen), 🔗 teilt einen Link direkt zur Strecke.
 Jedes Rennen dauert höchstens 5 Minuten (Rundenzahl je Strecke). Bestzeiten werden je Strecke, Fassung und Rundenzahl gemerkt.
 
-| Strecke | Charakter | Runde (KI Mittel) | Runden |
+| Strecke | Charakter | Runde (KI Mittel, P3) | Runden |
 |---|---|---|---|
-| Neon-Megastadt (Kurz / Lang) | Allrounder: Looping, Röhre, Wandfahrt, Überkopf, zwei Riesensprünge | 2:15 / 2:38 | 2 / 1 |
-| Wüsten-Raumhafen | Vollgas: lange Geraden, Boost-Ketten, weite Bögen, Riesensprung über das Raketensilo | 1:28 | 3 |
-| Gewitter-Pass | Sprünge: Serpentinen-Haarnadeln, Grat-Abkürzung ohne Bande, Kamm, Scharte, Talsprung, Blitze | 1:32 | 3 |
-| Riff-Röhre | Technik: Glasröhren unter Wasser, Korkenzieher, Überkopf-Röhre, Gabelung (innen eng ohne Bande + Pads) | 1:30 | 3 |
-
-| Orbital-Ring | Show: Möbius-Band, Wandfahrt in der Trommel, Looping, schwache Schwerkraft, Schwerelos-Sprung über der Erde | 1:33 | 3 |
+| Neon-Megastadt (Kurz / Lang) | Allrounder: Looping, Röhre, Wandfahrt, Überkopf, zwei Riesensprünge | 2:11 / 2:29 | 2 / 1 |
+| Wüsten-Raumhafen | Vollgas: lange Geraden, Boost-Ketten, weite Bögen, Riesensprung über das Raketensilo | 1:24 | 3 |
+| Gewitter-Pass | Sprünge: Serpentinen-Haarnadeln, Grat-Abkürzung ohne Bande, Kamm, Scharte, Talsprung, Blitze | 1:30 | 3 |
+| Riff-Röhre | Technik: Glasröhren unter Wasser, Korkenzieher, Überkopf-Röhre, Gabelung (innen eng ohne Bande + Pads) | 1:27 | 3 |
+| Orbital-Ring | Show: Möbius-Band, Wandfahrt in der Trommel, Looping, schwache Schwerkraft, Schwerelos-Sprung über der Erde | 1:29 | 3 |
 
 „🎲 Zufällig“ wählt nie zweimal hintereinander dieselbe Strecke. **🏆 Cup:** alle 5 Strecken nacheinander, Punkte
 9-7-5-3-2-1-0-0 je Platz, nach jedem Rennen die Tabelle, am Ende der Cup-Sieger (`?cup=1`).
@@ -78,7 +81,8 @@ Magnet-Abschnitte pulsieren, Boost-Pads gelb). Eigener Gleiter = gelber Pfeil, G
 weißem Ring. Antippen = groß/klein.
 
 ## URL-Regler (A/B-Vergleich)
-`?speed=1.2` Höchsttempo · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
+`?speed=1.2` Höchsttempo (P3: Basis 105 m/s) · `?tempo=alt` (95 m/s, Lenkung wie bis 0.1.17) · `?kurven=alt` · `?pads=0` ·
+`?sog=0|0.15` Windschatten · `?streuung=0|1.5` KI-Handschrift · `?autogas=0` · `?airbrake=1` · `?energie=1` · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
 der Luft · `?slowmo=0` Absprung-Zeitlupe aus · `?action=0|1|2` · `?blitze=0` Blitze reduzieren · `?horizont=1` ·
 `?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=2` (Standard: je Strecke, Rennen ≤ 5 min) ·
 `?strecke=megastadt|wueste|riff|gebirge|orbit|lang|zufall` · `?cup=1` (Strecke; `lang` = lange Megastadt, 1 Runde) · `?nase=alt` (Nase in der Luft wie bis 0.1.3) · `?look=0|1|2` Grafikstufe ·
@@ -91,7 +95,7 @@ Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle
 `?items=hb|ref` (Phase 2).
 Vorlagen-Mechaniken (P1b, je 0/alt = bisher): `?schwebe=0` (1/h-Feder) · `?bremse=0` / `?rutsch=1.2` (Luftbremse) ·
 `?lenk=alt` (Gegenlenken) · `?wand=0` (Wandschaden) · `?bergung=1.5` (Bergungs-Drohne, s) · `?nicken=0` (harte Landung) ·
-`?schraeg=0` (Schräglage) · `?energie=0` (Energie/Boxengasse aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10` · `?flugboost=0` · `?reserve=4` (s, 0 = bisher) · `?startgrad=0` · `?startband=0` · `?revanche=0` · `?strafe=0` · `?gvignette=0`.
+`?schraeg=0` (Schräglage) · `?energie=1` (Energie/Boxengasse an, P3: Standard aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10` · `?flugboost=0` · `?reserve=4` (s, 0 = bisher) · `?startgrad=0` · `?startband=0` · `?revanche=0` · `?strafe=0` · `?gvignette=0`.
 Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Start), `?autopilot=1`, `?nosw`.
 
 ## Tests (ohne Browser)
@@ -114,6 +118,9 @@ hoch + quer aller Passagen, Bullet-Time-Bildfolge, Collagen) · `python3 tests/t
 Bullet-Time) · `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand <name>` (Mess-Gate Mittelklasse-Android; P2: `--szenen tests/perf_szenen_p2.json`).
 Konsole: `__hb.galerie()` zeigt alle Gleiter nebeneinander, `__hb.moment('sprungScheitel')` erzwingt eine Bullet-Time.
 `node tools/action_mess.mjs` misst die Häufigkeit der Action-Momente je Rennen.
+P3: `node tools/feld_mess.mjs [alle] [läufe]` (Positionswechsel, Tempo-Streuung, Boost-/Windschatten-Anteil im Rennen wie im
+Spiel), `node tools/kurven_mess.mjs` (kleinster Radius bei Vollgas, Kurven ohne Luftbremse je Strecke), `python3 tests/p3_bilder.py`
+(Bildfolgen Windschatten + Boost-Kette hoch/quer).
 
 ## Recht
 Eigener Name, eigene Teams; nur Spielmechaniken des Genres. Gleiter-Modelle von Sketchfab (CC BY 4.0: Nikcore, Mattdude,

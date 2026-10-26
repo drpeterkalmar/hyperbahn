@@ -105,7 +105,7 @@ export class Hud {
       </div>
       <button class="credits-knopf">Credits</button>
       <div class="version">v${VERSION}</div>
-      <div class="steuerung">← → lenken · ↑ Gas (kurz vor „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste: am Boden Boost (ab Runde 2), im Sprung Barrel-Roll (Turbo bei der Landung) · Y/X seitwärts · in der Luft ↓ = Nase hoch, ↑ neu drücken = Nase runter (über den Absprung gehaltenes Gas verstellt die Nase nie)</div>`;
+      <div class="steuerung">← → lenken · ↑ Gas (kurz vor „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste: im Sprung Barrel-Roll (Turbo bei der Landung) · hinter einem Gegner Windschatten, voll geladen ausscheren = Schleuder-Boost · Y/X seitwärts · in der Luft ↓ = Nase hoch, ↑ neu drücken = Nase runter (über den Absprung gehaltenes Gas verstellt die Nase nie)</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
     this.menue.querySelector('.weiter').addEventListener('click', () => this.onWeiter && this.onWeiter());
     // Strecken-Karten (P2): Tippen = wählen, 🔗 = Teilen-Link

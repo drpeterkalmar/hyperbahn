@@ -2,6 +2,32 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P3 Etappe 1: schneller, schärfere Kurven, mehr Boost, Windschatten, Energie weg)
+- **Energie standardmäßig aus** (Peter: „Das mit der Energie ist doof“): kein Balken, kein manueller Boost, keine Boxengasse,
+  kein Notlauf. Boost wird verdient (Pads, Windschatten, Flug-Boost, Mini-Turbo, Start-Boost). Barrel-Roll kostet nichts,
+  bleibt 1× je Sprung, Turbo bei der Landung. `?energie=1` = wie bis 0.1.17.
+- **Grundtempo 95 → 105 m/s** (+10,5 %, Anzeige ≈ 720 statt 650 km/h), Beschleunigung mitskaliert; **Lenkung direkter**
+  (Querbeschleunigung 44 → 60 m/s², Seitenhaftung 5,5 → 7, schnelleres Einlenken): kleinster Radius bei Vollgas 141 → 129 m
+  trotz mehr Tempo. Magnetkraft 1,8 → 2,2 g (mehr Fliehkraft). `?tempo=alt` = Tempo/Lenkung wie bisher.
+- **Schärfere Kurven** auf allen 5 Strecken (2–3 Stellen je Strecke, Scheitel-Radius 157–204 m statt 229–679 m, gleiche Ein-
+  und Ausfahrt, der Rest der Strecke bleibt, wo er war). `?kurven=alt`. Bestzeiten starten neu (Streckenlänge ändert sich).
+- **Auto-Gas nimmt vor engen Kurven selbst Gas weg** (Touch auf Leicht/Mittel, Tastatur auf Leicht): alle 37 Kurven ohne
+  Luftbremse mit Auto-Gas gemessen geschafft (vorher 31/36 ohne die neuen engen Kurven). `?autogas=0` = immer Vollgas.
+  Wer im Boost das Gas loslässt, wird nicht mehr auf Vollgas gezwungen.
+- **Luftbremsen-Knöpfe am Handy weg** (Peter nutzt sie nie): die ROLLE-Taste sitzt unten mittig, die Lenkhälften bleiben
+  ganz frei. Tastatur Q/E und Gamepad LB/RB gehen weiter; `?airbrake=1` zeigt die Knöpfe wieder.
+- **Mehr Boost:** zusätzliche Risiko-Pads abseits der Ideallinie (links/rechts/Mitte im Wechsel) – Pads je Strecke 16→25,
+  15→27, 12→16, 14→20, 14→26 (Megastadt, Wüste, Riff, Gebirge, Orbit); nie kurz vor Sprüngen oder engen Kurven. Ketten
+  spürbarer (+50 → +65 %, Deckel +65 % = ≈ 173 m/s wie bisher), Boost-Ringe +45 % statt +35 %. `?pads=0`.
+- **Windschatten (neu):** hinter einem Gleiter (±4 m quer, 5–40 m) baut sich in 1 s ein Sog auf: bis +15 % Höchsttempo (nah
+  voll, am Ende halb, nicht in Magnet-Passagen). Nach 1,5 s Sog gibt Ausscheren einen Schleuder-Boost (+25 %, 0,9 s).
+  Luftschlieren vom Vordermann, stärkere Tempo-Streifen, HUD „WINDSCHATTEN“ mit Ladebalken („AUSSCHEREN!“ wenn voll), leiser
+  Sog-Ton. `?sog=0` aus, `?sog=0.1` Stärke.
+- **KI mit Handschrift:** jede KI hat eigenes Höchst- und Kurventempo, eigene Linie/Fehler und eine Form-Welle, hängt sich
+  in den Windschatten und schert zum Überholen aus, wählt Risiko-Pads (nicht alle dieselben); Gummiband nagelt nicht mehr
+  alle auf dasselbe Tempo. Positionswechsel je Runde (Rennen wie im Spiel) im Schnitt 13 → 25. `?streuung=0`.
+- KI: kein Spurwechsel in Röhren/Magnet-Passagen, Reset, wenn sie an der Bande festhängt.
+
 ## 0.1.17 – 26.10.2026
 - Action-Zeitlupe (Peter: „in der Luft eher störend“): nur noch bei der Zieldurchfahrt (jetzt auf jedem Platz, bisher nur
   Platz 1); Sprung-Scheitel, Überholen, Beinahe, Ringe, Magnet und der kurze Absprung-Akzent lösen keine Zeitlupe mehr aus.

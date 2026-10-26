@@ -4,14 +4,14 @@
 import * as THREE from 'three';
 
 export class SogSchlieren {
-  constructor(scene, n = 36) {
+  constructor(scene, n = 64) {
     this.n = n;
     this.pos = new Float32Array(n * 6); this.farbe = new Float32Array(n * 6);
     // je Schliere: Phase entlang des Korridors, Winkel/Radius um die Achse, Länge, Tempo
     this.phase = new Float32Array(n); this.winkel = new Float32Array(n); this.radius = new Float32Array(n);
     this.laenge = new Float32Array(n); this.tempo = new Float32Array(n);
     for (let k = 0; k < n; k++) {
-      this.phase[k] = Math.random(); this.winkel[k] = Math.random() * Math.PI * 2; this.radius[k] = 0.5 + Math.random() * 1.6;
+      this.phase[k] = Math.random(); this.winkel[k] = Math.random() * Math.PI * 2; this.radius[k] = 0.6 + Math.random() * 2.2;
       this.laenge[k] = 0.08 + Math.random() * 0.1; this.tempo[k] = 0.9 + Math.random() * 0.8;
     }
     const g = new THREE.BufferGeometry();
@@ -48,7 +48,7 @@ export class SogSchlieren {
         this.pos[i] = ax + bx * t + ox; this.pos[i + 1] = ay + by * t + oy; this.pos[i + 2] = az + bz * t + oz;
         // Ein-/Ausblenden entlang des Korridors, kühles Cyan-Weiß (HDR)
         const h = this.an * Math.sin(Math.PI * t) * (e ? 1 : 0.35);
-        this.farbe[i] = 1.1 * h; this.farbe[i + 1] = 2.0 * h; this.farbe[i + 2] = 2.4 * h;
+        this.farbe[i] = 2.2 * h; this.farbe[i + 1] = 4.0 * h; this.farbe[i + 2] = 4.8 * h;
       }
     }
     this.geo.attributes.position.needsUpdate = true; this.geo.attributes.color.needsUpdate = true;
