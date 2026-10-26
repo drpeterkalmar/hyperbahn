@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P3 Etappe 2: weniger Ruckeln, schnellerer Start)
+## 0.1.19 – 26.10.2026 (P3 Etappe 2: weniger Ruckeln, schnellerer Start)
 - **Vorwärmen im Menü:** sobald Strecke und Gleiter-Modelle da sind, werden alle Gleiter der Aufstellung, Funken,
   Windschatten-Schlieren, Bergungs-Drohne, Minikarte und die Renn-Durchgänge des Kino-Looks einmal unsichtbar gerechnet
   (Shader kompiliert, Geometrie hochgeladen) – der Countdown startet ohne Hänger (CPU ×4: erstes Rennbild 350 → 50 ms).
