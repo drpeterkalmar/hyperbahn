@@ -3,7 +3,10 @@
 // Wandfahrt in der Trommel (eine volle Schrauben-Windung an der Innenwand eines Zylinders, 90° Querneigung), Ring-Looping,
 // schwache Schwerkraft-Zonen (Mondkuppe: leicht abheben) und ein Schwerelos-Abschnitt mit Boost-Ringen als Riesensprung.
 // Grundriss gegen den Uhrzeigersinn, Start nach Norden. Schließ-Parameter: node tools/strecke_schliessen.mjs orbit
-import { baueBahn, kette } from './bahn.js';
+import { baueBahn, kette, schaerfe, zusatzPads } from './bahn.js';
+
+// P3 schärfere Kurven (bahn.js schaerfe): Faktor auf den Scheitel-Radius
+export const SCHARF = { 'Andockbogen': 0.65, 'Ringkurve': 0.7 };
 
 // Schrauben-Windung (Trommel): Anstieg THETA° je Windung; Gier/Rolle so, dass die Drehachse senkrecht steht (gier² + rolle² = 360²)
 const THETA = 3;
@@ -16,7 +19,7 @@ export const schlussOk = (s) => s.a >= 80 && s.b >= 150 && s.d >= -14 && s.d <= 
 export const START = { p: { x: 0, y: 200, z: 0 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 } };
 
 export function abschnitte(sch = SCHLUSS) {
-  return [
+  return schaerfe([
     { typ: 'gerade', name: 'Start-Ziel', len: 360, breite: 14, pads: kette(2, 200, 50, 0, 5), box: { at: 30, len: 280, u: -8.2, b: 2.8 } },
     { typ: 'kurve', name: 'Andockbogen', len: 500, gier: 90, bank: [24, 24, 0], breite: 14 },
     // Möbius-Band: eine ganze, langsame Drehung um die Fahrtrichtung (Magnet)
@@ -48,7 +51,7 @@ export function abschnitte(sch = SCHLUSS) {
     { typ: 'gerade', name: 'Looping-Anlauf', len: 200, breite: 13, pads: kette(3, 60, 55, 0, 6) },
     { typ: 'looping', name: 'Ring-Looping', len: 760, nick: Math.sqrt(360 ** 2 - 34 ** 2), roll: 34, rampe: 140, magnet: true, breite: 12 },
     { typ: 'gerade', name: 'Zielanlauf', len: sch.a, breite: 14 },
-  ];
+  ], SCHARF);
 }
 
 export const SPRUNG_MINDEST = { 'Schwerelos': 39 };
@@ -58,5 +61,6 @@ export function baue() {
   b.name = 'Orbital-Ring'; b.fassung = 'orbit'; b.id = 'orbit';
   b.sprungMindest = SPRUNG_MINDEST;
   b.padsWeich = true; b.planRand = 5;
+  zusatzPads(b, { abstand: 200, nachbar: 100 });   // P3: Risiko-Pads (≈ 1,5–2× so viele Pads)
   return b;
 }

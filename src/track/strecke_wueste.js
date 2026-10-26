@@ -4,7 +4,10 @@
 // Grundriss gegen den Uhrzeigersinn: Start nach Norden, Dünenbogen nach Nordwest, Startbahn + Radar-Schikane, Aufstieg
 // auf die Startrampe, Sprung über das Silo, Hangar-Kurve nach Süden, Hangar-Tunnel, Dünenwellen, Wüstenbogen nach Osten,
 // Ostgerade, Zielkurve. Schließ-Parameter: node tools/strecke_schliessen.mjs wueste
-import { baueBahn, kette } from './bahn.js';
+import { baueBahn, kette, schaerfe, zusatzPads } from './bahn.js';
+
+// P3 schärfere Kurven (bahn.js schaerfe): Faktor auf den Scheitel-Radius
+export const SCHARF = { 'Wüstenbogen': 0.55, 'Wüsten-S links': 0.3, 'Wüsten-S rechts': 0.3 };
 
 // a = Zielanlauf (Nord-Süd), b = Ostgerade (Ost-West), c = Gier der Zielkurve, d = Steigung der Ostrampe (Höhe)
 export const SCHLUSS = { a: 145.95, b: 725.69, c: 90.000, d: 4.839 };
@@ -13,7 +16,7 @@ export const SCHLUSS_SCHRITT = [120, 120, 4, 1.5];
 export const schlussOk = (s) => s.a >= 80 && s.b >= 200 && s.d >= -14 && s.d <= 14;
 
 export function abschnitte(sch = SCHLUSS) {
-  return [
+  return schaerfe([
     // --- Nordseite ---
     { typ: 'gerade', name: 'Start-Ziel', len: 520, breite: 15, pads: kette(2, 220, 50, 7, 5), box: { at: 40, len: 300, u: -9.2, b: 2.8 } },
     { typ: 'kurve', name: 'Dünenbogen', len: 620, gier: 90, bank: [18, 18, 0], breite: 15 },
@@ -49,7 +52,7 @@ export function abschnitte(sch = SCHLUSS) {
     // --- Ecke 4 ---
     { typ: 'kurve', name: 'Zielkurve', len: 620, gier: sch.c, bank: [22, 22, 0], breite: 15 },
     { typ: 'gerade', name: 'Zielanlauf', len: sch.a, breite: 15 },
-  ];
+  ], SCHARF);
 }
 
 // Mindesttempo an der Sprungkante (m/s, Vollgas) – „SPEED OK“ im HUD; test_strecken.mjs prüft es gegen die Physik (±4 m/s)
@@ -61,5 +64,6 @@ export function baue() {
   b.sprungMindest = SPRUNG_MINDEST;
   b.padsWeich = true;   // KI: Pads abseits der Linie nicht erzwingen, Plan feiner glätten (pilot.js)
   b.planRand = 5;       // KI-Linie 5 m von der Bande (Wandtreffer-Rate wie Megastadt, gemessen 0,09 statt 0,45 je Gleiter-Minute)
+  zusatzPads(b, { abstand: 330 });   // P3: Risiko-Pads (≈ 1,5–2× so viele Pads)
   return b;
 }

@@ -7,7 +7,7 @@
 import { Gleiter } from '../physics/gleiter.js';
 import { GEFUEHL, startWertung } from '../physics/fahrgefuehl.js';
 import { gummiband } from '../ai/gummiband.js';
-import { VORLAGE, SPIEL, BOOST } from '../config.js';
+import { VORLAGE, SPIEL, BOOST, SOG } from '../config.js';
 
 export const START = { reihe: 22, quer: 5.5, vorStrich: 12, countdown: 3 };
 
@@ -68,6 +68,7 @@ export class Rennen {
     if (this.zeit <= GEFUEHL.startfenster / 2 + 1e-9) this.startGas(dt, this.zeit, startSpieler || einSpieler);
     else this.startBoost();
     if (this.gummiStaerke > 0) gummiband(this, this.gummiStaerke);
+    this.windschatten(dt);
     for (const t of this.alle) {
       let ein;
       if (t.ziel && t.spieler && !einSpieler && !t.pilot) ein = AUS;
@@ -92,6 +93,30 @@ export class Rennen {
         t.g.revanche = R.dauer; t.g.ereignis('revanche', 1); t.g.statistik.revanchen = (t.g.statistik.revanchen || 0) + 1;
       }
       t.warVor = vor;
+    }
+  }
+
+  // Windschatten (P3): je Gleiter der nächste Vordermann im Kegel (±SOG.quer m quer, SOG.min…SOG.max m voraus, beide in
+  // Fahrt); Ausscheren = der bisherige Vordermann ist noch nah (−3 … max+5 m), aber seitlich außerhalb des Kegels
+  windschatten(dt) {
+    if (SOG.staerke <= 0) return;
+    const a = this.gleiter, L = this.bahn.L;
+    for (const g of a) {
+      if (g.zustand !== 'fahrt') { g.windschatten(dt, false, 0, -1, false); continue; }
+      let best = -1, bestD = Infinity;
+      for (let j = 0; j < a.length; j++) {
+        const o = a[j]; if (o === g || o.zustand !== 'fahrt') continue;
+        let ds = o.s - g.s; if (ds < -L / 2) ds += L; else if (ds > L / 2) ds -= L;
+        if (ds >= SOG.min && ds <= SOG.max && ds < bestD && Math.abs(o.u - g.u) < SOG.quer) { best = j; bestD = ds; }
+      }
+      let seitlich = false;
+      if (best < 0 && g.sogVor >= 0) {
+        const o = a[g.sogVor];
+        let ds = o.s - g.s; if (ds < -L / 2) ds += L; else if (ds > L / 2) ds -= L;
+        seitlich = o.zustand === 'fahrt' && ds > -3 && ds < SOG.max + 5 && Math.abs(o.u - g.u) >= SOG.quer;
+      }
+      const nah = best >= 0 ? 1 - (1 - SOG.fern) * (bestD - SOG.min) / (SOG.max - SOG.min) : 0;
+      g.windschatten(dt, best >= 0, nah, best, seitlich);
     }
   }
 

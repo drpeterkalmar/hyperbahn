@@ -2,7 +2,8 @@
 // Spektakel-Regel: Startwerte eher kräftig; Heavy-Job/Peter stimmen am Bild nach.
 //
 // URL-Regler (alle optional):
-//   ?speed=1.2     Höchsttempo-Faktor (1 = Standard, 95 m/s echt ≈ 650 km/h Anzeige)
+//   ?speed=1.2     Höchsttempo-Faktor auf die Grundgeschwindigkeit (P3: 1 = 105 m/s echt ≈ 720 km/h Anzeige; bis 0.1.17 95 m/s)
+//   ?tempo=alt     Grundtempo und Lenkung wie bis 0.1.17 (95 m/s, Querbeschleunigung 44 m/s², Seitenhaftung 5,5)
 //   ?mag=1.8       Magnetkraft in g (Magnet-Abschnitte, tempounabhängig)
 //   ?boost=0.5     Schub je Boost-Pad (Anteil Höchsttempo, stapelbar bis BOOST.deckel)
 //   ?air=0.55      Schwerkraft in der Luft (Faktor auf g; Alias ?sprung=)
@@ -23,17 +24,24 @@ export const G = 9.81;
 // Anzeige-Tempo: echte m/s × Faktor = „gefühlte“ km/h im HUD (Bahn und Physik bleiben in echten Metern)
 export const ANZEIGE = { faktor: 1.9 };
 
+// P3 (Peter 26.10.: „von Natur aus etwas schneller und schärfere Kurven, ich verwende die Airbrakes nie“): Grundtempo
+// 95 → 105 m/s (+10,5 %, Schub und Beschleunigungs-Bänder wachsen mit, gleiche Zeit bis Höchsttempo), Lenkung direkter
+// (Querbeschleunigung 44 → 60 m/s², Seitenhaftung 5,5 → 7, Gier-Aufbau 3,5 → 4,5 rad/s²) – enge Kurven ohne Luftbremse.
+// TEMPO.alt = Werte bis 0.1.17 (?tempo=alt)
+export const TEMPO = { basis: 105, querMax: 60, grip: 7, gierBeschl: 4.5, alt: { basis: 95, querMax: 44, grip: 5.5, gierBeschl: 3.5 } };
+
 export const GLEITER = {
-  vmax: 95,          // m/s Höchsttempo bei Vollgas ohne Boost
-  schub: 26,         // m/s² Beschleunigung aus dem Stand (fällt quadratisch zum Höchsttempo ab)
+  vmax: 105,         // m/s Höchsttempo bei Vollgas ohne Boost (= TEMPO.basis × ?speed=)
+  basis: 105,        // m/s Grundtempo ohne ?speed= (Schub und Bänder sind darauf skaliert)
+  schub: 26 * 105 / 95, // m/s² Luftwiderstand bei Höchsttempo (quadratisch; bis 0.1.17 26 bei 95 m/s)
   hoehe: 1.2,        // m Schwebehöhe (Ruhelage der Federn)
   reichweite: 4.5,   // m Reichweite der Schwebe-Raycasts (darüber = in der Luft)
   omega: 18,         // rad/s Eigenfrequenz der Schwebe-Federn (+ progressiver Anteil: hält ~15 g im Looping)
   zeta: 0.75,        // Dämpfungsgrad
   minHoehe: 0.3,     // m darunter: harter Aufsetzer (Funken, Tempoverlust)
   gierMax: 1.9,      // rad/s größte Gierrate (Lenken) bei niedrigem Tempo
-  querMax: 44,       // m/s² größte Querbeschleunigung aus Lenken (≈ 4,5 g)
-  grip: 5.5,         // 1/s Seitenhaftung (wie schnell Querrutschen abgebaut wird)
+  querMax: 60,       // m/s² größte Querbeschleunigung aus Lenken (≈ 6 g; bis 0.1.17 44)
+  grip: 7,           // 1/s Seitenhaftung (wie schnell Querrutschen abgebaut wird; bis 0.1.17 5,5)
   luftbremseGier: 0.75, // + Anteil Gierrate mit voller Luftbremse auf der Kurveninnenseite
   luftbremseZug: 9,  // m/s² Bremswirkung je voll gezogener Luftbremse
   luftSchub: 0.6,    // Anteil Schub in der Luft
@@ -56,9 +64,26 @@ export const BOOST = {
   dauer: 1.3,        // s je Pad (Datenblatt Fahrgefühl: 1,3 s, dann Abklingen)
   abklingen: 0.3,    // s Abklingen nach der vollen Dauer
   deckel: 0.8,       // höchstens +80 % gestapelt (Kette = immer schneller, gedeckelt)
-  ring: 0.35,        // Boost-Ring in der Luft
+  ring: 0.45,        // Boost-Ring in der Luft (P3: 0,35 → 0,45)
   rolle: 0.4,        // Barrel-Roll im Sprung = Turbo
 };
+
+// Windschatten (P3, Peter 26.10.: „mehr Boost und Windschatten-Ansaugen“): hinter einem Gleiter (Kegel ±`quer` m quer,
+// `min`…`max` m dahinter) baut sich der Sog in `aufbau` s auf (Abbau `abbau` s): Höchsttempo +`staerke` × Sog, nah voll, am
+// Kegelende ×`fern`. Nach ≥ `lade` s Sog gibt seitliches Ausscheren einen Schleuder-Boost (+`schleuder` für `schleuderDauer` s).
+// ?sog=0 aus, ?sog=0.15 Stärke
+export const SOG = { staerke: 0.12, quer: 4, min: 5, max: 40, aufbau: 1.0, abbau: 0.5, fern: 0.5, lade: 1.5, gnade: 0.3,
+  schleuder: 0.25, schleuderDauer: 0.9 };
+
+// KI-Streuung (P3): jede KI bekommt aus ihrem Seed eine eigene „Handschrift“ – Höchsttempo ±`top`, Kurventempo ±`kurve`,
+// Linien-/Fehler-Faktoren, Form-Welle (±`form` Höchsttempo, Periode 25–55 s), Lust auf Windschatten und Risiko-Pads.
+// ?streuung=0 = alle gleich wie bis 0.1.17, ?streuung=1.5 stärker
+export const KI = { streu: 1, top: 0.035, kurve: 0.035, form: 0.025 };
+
+// Strecken (P3, Peter 26.10.: „schärfere Kurven“ + „mehr Boost“): 2–3 Kurven je Strecke enger (gleiche Ein-/Ausfahrt-Linien,
+// kleinerer Radius im Scheitel, ?kurven=alt = bisherige Bögen) und zusätzliche Risiko-Pads auf ruhigen Stücken, im Wechsel
+// links/rechts/Mitte abseits der Ideallinie (?pads=0 = nur die bisherigen Pads)
+export const STRECKE = { scharf: 1, pads: 1 };
 
 export const LUFT = {
   faktor: 0.55,      // Schwerkraft-Faktor in der Luft (?air= / ?sprung=): Gleiter fliegt flach und weit
@@ -113,7 +138,7 @@ export const VORLAGE = {
   // Drift-Seitenhaftung 0,45 → 0,5: Schiebewinkel im Bremsen-Drift max. ≈ 25° (Ziel 15–25°, vorher 33°), Mini-Turbo-Gewinn bleibt
   bremse: { an: 1, aufbau: 0.2, zug: 18, zugBeide: 40, rutsch: 1.2, driftGrip: 0.5 },
   // Gegenlenken (?lenk=alt): Gier-Beschleunigung höchstens `beschl` rad/s², gegen die Drehung ×`gegen`, Gierrate ≤ `max` rad/s
-  gier: { an: 1, beschl: 3.5, gegen: 2, max: 1.75 },
+  gier: { an: 1, beschl: 4.5, gegen: 2, max: 1.75 },   // beschl bis 0.1.17 3,5 (P3: direkter einlenken)
   // Wandtreffer (?wand=0 alt): Energie ∝ Quertempo (Anteil je m/s, mind. `min`), Tempo −`v0`…−`v1` je Aufprallwinkel
   // (`w0`…`w1`°), Nachstöße desselben Einschlags (innerhalb `sperre` s) kosten nichts; die Nase gleitet ab (parallel zur Wand
   // + `weg`°). Datenblatt-Startwert 0,6 %/(m/s)
@@ -129,12 +154,16 @@ export const VORLAGE = {
   // +`gewinn` Höchsttempo für `dauer` s, nie unter `rest`; Boxengasse lädt `box` je s; leer = Notlauf (Höchsttempo ×`notlauf`);
   // unter `warnung` rot + Warnton; Barrel-Roll kostet `rolle`, nur ab `rolleMin` Rest, 1× je Sprung, Turbo +`rolleGewinn` für
   // `rolleDauer` s erst nach der Landung
-  energie: { an: 1, kosten: 0.12, gewinn: 0.35, dauer: 1.6, rest: 0.01, abRunde: 2, box: 0.35, notlauf: 0.7, warnung: 0.25,
+  // P3 (Peter 26.10.: „Das mit der Energie ist doof“): standardmäßig AUS (?energie=1 = wie bis 0.1.17) – kein Balken, kein
+  // manueller Boost, keine Boxengasse, kein Notlauf; Boost wird verdient (Pads, Windschatten, Flug-Boost, Mini-Turbo, Start).
+  // Die Barrel-Roll bleibt 1× je Sprung mit Turbo bei der Landung, kostet aber nichts.
+  energie: { an: 0, kosten: 0.12, gewinn: 0.35, dauer: 1.6, rest: 0.01, abRunde: 2, box: 0.35, notlauf: 0.7, warnung: 0.25,
     rolle: 0.10, rolleMin: 0.15, rolleGewinn: 0.30, rolleDauer: 1.2 },
   // Boost-Reserve + Ketten-Deckel (?reserve=4 s, 0 = bisher): Pads addieren Zeit (höchstens `max` s); jedes weitere Pad
   // in derselben Reserve hebt die Stufe um `kette` (Pad +50 % → +60 % → +70 % → Deckel +80 %); solange Reserve läuft,
   // zieht der Antrieb ×`beschl`
-  reserve: { an: 1, max: 4, kette: 0.10, beschl: 2 },
+  // P3: Kette spürbarer – je Pad +15 % statt +10 % (+50 → +65 → Deckel +80 %)
+  reserve: { an: 1, max: 4, kette: 0.15, beschl: 2 },
   // Flugzeit-Boost (?flugboost=0 aus): saubere Landung (Nase ≤ `sauber`° zur Fahrfläche) nach Flugzeit ≥ Schwelle gibt
   // Reserve und Stufe: [Flugzeit s, Reserve s, +Höchsttempo]; HUD-Flugmesser bleibt `messer` s nach der Landung stehen.
   // Stufe 3: Datenblatt-Startwert 2,0 s Reserve gab 0,65–0,80 s Zeitgewinn je Riesensprung (Ziel 0,4–0,7) → 1,5 s
@@ -169,7 +198,9 @@ export function leseRegler(search) {
     const v = parseFloat(q.get(k));
     return Number.isFinite(v) ? v : d;
   };
-  GLEITER.vmax = 95 * zahl('speed', 1);
+  const T = q.get('tempo') === 'alt' ? TEMPO.alt : TEMPO;
+  GLEITER.basis = T.basis; GLEITER.vmax = T.basis * zahl('speed', 1);
+  GLEITER.schub = 26 * T.basis / 95; GLEITER.querMax = T.querMax; GLEITER.grip = T.grip; VORLAGE.gier.beschl = T.gierBeschl;
   MAGNET.g = zahl('mag', MAGNET.g);
   BOOST.gewinn = zahl('boost', BOOST.gewinn);
   LUFT.faktor = zahl('air', zahl('sprung', LUFT.faktor));
@@ -183,7 +214,7 @@ export function leseRegler(search) {
   V.wand.an = q.get('wand') === '0' ? 0 : 1;
   V.bergung.zeit = zahl('bergung', 1.5);
   V.nicken.an = q.get('nicken') === '0' ? 0 : 1;
-  V.energie.an = q.get('energie') === '0' ? 0 : 1;
+  V.energie.an = q.get('energie') === '1' ? 1 : 0;
   V.energie.kosten = zahl('boostkosten', 12) / 100;
   V.energie.box = zahl('box', 35) / 100;
   V.energie.rolle = zahl('rollkosten', 10) / 100;
@@ -194,6 +225,10 @@ export function leseRegler(search) {
   V.revanche.an = q.get('revanche') === '0' ? 0 : 1;
   V.strafe.an = q.get('strafe') === '0' ? 0 : 1;
   V.gvignette.an = q.get('gvignette') === '0' ? 0 : 1;
+  SOG.staerke = zahl('sog', 0.12);
+  STRECKE.scharf = q.get('kurven') === 'alt' ? 0 : 1;
+  STRECKE.pads = q.get('pads') === '0' ? 0 : 1;
+  KI.streu = zahl('streuung', 1);
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   if (q.get('momente') === 'alle') ACTION.nurZiel = 0;

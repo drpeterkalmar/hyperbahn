@@ -24,7 +24,7 @@ export class Fahrhilfe {
     this.cfg = HILFE[stufe] || HILFE.leicht;
     this.bahn = bahn;
     // gleicher Pilot wie die KI, aber ohne menschliche Fehler – liefert nur die „Wunsch-Lenkung“
-    const pr = { ...PROFILE.profi, linie: 0, wackler: 0, rolle: 0 };
+    const pr = { ...PROFILE.profi, linie: 0, wackler: 0, rolle: 0, streu: 0 };
     const plaene = plan.sicher ? plan : { sicher: plan, schnell: plan };
     this.piloten = { sicher: new Pilot(bahn, plaene.sicher, pr, 1), schnell: new Pilot(bahn, plaene.schnell, pr, 1) };
     this.pilot = this.piloten.sicher;

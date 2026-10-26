@@ -9,7 +9,7 @@
 //   Südseite:  Möbius-Twist, Tunnel, Aufstieg auf die Hochstraße, Sprung 2 (Neon-Schlucht/Hafen)
 //   Ostseite:  Schikane, Große Steilkurve, Zielanlauf
 // Die Schließ-Parameter (SCHLUSS) stimmt tools/strecke_schliessen.mjs ab (Test: test_bahn.mjs prüft den Restfehler).
-import { baueBahn } from './bahn.js';
+import { baueBahn, schaerfe, zusatzPads } from './bahn.js';
 import { SPIEL } from '../config.js';
 import { rundenFuer } from './runden.js';
 
@@ -51,10 +51,13 @@ function kette(n, at0, abstand, u = 0, b = 4, l = 12) {
   return Array.from({ length: n }, (_, k) => ({ at: at0 + k * abstand, u, b, l }));
 }
 
+// P3 schärfere Kurven (bahn.js schaerfe): Faktor auf den Scheitel-Radius
+export const SCHARF = { 'Hafenkurve': 0.6, 'Schikane rechts': 0.45, 'Schikane links': 0.45 };
+
 // fassung 'lang' = Original (bis 0.1.3), 'kurz' = Kurzfassung (Standard ab P1b)
 export function strecke1Abschnitte(sch = SCHLUSS, fassung = 'lang') {
   const liste = abschnitteLang(sch);
-  return fassung === 'kurz' ? liste.map((a) => (KURZ[a.name] ? { ...a, ...KURZ[a.name] } : a)) : liste;
+  return schaerfe(fassung === 'kurz' ? liste.map((a) => (KURZ[a.name] ? { ...a, ...KURZ[a.name] } : a)) : liste, SCHARF);
 }
 
 function abschnitteLang(sch) {
@@ -130,6 +133,7 @@ export function strecke1(fassung = SPIEL.strecke) {
   b.fassung = f;
   b.id = f === 'lang' ? 'megastadt-lang' : 'megastadt';
   b.sprungMindest = SPRUNG_MINDEST;
+  zusatzPads(b);   // P3: Risiko-Pads (16 → 32 Pads)
   return b;
 }
 // Strecken-Register (P2): einheitlicher Einstieg baue(fassung) für alle Strecken

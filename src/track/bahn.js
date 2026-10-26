@@ -23,6 +23,7 @@
 // der lokalen Bahn-Normale: liefert Bogenlänge s, Querversatz u, Höhe h über der Fahrfläche und den Rahmen dort.
 import { v3, setze, kreuz, norm, dreheRahmen, orthoRahmen, drehe } from '../core/vec.js';
 import { clamp, smootherstep } from '../core/util.js';
+import { STRECKE } from '../config.js';
 
 export const DS = 2;              // m Abstand der Stützstellen
 const DS_INT = 0.5;               // m Integrationsschritt
@@ -372,4 +373,85 @@ export function spurGrenzen(b, i, u, rand = 0, seite = 0, out = [0, 0]) {
 // Boost-Pad-Kette: n Pads ab at0 im Abstand `abstand` (m), Querversatz u, Halbbreite b, Länge l
 export function kette(n, at0, abstand, u = 0, b = 4, l = 12) {
   return Array.from({ length: n }, (_, k) => ({ at: at0 + k * abstand, u, b, l }));
+}
+
+// P3 schärfere Kurven (Peter 26.10.): Kurve mit kleinerem Scheitel-Radius (Faktor auf den wirksamen Radius), aber denselben
+// Ein- und Ausfahrt-Linien – davor und danach je ein Geradenstück der Tangenten-Länge (R − R')·tan(θ/2), damit der Rest der
+// Strecke (fast) an derselben Stelle bleibt; Querneigung ×1,25 (höchstens 50°). liste = Abschnitte, faktoren = { Name: Faktor }.
+// STRECKE.scharf = 0 (?kurven=alt) lässt die Bögen wie bisher.
+export function schaerfe(liste, faktoren) {
+  if (!STRECKE.scharf) return liste;
+  return liste.flatMap((a) => {
+    const f = faktoren[a.name];
+    if (!f || !a.gier) return [a];
+    const th = Math.abs(a.gier) * RAD;
+    const r0 = a.rampe != null ? Math.min(a.rampe, a.len / 2) : Math.min(a.len / 3, 120);
+    const R = (a.len - r0) / th, R2 = R * f;
+    let len = R2 * th + 120;
+    if (len / 3 < 120) len = 1.5 * R2 * th;
+    // Abstand Kurvenanfang → Schnittpunkt der Ein-/Ausfahrt-Tangente, numerisch über das Krümmungs-Fenster (wie baueBahn)
+    const tangente = (L, r) => {
+      let x = 0, y = 0, phi = 0;
+      const n = Math.ceil(L / 0.25), h = L / n, k = th / (L - r);
+      for (let i = 0; i < n; i++) { const w = fenster((i + 0.5) * h, L, r); phi += k * w * h / 2; x += Math.cos(phi) * h; y += Math.sin(phi) * h; phi += k * w * h / 2; }
+      return x - y / Math.tan(th);
+    };
+    const r2 = Math.min(len / 3, 120);
+    const t = Math.max(0, tangente(a.len, r0) - tangente(len, r2));
+    const bank = Array.isArray(a.bank) ? a.bank.map((w) => Math.sign(w) * Math.min(50, Math.abs(w) * 1.25)) : a.bank;
+    const { pads, ringe, ...rest } = a;
+    void pads; void ringe;
+    return [
+      { typ: 'gerade', name: `${a.name} Einfahrt`, len: t, breite: a.breite },
+      { ...rest, len, bank, rampe: undefined, scharf: f },
+      { typ: 'gerade', name: `${a.name} Ausfahrt`, len: t, breite: a.breite },
+    ].filter((x) => x.len > 0);
+  });
+}
+
+// P3 Risiko-Pads (Peter 26.10.: „mehr Boost“): auf ruhigen Stücken (kein Magnet/Röhre/Sprung/Landezone/Box/Gabelung/offene
+// Kante von 40 m davor bis `nach` m danach, Kurvenradius dort ≥ `radius` m, keine Kuppe/Senke) Zweier-Ketten im Abstand
+// ≥ `abstand` m, im Wechsel links/rechts außen und Mitte – abseits der Ideallinie (p.extra: die KI-Linie erzwingt sie nicht).
+// STRECKE.pads = 0 (?pads=0): keine. Gibt die Zahl der neuen Pads zurück.
+export const ZUSATZ = { nach: 400, vor: 40, radius: 360, kuppe: 700, abstand: 260, nachbar: 120, paar: 45, rand: 5.5, nachEinzel: 220, radiusEinzel: 300, sprung: 2200 };
+export function zusatzPads(b, opt = {}) {
+  if (!STRECKE.pads) return 0;
+  const Z = { ...ZUSATZ, ...opt }, N = b.N, ds = b.ds;
+  const SPERRE = F_MAGNET | F_ROEHRE | F_LUECKE | F_SPRUNG | F_LANDEZONE | F_BOX | F_TEILER | F_OFFEN_L | F_OFFEN_R;
+  const unruhig = new Uint8Array(N), kurve = new Float64Array(N);
+  for (let i = 0; i < N; i++) {
+    const j = (i + 3) % N, h = (i - 3 + N) % N;
+    const dx = (b.tx[j] - b.tx[h]) / (6 * ds), dy = (b.ty[j] - b.ty[h]) / (6 * ds), dz = (b.tz[j] - b.tz[h]) / (6 * ds);
+    const kq = Math.abs(dx * b.lx[i] + dy * b.ly[i] + dz * b.lz[i]), kv = Math.abs(dx * b.ux[i] + dy * b.uy[i] + dz * b.uz[i]);
+    unruhig[i] = (b.flags[i] & SPERRE) || kv > 1 / Z.kuppe ? 1 : 0;
+    kurve[i] = kq;
+  }
+  // vor einem Absprung (≤ `sprung` m) keine Zusatz-Pads: volle Reserve + Ketten-Stufe trügen die KI über die Landezone hinaus
+  const vorSprung = new Uint8Array(N);
+  for (let n = 2 * N - 1, d = Infinity; n >= 0; n--) { const i = n % N; d = b.flags[i] & (F_SPRUNG | F_LUECKE) ? 0 : d + ds; if (d <= Z.sprung) vorSprung[i] = 1; }
+  const frei = (i, nach, radius) => {
+    if (vorSprung[i]) return false;
+    for (let k = -Math.round(Z.vor / ds); k <= Math.round(nach / ds); k++) { const j = (i + k + N) % N; if (unruhig[j] || kurve[j] > 1 / radius) return false; }
+    return true;
+  };
+  const neu = [], gruppen = [];
+  const belegt = (s, d) => b.pads.concat(neu).some((p) => { let x = Math.abs(p.s0 - s); x = Math.min(x, b.L - x); return x < d; });
+  const seiten = [1, -1, 0];
+  // erst Zweier-Ketten (Boost ≈ 2,6 s → `nach` m ruhige Bahn), auf kürzeren ruhigen Stücken einzelne Pads (`nachEinzel`)
+  for (const [n, nach, radius] of [[2, Z.nach, Z.radius], [1, Z.nachEinzel, Z.radiusEinzel]]) {
+    for (let s = 150; s < b.L - nach - 100; s += 10) {
+      if (belegt(s, Math.max(Z.nachbar, gruppen.length ? Z.abstand : 0)) || belegt(s + (n - 1) * Z.paar, Z.nachbar)) continue;
+      const i = Math.round(s / ds) % N;
+      if (!frei(i, nach + (n - 1) * Z.paar, radius)) continue;
+      const sg = seiten[gruppen.length % 3], u = sg * Math.max(0, b.hw[i] - Z.rand);
+      for (let k = 0; k < n; k++) neu.push({ s0: s + k * Z.paar, s1: s + k * Z.paar + 12, u, b: 3.5, extra: true });
+      gruppen.push(s);
+    }
+  }
+  for (const p of neu) {
+    b.pads.push(p);
+    for (let i = Math.floor(p.s0 / ds); i <= Math.ceil(p.s1 / ds); i++) b.flags[((i % N) + N) % N] |= F_PAD;
+  }
+  b.pads.sort((x, y) => x.s0 - y.s0);
+  return neu.length;
 }

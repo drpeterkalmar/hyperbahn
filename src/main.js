@@ -6,7 +6,7 @@
 // Mess-/Abnahme-Regler: ?autostart=1 (Menü überspringen), ?at=<Abschnittsname oder s in m> (Feld dort aufstellen, fliegender
 // Start), ?autopilot=1 (Spieler fährt per KI – Screenshots/Mess-Gate), ?nosw (ohne Service-Worker), ?look=, ?kl=.
 import * as THREE from 'three';
-import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST, VORLAGE } from './config.js';
+import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST, VORLAGE, SOG } from './config.js';
 import { CUP, CUP_PUNKTE, cupBereit, finde, sichtbar, rundenDer, zufallsStrecke, ladeStrecke, STANDARD_STRECKE } from './track/strecken.js';
 import { bestzeitSchluessel, trageBestzeitEin, leseBestzeit } from './game/bestzeiten.js';
 import { F_MAGNET } from './track/bahn.js';
@@ -25,6 +25,7 @@ import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
 import { Bergung } from './gfx/drohne.js';
+import { SogSchlieren } from './gfx/sog.js';
 import { Hud, ladeEinstellungen } from './ui/hud.js';
 import { Minikarte } from './gfx/minikarte.js';
 import { GpuZeit } from './gfx/gpuzeit.js';
@@ -78,6 +79,7 @@ let ladeNr = 0, umgebung = null;
 const blitze = new BlitzBremse({ reduziert: BLITZE.reduziert });
 const funken = new Funken(scene);
 const bergung = new Bergung(scene);   // Bergungs-Drohne nach Abflügen (Vorlage)
+const schlieren = new SogSchlieren(scene);   // Windschatten-Schlieren (P3)
 let ton = null;
 import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => console.warn('Ton', e));
 
@@ -152,6 +154,7 @@ const modelle = ladeGleiterModelle().catch((e) => console.warn('Gleiter-Modelle'
 const hud = new Hud(document.getElementById('ui'), {
   strecke: streckeInfo(startWahl()),
   cup: cupBereit(),
+  airbrake: q.get('airbrake') === '1',
   strecken: sichtbar().map((e) => ({ id: e.id, name: e.name, charakter: e.charakter, text: e.text, farbe: e.farbe, runden: rundenVon(e.id) })),
   // im laufenden Cup startet „NEU STARTEN“ nur das aktuelle Rennen neu, sonst beginnt ein neuer Cup
   onStart: (e) => modelle.then(() => (hud.cupAn && !(cup && rennen) ? starteCup(e) : bereit().then(() => starte(e)))),
@@ -312,10 +315,11 @@ function ereignisse() {
           if (!uhr.akzent() && SPIEL.online && ZEIT.slowmo) scheinBis = praes + ZEIT.slowmoDauer;
           break;
         case 'magnet': blitz(0.45, [0.6, 0.25, 1]); vibriere(30); break;
-        case 'rolle': if (VE.an && VE.rolle > 0) hud.meldung('ROLLE ✓ – TURBO BEI DER LANDUNG', praes, 1); else { hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); } break;
+        case 'rolle': if (!VE.an || VE.rolle > 0) hud.meldung('ROLLE ✓ – TURBO BEI DER LANDUNG', praes, 1); else { hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); } break;
         case 'rolleTurbo': hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); rig.stoss(0.3); break;
         case 'rolleNein': hud.meldung(e.grund === 'einmal' ? 'NUR EINE ROLLE JE SPRUNG' : 'ROLLE: ZU WENIG ENERGIE', praes, 0.9); break;
         case 'flugBoost': if (VORLAGE.flug.an) { hud.flugMesser(false, 0, praes, e, VORLAGE.flug.messer); if (e.stufe) { blitz(0.3 + 0.1 * e.stufe, [1, 0.85, 0.2]); rig.stoss(0.2); } } break;
+        case 'schleuder': hud.meldung('SCHLEUDER-BOOST!', praes, 0.9); blitz(0.35, [0.5, 0.95, 1]); rig.stoss(0.2); break;
         case 'energieBoost': hud.meldung('BOOST', praes, 0.7); blitz(0.4, [1, 0.85, 0.2]); rig.stoss(0.25); break;
         case 'boostNein': hud.meldung(e.grund === 'runde' ? (rennen.runden > 1 ? 'BOOST AB RUNDE 2' : 'BOOST AB DER HÄLFTE') : 'ZU WENIG ENERGIE', praes, 0.9); break;
         case 'box': hud.meldung('BOXENGASSE – LADEN', praes, 1.2); break;
@@ -389,11 +393,12 @@ function bestzeit() {
 
 // ROLLE-Taste (P1b): am Boden Energie-Boost (ab Runde 2, genug Energie), in der Luft Rolle (1× je Sprung, genug Energie)
 const VE = VORLAGE.energie;
-const tasteAus = { boden: true, moeglich: false };
+const tasteAus = { boden: true, moeglich: false, boost: false };
 function tasteZustand(g) {
-  tasteAus.boden = g.boden;
+  tasteAus.boden = g.boden; tasteAus.boost = !!VE.an;
   tasteAus.moeglich = g.boden ? g.boostFrei && g.schild >= VE.kosten + VE.rest
-    : !g.rolle && (VE.rolle <= 0 || (!g.gerollt && g.schild >= VE.rolle + VE.rolleMin));
+    : !g.rolle && (VE.an ? VE.rolle <= 0 || (!g.gerollt && g.schild >= VE.rolle + VE.rolleMin) : !g.gerollt);
+  if (!VE.an && g.boden) tasteAus.moeglich = false;   // P3 ohne Energie: am Boden keine Funktion (nur Rolle im Sprung)
   return tasteAus;
 }
 
@@ -448,15 +453,17 @@ function bild() {
     }
     const bergZeit = VORLAGE.bergung.zeit > 0 ? VORLAGE.bergung.zeit : 1.6;
     rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); bergung.update(dt, t.g, meshes[k], bergZeit); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
+    schlieren.update(dt, g, g.sogVor >= 0 ? rennen.gleiter[g.sogVor] : null);
     rig.update(dt, g, fx);
     const schein = praes < scheinBis ? 1 : 0;   // Schein-Akzent online: kurzer Ran-Zoom statt Zeitlupe
     rig.fov -= 8 * schein;
     wendeAn(camera, rig);
     hud.update({
       tempo: g.tempo, platz: spielerT.platz, von: rennen.alle.length, runde: spielerT.runde, runden: rennen.runden,
-      zeit: rennen.zeit - spielerT.rundenStart, beste: spielerT.beste, schild: g.schild, boost: Math.min(1, (g.boost + g.mt) / BOOST.deckel),
+      zeit: rennen.zeit - spielerT.rundenStart, beste: spielerT.beste, schild: VE.an ? g.schild : null,
+      sog: g.sog, sogLade: g.sogZeit / SOG.lade, boost: Math.min(1, (g.boost + g.mt) / BOOST.deckel),
       magnet: !!(g.q.flags & F_MAGNET), speedOk: speedOk(g), countdown: rennen.countdown,
-      warn: VE.an && g.schild < VE.warnung, taste: VE.an ? tasteZustand(g) : null,
+      warn: VE.an && g.schild < VE.warnung, taste: tasteZustand(g),
     }, praes);
     document.body.classList.toggle('ruhig', blitze.reduziert);
     if (VORLAGE.flug.an) hud.flugMesser(!g.boden && g.zustand === 'fahrt', g.luftZeit, praes);
@@ -464,7 +471,7 @@ function bild() {
     hud.gVignette(gVignetteDeckkraft(g.gLast, blitze.reduziert));
     hud.drehzahl(rennen.phase === 'countdown' && startAnalog && VORLAGE.start.band ? startEin.drehzahl : null, VORLAGE.start);
     WARNLICHT.ruhig = blitze.reduziert;
-    if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
+    if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, sog: g.sog * g.sogNah, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {
     if (ton) ton.ruhe();
     // Menü: langsame Kamerafahrt über die Strecke (oder feste Galerie-Kamera, __hb.galerie())

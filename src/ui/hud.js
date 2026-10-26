@@ -22,7 +22,8 @@ const el = (tag, cls, html = '') => { const e = document.createElement(tag); if 
 export class Hud {
   // strecke = { id, name, runden } (Menü-Zeile); strecken = [{ id, name, charakter, text, farbe, runden }] (Karten);
   // onStrecke(id) bei Wahl einer Karte (auch 'zufall', 'cup', 'megastadt-lang'), onTeilen(id), onNaechstes() im Cup
-  constructor(root, { onStart, onEinstellung, onWeiter, onStrecke, onTeilen, onNaechstes, strecke, strecken = [], cup = false } = {}) {
+  // airbrake (P3): Touch-Knöpfe „◀︎ BREMSE / BREMSE ▶︎“ nur mit ?airbrake=1 (Peter nutzt sie nie; Tastatur Q/E, Gamepad LB/RB bleiben)
+  constructor(root, { onStart, onEinstellung, onWeiter, onStrecke, onTeilen, onNaechstes, strecke, strecken = [], cup = false, airbrake = false } = {}) {
     this.cupMoeglich = cup;
     this.root = root; this.onStart = onStart; this.onEinstellung = onEinstellung; this.onWeiter = onWeiter;
     this.onStrecke = onStrecke; this.onTeilen = onTeilen; this.onNaechstes = onNaechstes;
@@ -43,6 +44,7 @@ export class Hud {
         <div class="balken schild" data-k="schildBalken"><i data-k="schild"></i><b>ENERGIE</b></div>
         <div class="balken boost"><i data-k="boost"></i><b>BOOST</b></div>
       </div>
+      <div class="hinweis sog" data-k="sog"><span data-k="sogT">WINDSCHATTEN</span><div class="sog-balken"><i data-k="sogI"></i></div></div>
       <div class="hinweis magnet" data-k="magnet">⟁ MAGNET</div>
       <div class="hinweis speed" data-k="speed">SPEED OK</div>
       <div class="countdown" data-k="countdown"></div>
@@ -50,10 +52,10 @@ export class Hud {
       <div class="flug" data-k="flug"><div class="flug-balken"><i data-k="flugI"></i><s style="left:26.7%"></s><s style="left:53.3%"></s><s style="left:calc(100% - 2px)"></s></div><span data-k="flugT"></span></div>
       <div class="meldung" data-k="meldung"></div>
       <div class="blitz" data-k="blitz"></div>
-      <div class="touch">
-        <button class="tk bremse-l" data-k="bremseL">◀︎ BREMSE</button>
+      <div class="touch${airbrake ? '' : ' ohne-bremse'}">
+        ${airbrake ? '<button class="tk bremse-l" data-k="bremseL">◀︎ BREMSE</button>' : ''}
         <button class="tk rolle" data-k="rolle">⟲ ROLLE</button>
-        <button class="tk bremse-r" data-k="bremseR">BREMSE ▶︎</button>
+        ${airbrake ? '<button class="tk bremse-r" data-k="bremseR">BREMSE ▶︎</button>' : ''}
       </div>
       <button class="pause" data-k="pause" aria-label="Pause">❚❚</button>
       <button class="reset" data-k="reset" aria-label="Zurück auf die Strecke (R)" title="Zurück auf die Strecke (R)">↺</button>
@@ -220,13 +222,25 @@ export class Hud {
     k.runde.textContent = `${Math.min(z.runde + 1, z.runden)}/${z.runden}`;
     k.zeit.textContent = fmtTime(z.zeit);
     k.beste.textContent = isFinite(z.beste) ? 'BESTE ' + fmtTime(z.beste) : '';
-    k.schild.style.transform = `scaleX(${Math.max(0, Math.min(1, z.schild))})`;
+    // P3: ohne Energie (Standard) kein Balken
+    k.schildBalken.style.display = z.schild == null ? 'none' : '';
+    if (z.schild != null) k.schild.style.transform = `scaleX(${Math.max(0, Math.min(1, z.schild))})`;
     k.schildBalken.classList.toggle('warn', !!z.warn);
+    // Windschatten (P3): Hinweis + Ladebalken (voll = Schleuder-Boost bereit: zum Überholen ausscheren)
+    const sog = z.sog || 0, an = sog > 0.15;
+    k.sog.classList.toggle('an', an);
+    if (an) {
+      const voll = (z.sogLade || 0) >= 1;
+      k.sogI.style.transform = `scaleX(${Math.min(1, z.sogLade || 0).toFixed(3)})`;
+      k.sog.classList.toggle('voll', voll);
+      const txt = voll ? 'WINDSCHATTEN · AUSSCHEREN!' : 'WINDSCHATTEN';
+      if (k.sogT.textContent !== txt) k.sogT.textContent = txt;
+    }
     // ROLLE-Taste (P1b): am Boden Energie-Boost, in der Luft Barrel-Roll; grau, wenn gerade nicht möglich
     if (z.taste) {
-      const txt = z.taste.boden ? '⚡ BOOST' : '⟲ ROLLE';
+      const txt = z.taste.boden && z.taste.boost ? '⚡ BOOST' : '⟲ ROLLE';
       if (k.rolle.textContent !== txt) k.rolle.textContent = txt;
-      k.rolle.classList.toggle('boost', z.taste.boden);
+      k.rolle.classList.toggle('boost', z.taste.boden && z.taste.boost);
       k.rolle.classList.toggle('gesperrt', !z.taste.moeglich);
     }
     k.boost.style.transform = `scaleX(${Math.max(0, Math.min(1, z.boost))})`;

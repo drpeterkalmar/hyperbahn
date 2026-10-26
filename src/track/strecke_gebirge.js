@@ -3,7 +3,10 @@
 // (in der zweiten Haarnadel innen schmal und ohne Bande), Kamm ohne Bande, Talsprung, enge Schikane, Riesensprung über das
 // Tal mit Landezone im Gegenhang.
 // Grundriss gegen den Uhrzeigersinn, Start nach Norden. Schließ-Parameter: node tools/strecke_schliessen.mjs gebirge
-import { baueBahn, kette } from './bahn.js';
+import { baueBahn, kette, schaerfe, zusatzPads } from './bahn.js';
+
+// P3 schärfere Kurven (bahn.js schaerfe): Faktor auf den Scheitel-Radius
+export const SCHARF = { 'Passkurve': 0.65, 'Schikane rechts': 0.6, 'Schikane links': 0.6 };
 
 // a = Zielanlauf, b = Talstraße (Ostseite), c = Gier der Zielkurve, d = Gefälle der Abfahrt (Höhe)
 export const SCHLUSS = { a: 361.44, b: 350.32, c: 90.000, d: 3.305 };
@@ -12,7 +15,7 @@ export const schlussOk = (s) => s.a >= 80 && s.b >= 150 && s.d >= -12 && s.d <= 
 export const START = { p: { x: 0, y: 60, z: 0 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 } };
 
 export function abschnitte(sch = SCHLUSS) {
-  return [
+  return schaerfe([
     { typ: 'gerade', name: 'Start-Ziel', len: 380, breite: 14, pads: kette(2, 200, 50, 0, 5), box: { at: 30, len: 280, u: -8.2, b: 2.8 } },
     { typ: 'kurve', name: 'Passkurve', len: 380, gier: 60, bank: [24, 24, 0], breite: 14 },
     { typ: 'huegel', name: 'Anstieg', len: 360, nick: 9, rampe: 160, breite: 14, pads: kette(3, 100, 60, 0, 6) },
@@ -50,7 +53,7 @@ export function abschnitte(sch = SCHLUSS) {
     { typ: 'gerade', name: 'Talstraße', len: sch.b, breite: 14, pads: kette(3, 120, 60, 0, 5) },
     { typ: 'kurve', name: 'Zielkurve', len: 600, gier: sch.c, bank: [30, 30, 0], breite: 14 },
     { typ: 'gerade', name: 'Zielanlauf', len: sch.a, breite: 14 },
-  ];
+  ], SCHARF);
 }
 
 export const SPRUNG_MINDEST = { 'Scharte': 55, 'Talsprung': 70 };
@@ -60,5 +63,6 @@ export function baue() {
   b.name = 'Gewitter-Pass'; b.fassung = 'gebirge'; b.id = 'gebirge';
   b.sprungMindest = SPRUNG_MINDEST;
   b.padsWeich = true; b.planRand = 5;
+  zusatzPads(b, { abstand: 200, nachbar: 100 });   // P3: Risiko-Pads (≈ 1,5–2× so viele Pads)
   return b;
 }

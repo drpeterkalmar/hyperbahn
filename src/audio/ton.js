@@ -8,7 +8,8 @@
 // URL-Regler ?musik=0..1.2 (Musik-Pegel, 0 = aus).
 const _q = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('musik') : null;
 const _musik = _q !== null && _q !== '' && Number.isFinite(+_q) ? Math.max(0, Math.min(1.2, +_q)) : 0.8;
-export const MISCHUNG = { gesamt: 0.55, boost: 0.14, wand: 0.18, magnet: 0.05, ereignis: 0.22, musik: _musik };
+// P3: sog = leiser Sog-Ton im Windschatten (tiefes, gefiltertes Rauschen, steigt mit dem Sog)
+export const MISCHUNG = { gesamt: 0.55, boost: 0.14, wand: 0.18, magnet: 0.05, sog: 0.07, ereignis: 0.22, musik: _musik };
 
 export class Ton {
   constructor() {
@@ -36,6 +37,7 @@ export class Ton {
     };
     this.boostR = rauschen('bandpass', 600, 1.2);
     this.wandR = rauschen('highpass', 1800, 0.7);
+    this.sogR = rauschen('lowpass', 380, 0.9);
     // Magnet-Summen: 110/220 Hz mit Tremolo
     this.mag1 = c.createOscillator(); this.mag1.frequency.value = 110;
     this.mag2 = c.createOscillator(); this.mag2.frequency.value = 220.5;
@@ -54,13 +56,15 @@ export class Ton {
   }
 
   // je Bild: tempo (m/s), vmax, boost (0…), magnet (0…1), wand (bool), luft (bool), tonFaktor (Zeitlupe)
-  update({ tempo = 0, vmax = 95, boost = 0, magnet = 0, wand = false, luft = false, tonFaktor = 1 } = {}) {
+  update({ tempo = 0, vmax = 95, boost = 0, magnet = 0, wand = false, luft = false, sog = 0, tonFaktor = 1 } = {}) {
     if (!this.ctx || !this.an) return;
     const t = this.ctx.currentTime;
     this.boostR.g.gain.setTargetAtTime(MISCHUNG.boost * Math.min(1, boost * 1.4), t, 0.08);
     this.boostR.fl.frequency.setTargetAtTime((450 + 500 * Math.min(1, boost)) * tonFaktor, t, 0.1);
     this.wandR.g.gain.setTargetAtTime(wand ? MISCHUNG.wand : 0, t, 0.03);
     this.magG.gain.setTargetAtTime(MISCHUNG.magnet * magnet, t, 0.15);
+    this.sogR.g.gain.setTargetAtTime(MISCHUNG.sog * sog, t, 0.2);
+    this.sogR.fl.frequency.setTargetAtTime((260 + 420 * sog) * tonFaktor, t, 0.2);
     if (this.musikSrc) this.musikSrc.playbackRate.setTargetAtTime(Math.max(0.5, tonFaktor), t, 0.05);   // Zeitlupe: Musik tiefer
   }
 
@@ -68,7 +72,7 @@ export class Ton {
   ruhe() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    for (const g of [this.boostR.g.gain, this.wandR.g.gain, this.magG.gain]) g.setTargetAtTime(0, t, 0.1);
+    for (const g of [this.boostR.g.gain, this.wandR.g.gain, this.magG.gain, this.sogR.g.gain]) g.setTargetAtTime(0, t, 0.1);
     this.musikStopp();
   }
 
@@ -102,6 +106,7 @@ export class Ton {
       case 'box': ton(330, 990, 0.5, 'sine', 0.5); break;
       case 'notlauf': ton(220, 110, 0.5, 'square', 0.5); break;
       case 'boostNein': case 'rolleNein': ton(200, 180, 0.08, 'square', 0.25); break;
+      case 'schleuder': ton(260, 700, 0.28, 'sawtooth', 0.55); break;
       case 'stoss': if (staerke > 0.3) ton(180, 120, 0.12, 'square', 0.5 * staerke); break;
       default: break;
     }

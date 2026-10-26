@@ -10,7 +10,7 @@
 // Eingabe je Schritt: { gas 0…1, lenk −1…1 (+ links), bremseL 0…1, bremseR 0…1 (Luftbremsen), nase −1…1 (+ hoch, nur in
 // der Luft), rolle −1|0|1 (Barrel-Roll im Sprung = Turbo) }.
 // Ereignisse (für Effekte/Ton/HUD/Action-Momente) landen in `ereignisse` und werden vom Spiel abgeholt.
-import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE, VORLAGE } from '../config.js';
+import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE, VORLAGE, SOG } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
 import { neueAbfrage, padBei, inBox, F_MAGNET, F_LUECKE, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, F_TEILER } from '../track/bahn.js';
 import { clamp, smoothstep } from '../core/util.js';
@@ -41,6 +41,9 @@ export class Gleiter {
     this.boostFrei = false; this.boostTaste = false; this.rolleTaste = false; this.imBox = false; this.notlauf = false;
     this.warnung = false; this.gerollt = false; this.rolleBonus = false;
     this.revanche = 0; this.strafeV = 0; this.gLast = 1;   // KI-Revanche (s), Seitwärts-Schub (m/s), G-Last (P1b)
+    // Windschatten (P3, setzt das Rennen je Schritt): sog 0…1 (aufgebaut), sogNah 0,5…1 (Abstand), sogZeit (s im Kegel,
+    // lädt den Schleuder-Boost), sogVor = Index des Vordermanns; kiTempo = Höchsttempo-Faktor der KI-Handschrift (Spieler 1)
+    this.sog = 0; this.sogNah = 0; this.sogZeit = 0; this.sogLos = 0; this.sogVor = -1; this.kiTempo = 1;
     this.p = v3(); this.v = v3(); this.w = v3();
     this.vor = v3(0, 0, -1); this.links = v3(-1, 0, 0); this.oben = v3(0, 1, 0);
     this.q = neueAbfrage(); this.qp = [neueAbfrage(), neueAbfrage(), neueAbfrage(), neueAbfrage()];
@@ -48,7 +51,7 @@ export class Gleiter {
     this.ereignisse = [];
     this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
       miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0, hartLandungen: 0,
-      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0, flugBoosts: [0, 0, 0, 0] };
+      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0, flugBoosts: [0, 0, 0, 0], sogZeit: 0, schleuder: 0 };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 
@@ -163,7 +166,7 @@ export class Gleiter {
     // --- Treffer (Schlingern → Dreher), Neustart-Rhythmus, Drift ---
     const tempo = Math.sqrt(dot(this.v, this.v));
     this.tempo = tempo;
-    const vmaxK = GLEITER.vmax * this.kl.top;
+    const vmaxK = GLEITER.vmax * this.kl.top * this.kiTempo;
     let gas = clamp(ein.gas || 0, 0, 1);
     let lenk = clamp(ein.lenk || 0, -1, 1);
     let bl = clamp(ein.bremseL || 0, 0, 1), br = clamp(ein.bremseR || 0, 0, 1);
@@ -216,12 +219,15 @@ export class Gleiter {
     this.notlauf = leer;
     // KI-Revanche (P1b): kurz mehr Höchsttempo und Beschleunigung nach einem Überholtwerden durch den Menschen
     const rev = this.revanche > 0 ? (this.revanche -= dt, VORLAGE.revanche) : null;
-    let vz = vmaxK * (1 + this.boost + this.mt + (rev ? rev.deckel : 0)) * (leer ? VE.notlauf : 1);
+    // Windschatten (P3): Sog hebt das Höchsttempo (nah voll, am Kegelende halb)
+    const sogPlus = SOG.staerke * this.sog * this.sogNah;
+    let vz = vmaxK * (1 + this.boost + this.mt + sogPlus + (rev ? rev.deckel : 0)) * (leer ? VE.notlauf : 1);
     if (this.boost <= 0) vz *= kurvenFaktor(lenk, dr.aktiv);
     this.imRand = aufBahn && amBoden && Math.abs(q.u) > q.hw - GEFUEHL.randBreite;
     if (this.imRand && !this.randImmun) vz *= 1 - GEFUEHL.rand * (this.kl.rand / 0.30) * (this.boost > 0 ? 0.5 : 1);
     // Boost = Vollgas – außer die Luftbremse ist gezogen (P1b, Reserve: sonst käme man mit langer Reserve nicht vor Kurven runter)
-    if (this.boost > 0 && !steuerlos && !(VORLAGE.reserve.an && this.blW + this.brW >= 0.1 && !dr.aktiv)) gas = 1;
+    // P3 (ohne Luftbremse spielbar): wer das Gas bewusst wegnimmt (< 0,3), wird auch im Boost nicht mehr auf Vollgas gezwungen
+    if (this.boost > 0 && !steuerlos && gas >= 0.3 && !(VORLAGE.reserve.an && this.blW + this.brW >= 0.1 && !dr.aktiv)) gas = 1;
     if (this.stotter > 0) { this.stotter -= dt; gas *= 0.05; }
     if (this.neustartBonus > 0) this.neustartBonus -= dt;
     setze(_d, this.vor.x, this.vor.y, this.vor.z);
@@ -400,11 +406,13 @@ export class Gleiter {
     const neu = ein.rolle && !this.rolleTaste;
     this.rolleTaste = !!ein.rolle;
     // Rolle kostet Energie (P1b, ?rollkosten=0 = frei wie bisher): nur 1× je Sprung und nur mit genug Rest
-    const VE = VORLAGE.energie, kostet = VE.an && VE.rolle > 0;
+    // P3: ohne Energie (Standard) kostenlos, aber weiter 1× je Sprung mit Turbo bei der Landung (einmal = Regel aktiv)
+    const VE = VORLAGE.energie, kostet = VE.an && VE.rolle > 0, einmal = kostet || !VE.an;
     if (!this.rolle && neu && this.luftZeit > 0.15) {
-      if (!kostet) this.rolle = { richt: Math.sign(ein.rolle), winkel: 0 };
-      else if (!this.gerollt && this.schild >= VE.rolle + VE.rolleMin) {
-        this.schild -= VE.rolle; this.gerollt = true;
+      if (!einmal) this.rolle = { richt: Math.sign(ein.rolle), winkel: 0 };
+      else if (!this.gerollt && (!kostet || this.schild >= VE.rolle + VE.rolleMin)) {
+        if (kostet) this.schild -= VE.rolle;
+        this.gerollt = true;
         this.rolle = { richt: Math.sign(ein.rolle), winkel: 0 };
       } else this.ereignis('rolleNein', 1, { grund: this.gerollt ? 'einmal' : 'energie' });
     }
@@ -415,8 +423,8 @@ export class Gleiter {
       if (this.rolle.winkel >= 2 * Math.PI) {
         this.rolle = null;
         addSk(this.w, this.w, this.vor, -dot(this.w, this.vor));
-        // mit Rollkosten gibt es den Turbo erst nach der Landung (gelandet), sonst sofort wie bisher
-        if (kostet) this.rolleBonus = true;
+        // mit Rollkosten bzw. ohne Energie (P3) gibt es den Turbo erst nach der Landung (gelandet), sonst sofort wie bisher
+        if (einmal) this.rolleBonus = true;
         else { this.boost = Math.min(BOOST.deckel, this.boost + BOOST.rolle); this.boostZeit = Math.max(this.boostZeit, BOOST.dauer); }
         this.statistik.rollen++;
         this.ereignis('rolle', 1);
@@ -574,6 +582,27 @@ export class Gleiter {
   }
 
   get energie() { return this.schild; }
+
+  // Windschatten (P3) je Schritt vom Rennen: drin = im Kegel hinter Gleiter `vor` (Index) mit Abstandsfaktor nah;
+  // seitlich = der Kegel ging durch Ausscheren verloren (Vordermann noch nah) → nach ≥ SOG.lade s Schleuder-Boost
+  windschatten(dt, drin, nah, vor, seitlich) {
+    if (SOG.staerke <= 0 || this.zustand !== 'fahrt') { this.sog = 0; this.sogZeit = 0; this.sogVor = -1; return; }
+    this.sog = Math.max(0, Math.min(1, this.sog + (drin ? dt / SOG.aufbau : -dt / SOG.abbau)));
+    if (drin) {
+      this.sogNah = nah; this.sogVor = vor; this.sogLos = 0;
+      this.sogZeit += dt; this.statistik.sogZeit += dt;
+      return;
+    }
+    if (this.sogZeit > 0 && seitlich && this.sogZeit >= SOG.lade) {
+      this.boost = Math.min(BOOST.deckel, Math.max(this.boost, SOG.schleuder));
+      this.boostZeit = Math.max(this.boostZeit, SOG.schleuderDauer);
+      this.statistik.schleuder++;
+      this.ereignis('schleuder', 1, { vor: this.sogVor });
+      this.sogZeit = 0;
+    }
+    this.sogLos += dt;
+    if (this.sogLos > SOG.gnade) { this.sogZeit = 0; this.sogVor = -1; }
+  }
 
   // Manueller Boost aus der Energie (P1b): ab Runde 2 (boostFrei), kostet VE.kosten, nie unter VE.rest
   energieBoost() {

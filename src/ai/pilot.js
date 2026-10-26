@@ -9,7 +9,7 @@
 //  4. Stärke-Profile mit menschlichen Fehlern (Linienrauschen, Tempofaktor, Wackler), deterministisch per Seed.
 //  5. Fahrgefühl (Datenblatt): Drift mit Pump-Rhythmus in langen Kurven (Mini-Turbo), Start-Tipp im Countdown,
 //     Gummiband-Modus (`gummi` von ai/gummiband.js: Tempo raus bzw. „schnell“ = volles Profil, kein Störfeld-Abzug).
-import { GLEITER, VORLAGE } from '../config.js';
+import { GLEITER, VORLAGE, SOG, KI } from '../config.js';
 import { clamp, rng } from '../core/util.js';
 import { v3, setze, dot } from '../core/vec.js';
 import { F_LUECKE, F_SPRUNG, F_MAGNET, F_ROEHRE, F_TEILER, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, rahmenBei, neueAbfrage, spurGrenzen } from '../track/bahn.js';
@@ -19,9 +19,10 @@ export const PROFILE = {
   // boost = Anteil der Gelegenheiten (Gerade, genug Energie), bei denen der manuelle Energie-Boost gezogen wird; box = unter
   // diesem Energie-Stand fährt die KI durch die Boxengasse (P1b)
   // risiko (P2) = Anteil der KIs, die an Gabelungen den schnellen, riskanteren Weg nehmen
-  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15, boost: 0.3, box: 0.35, risiko: 0.2 },
-  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4, boost: 0.6, box: 0.5, risiko: 0.5 },
-  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7, boost: 0.9, box: 0.6, risiko: 0.85 },
+  // P3: sog = Lust, sich in den Windschatten zu hängen; pads = Anteil der Risiko-Pads abseits der Linie, die angefahren werden
+  leicht: { name: 'Leicht', tempo: 0.86, linie: 2.2, wackler: 0.05, rolle: 0.15, vorschau: 1.15, drift: 0, start: 0.15, boost: 0.3, box: 0.35, risiko: 0.2, sog: 0.35, pads: 0.3 },
+  mittel: { name: 'Mittel', tempo: 0.93, linie: 1.2, wackler: 0.025, rolle: 0.45, vorschau: 1.0, drift: 0.5, start: 0.4, boost: 0.6, box: 0.5, risiko: 0.5, sog: 0.65, pads: 0.55 },
+  profi: { name: 'Profi', tempo: 0.985, linie: 0.5, wackler: 0.008, rolle: 0.85, vorschau: 0.95, drift: 1, start: 0.7, boost: 0.9, box: 0.6, risiko: 0.85, sog: 0.9, pads: 0.8 },
 };
 
 const RAND_STD = 3.2;   // m Abstand der Linie zur Bahnkante
@@ -84,6 +85,8 @@ export function bauePlan(bahn, opt = {}) {
   if (lose.length) relax();
   const uFrei = Float64Array.from(u);
   for (const p of bahn.pads) {
+    // P3: zusätzliche Risiko-Pads (bahn.js zusatzPads) erzwingen nie die Linie – die KI wählt sie unterwegs (Pilot.padWahl)
+    if (p.extra) continue;
     // Pads an einer Gabelung zählen nur auf der Seite des eigenen Wegs
     const ip = ((Math.round((p.s0 + p.s1) / 2 / ds) % N) + N) % N;
     if (bahn.flags[ip] & F_TEILER && Math.sign(p.u - bahn.tu[ip]) !== (bahn.tschnell[ip] || 1) * ((opt.weg || 'sicher') === 'schnell' ? 1 : -1)) continue;
@@ -119,7 +122,7 @@ export function bauePlan(bahn, opt = {}) {
   relax();
   // Krümmung der Linie in der Fahrfläche (quer) → Grenztempo
   const vLim = new Float64Array(N), kQuer = new Float64Array(N), kSign = new Float64Array(N);
-  const quer = opt.quer || GLEITER.querMax * 0.8;
+  const quer = opt.quer || GLEITER.querMax * 0.6;
   const vmaxPlan = opt.vmaxPlan || GLEITER.vmax * 2.2;
   for (let i = 0; i < N; i++) {
     const a = (i - 3 + N) % N, c = (i + 3) % N;
@@ -191,6 +194,21 @@ export class Pilot {
     this.rolleGeplant = false;
     this.gummi = null;
     this.driftT = 0; this.driftKurve = -1;
+    // P3 Handschrift (KI-Streuung, eigener Zufall – die übrigen Entscheidungen bleiben wie bisher): Höchsttempo, Kurventempo,
+    // Linie, Fehler, Form-Welle, Windschatten-Lust, Risiko-Pads. profil.streu = 0 (Fahrhilfe, Mess-Spieler) = ohne
+    this.persona = null;
+    this.padU = 0; this.padK = -1; this.padJa = false; this.sogMit = -1; this.sogJa = false; this.ueberholT = 0; this.ueberholZiel = 0;
+    const st = (profil.streu ?? 1) * KI.streu;
+    if (st > 0) {
+      const r = rng(seed * 31 + 7), z = () => r() * 2 - 1;
+      const P = this.persona = {
+        top: 1 + z() * KI.top * st, kurve: 1 + z() * KI.kurve * st,
+        formAmp: KI.form * st * (0.5 + r() * 0.5), formPer: 25 + r() * 30, formPh: r() * 2 * Math.PI,
+        sog: clamp((profil.sog ?? 0.6) + z() * 0.25, 0, 1), pads: clamp((profil.pads ?? 0.5) + z() * 0.3, 0, 1), geduld: 0.2 + r() * 1.2,
+      };
+      this.profil = { ...profil, tempo: Math.min(0.995, profil.tempo * P.kurve), linie: profil.linie * (0.6 + r() * (0.4 + 0.6 * st)), wackler: profil.wackler * (0.5 + r() * 1.5 * st) };
+      this.rp = rng(seed * 53 + 11);
+    }
     // Start-Tipp relativ zu Grün (s): Treffer im Fenster mit Wahrscheinlichkeit profil.start, sonst zu früh/zu spät
     const rs = this.r();
     // abgestufter Start (P1b): Treffer streuen um den Idealpunkt vor Grün, sonst wie bisher um Grün
@@ -218,6 +236,9 @@ export class Pilot {
     e.rolle = 0; e.nase = 0; e.boost = 0;
     if (g.zustand !== 'fahrt') { e.gas = 0; e.lenk = 0; return e; }
     const v = Math.max(g.tempo, 5);
+    const P = this.persona;
+    // P3: Höchsttempo der Handschrift mit langsamer Form-Welle (Positionswechsel im Rennverlauf)
+    if (P) g.kiTempo = P.top * (1 + P.formAmp * Math.sin(2 * Math.PI * g.zeit / P.formPer + P.formPh));
     // menschliche Fehler: langsames Linienrauschen + seltene Wackler
     this.rauschT -= dt;
     if (this.rauschT <= 0) { this.rauschZiel = (this.r() * 2 - 1) * pr.linie; this.rauschT = 1.5 + this.r() * 2.5; }
@@ -227,7 +248,33 @@ export class Pilot {
     if (this.wackelT <= 0) this.wackel = 0;
     // Ausweichen: Gleiter knapp voraus auf ähnlicher Linie → seitlich versetzen
     let ziel = 0, rate = 2;
-    if (AUSWEICH.vorn) {
+    // P3 Windschatten: Vordermann 8–60 m voraus (±9 m quer) → je nach Lust dahinter einreihen, bis der Sog geladen ist
+    // (SOG.lade + Geduld) oder er zu nah kommt; dann zum Überholen ausscheren (Schleuder-Boost) und 4 s draußen bleiben
+    let saugt = false;
+    if (P && SOG.staerke > 0) {
+      this.ueberholT -= dt;
+      let vo = null, vds = Infinity;
+      for (const o of andere) {
+        if (o === g || o.zustand !== 'fahrt') continue;
+        let ds = o.s - g.s; if (ds < -b.L / 2) ds += b.L; if (ds > b.L / 2) ds -= b.L;
+        if (ds > 0 && ds < 60 && ds < vds && Math.abs(o.u - g.u) < 9) { vo = o; vds = ds; }
+      }
+      if (vo && vo.id !== this.sogMit) { this.sogMit = vo.id; this.sogJa = this.rp() < P.sog; }
+      if (vo && this.ueberholT > 0) { ziel = this.ueberholZiel; rate = 3; saugt = true; }
+      else if (vo && this.sogJa) {
+        const dv = g.tempo - vo.tempo, ttc = dv > 0.5 ? vds / dv : Infinity;
+        const lin = this.linieBei(vo.s);
+        if (vds > 8 && ttc >= 1.2 && g.sogZeit < SOG.lade + P.geduld) { ziel = clamp(vo.u - lin, -7, 7); rate = 1.5; saugt = true; }
+        else if (g.sogZeit >= SOG.lade || ttc < 1.2) {
+          // ausscheren: zur Seite mit mehr Platz (in der Fahrbahn), Kegel ±SOG.quer sicher verlassen
+          const lim = b.hw[((Math.floor(vo.s / b.ds) % b.N) + b.N) % b.N] - 2.6;
+          const plus = clamp(vo.u + SOG.quer + 2.5, -lim, lim), minus = clamp(vo.u - SOG.quer - 2.5, -lim, lim);
+          this.ueberholZiel = (Math.abs(plus - vo.u) >= Math.abs(minus - vo.u) ? plus : minus) - lin;
+          this.ueberholT = 4; ziel = this.ueberholZiel; rate = 3; saugt = true;
+        }
+      }
+    }
+    if (saugt) { /* Windschatten/Überholen bestimmt den Versatz */ } else if (AUSWEICH.vorn) {
       // p1c: nächster Gleiter voraus zählt; früher bei hoher Annäherung (Zeit bis zum Kontakt < ttc s) und schneller zur
       // Seite (rate 4/s); Seite = die, auf der die eigene Linie + Versatz weiter vom anderen weg liegt (in der Fahrbahn)
       let naechst = Infinity;
@@ -253,7 +300,7 @@ export class Pilot {
       }
     }
     // p1c: Gleiter direkt daneben (Seite an Seite, weiche Stöße trennen kaum noch) → Platz machen statt Schleifen
-    if (AUSWEICH.seite) for (const o of andere) {
+    if (AUSWEICH.seite && !saugt) for (const o of andere) {
       if (o === g || o.zustand !== 'fahrt') continue;
       let ds = o.s - g.s; if (ds < -b.L / 2) ds += b.L; if (ds > b.L / 2) ds -= b.L;
       if (Math.abs(ds) < AUSWEICH.laengs && Math.abs(o.u - g.u) < AUSWEICH.quer) ziel = (g.u >= o.u ? 1 : -1) * AUSWEICH.weg;
@@ -264,7 +311,22 @@ export class Pilot {
     const sv = g.s + la;
     const i = ((Math.floor(sv / b.ds) % b.N) + b.N) % b.N;
     const imSprung = (b.flags[i] & (F_LUECKE | F_SPRUNG)) || (b.flags[Math.floor(g.hint) % b.N] & (F_LUECKE | F_SPRUNG));
-    let uz = clamp(this.linieBei(sv) + (imSprung ? 0 : this.rausch + this.ausweich), -(b.hw[i] - 2.4), b.hw[i] - 2.4);
+    // P3 Risiko-Pads: nächstes Pad abseits der Linie (bis ≈ 1,6 s voraus) – je nach Handschrift anfahren oder liegen lassen
+    let padZiel = 0;
+    if (P && !imSprung) {
+      for (let k = 0; k < b.pads.length; k++) {
+        const p = b.pads[k];
+        let d = p.s0 - g.s; if (d < -b.L / 2) d += b.L; if (d > b.L / 2) d -= b.L;
+        if (d < -(p.s1 - p.s0) || d > 20 + 1.6 * v) continue;
+        const off = p.u - this.linieBei((p.s0 + p.s1) / 2);
+        if (Math.abs(off) < p.b - 1 || Math.abs(off) > 11) continue;
+        if (k !== this.padK) { this.padK = k; this.padJa = this.rp() < P.pads; }
+        if (this.padJa) padZiel = off;
+        break;
+      }
+    }
+    this.padU += (padZiel - this.padU) * Math.min(1, dt * 1.6);
+    let uz = clamp(this.linieBei(sv) + (imSprung ? 0 : this.rausch + this.ausweich + this.padU), -(b.hw[i] - 2.4), b.hw[i] - 2.4);
     // Boxengasse (P1b): mit wenig Energie ab 250 m davor auf die Lade-Spur, bis zu ihrem Ende
     const bx = b.box, VE = VORLAGE.energie;
     if (bx && VE.an && VE.box > 0) {
@@ -313,7 +375,8 @@ export class Pilot {
     // Tempo (Gummiband: „schnell“ = volles Profil + kein Störfeld-Abzug, sonst ggf. Tempo-Deckel; nie in Sprung-Anläufen)
     const gm = this.gummi;
     g.randImmun = !!(gm && gm.schnell);
-    let vz = this.zielBei(g.s + v * 0.6) * (gm && gm.schnell ? Math.max(pr.tempo, 1) : pr.tempo);
+    // P3: „schnell“ hebt das eigene Profil um 4 % (bis 0,995) statt alle auf 1 zu nageln – die Handschrift bleibt sichtbar
+    let vz = this.zielBei(g.s + v * 0.6) * (gm && gm.schnell ? Math.min(0.995, pr.tempo + 0.04) : pr.tempo);
     const voll = this.plan.voll[((Math.round(g.s / b.ds) % b.N) + b.N) % b.N];
     if (gm && gm.tempo < 1 && !voll) vz = Math.min(vz, GLEITER.vmax * gm.tempo * (1 + g.boost));
     e.gas = voll ? 1 : clamp((vz - v) / 6 + 0.6, 0, 1);

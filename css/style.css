@@ -41,6 +41,12 @@ body.ruhig .schild.warn i { animation: none; }
 .boost i { background: linear-gradient(90deg, var(--magenta), var(--gelb)); box-shadow: var(--glow-m); }
 .hinweis { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 800; letter-spacing: 0.25em; font-size: clamp(14px, 3.2vmin, 22px); opacity: 0; transition: opacity 0.2s; }
 .hinweis.an { opacity: 1; }
+/* P3 Windschatten: Hinweis + Ladebalken (voll = Schleuder bereit) */
+.sog { top: 25%; color: #bfefff; text-shadow: 0 0 8px var(--cyan), 0 0 18px rgba(0, 229, 255, 0.6); font-size: clamp(12px, 2.6vmin, 18px); text-align: center; white-space: nowrap; }
+.sog-balken { margin: 5px auto 0; width: clamp(110px, 26vmin, 200px); height: 6px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.5); border-radius: 3px; overflow: hidden; }
+.sog-balken i { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, var(--cyan), #fff); }
+.sog.voll { color: var(--gelb); text-shadow: 0 0 8px var(--gelb), 0 0 20px rgba(255, 212, 0, 0.7); }
+.sog.voll .sog-balken i { background: var(--gelb); }
 .magnet { top: 18%; color: var(--violett); text-shadow: 0 0 8px var(--violett), 0 0 22px rgba(155, 92, 255, 0.7); }
 .magnet.an { animation: puls 0.6s infinite alternate; }
 .speed { top: 24%; color: #6dff9a; text-shadow: 0 0 8px #3dff7a; }
@@ -74,6 +80,9 @@ body.ruhig .schild.warn i { animation: none; }
 /* Touch-Tasten (nur bei Touch sichtbar) */
 .touch { position: absolute; left: 0; right: 0; bottom: max(10px, env(safe-area-inset-bottom)); display: none; justify-content: space-between; align-items: flex-end; padding: 0 max(10px, env(safe-area-inset-left)); pointer-events: none; }
 @media (pointer: coarse) { .touch { display: flex; } }
+/* P3: ohne Luftbremsen-Knöpfe sitzt die ROLLE-Taste unten mittig (neutrale Zone zwischen den Lenkhälften) */
+.touch.ohne-bremse { justify-content: center; }
+.touch.ohne-bremse .tk.rolle { min-width: 150px; padding: 16px 18px; }
 .tk { pointer-events: auto; border: 1px solid rgba(0, 229, 255, 0.6); background: var(--glas); color: #fff; font: 700 12px var(--schrift); letter-spacing: 0.15em; padding: 18px 16px; border-radius: 14px; backdrop-filter: blur(4px); min-width: 92px; touch-action: none; }
 .tk.an { background: rgba(0, 229, 255, 0.35); box-shadow: var(--glow-c); }
 .tk.rolle { border-color: rgba(255, 43, 214, 0.7); }
@@ -93,6 +102,7 @@ body.ruhig .schild.warn i { animation: none; }
   .hud-tempo { right: 50%; transform: translateX(50%); text-align: center; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 96px); }
   .tk { padding: 22px 14px; min-width: 30vw; }
   .tk.rolle { min-width: 24vw; }
+  .touch.ohne-bremse .tk.rolle { min-width: 34vw; }
 }
 
 /* --- Menü --- */

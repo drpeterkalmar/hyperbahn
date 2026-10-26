@@ -12,6 +12,7 @@
 //  • Treffer-Dreher mit Rettungsfenster (beide Luftbremsen = Abfangen), Neustart-Rhythmus (5 schnelle Gas-Tipper).
 // Alle Werte: Startwerte mit URL-Regler (leseGefuehl), als „unsicher“ markierte Datenblatt-Werte mit TODO.
 import { clamp, smoothstep } from '../core/util.js';
+import { GLEITER } from '../config.js';
 
 // Beschleunigung je Band in m/s² (bei Höchsttempo 95 m/s; ausgelegt auf 0→90 % in 2,5 / 3,0 / 2,8 s, letzte 10 % ≈ 1,5 s)
 export const KLASSEN = {
@@ -96,8 +97,8 @@ export function bandBeschl(kl, x) {
   const i = Math.floor(f);
   let a;
   if (i < 0) a = b[0]; else if (i >= 9) a = b[9]; else a = b[i] + (b[i + 1] - b[i]) * (f - i);
-  // ganz oben weich auf 0 (kein Ruck an der Höchsttempo-Grenze)
-  return a * GEFUEHL.beschl * Math.min(1, (1 - x) * 40);
+  // ganz oben weich auf 0 (kein Ruck an der Höchsttempo-Grenze); Bänder gelten für 95 m/s – mit dem Grundtempo skaliert (P3)
+  return a * GEFUEHL.beschl * (GLEITER.basis / 95) * Math.min(1, (1 - x) * 40);
 }
 
 // Lenk-Faktor: im Stand ≈ 0, Sweet-Spot ab 90 % Höchsttempo
