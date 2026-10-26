@@ -189,6 +189,8 @@ Sprüngen, Show-Elemente mit schwacher Schwerkraft). Hochformat-Übersicht: `doc
 - Gebirge und Orbit liegen für die KI „Leicht“ bei 4:56/4:57 – knapp unter 5:00.
 - Die Strecken sind handgebaut; der Strecken-Generator mit Seed und drei Cups aus Phase 3 sind noch offen (Register, Bausteine
   und Prüf-Werkzeuge sind dafür vorbereitet). Online-Cup-Wertung (Phase 4) nicht gebaut.
+- Mess-Gate (`tests/perf_gate.py`): per `open` gestartete Mess-Browser blieben unter macOS nach `Browser.close` stehen (59 Stück
+  nach den P2-Läufen, gezielt per PID beendet) – `close()` beendet sie jetzt per TERM, notfalls KILL (geprüft: 0 übrig).
 - Gabelung im Riff ist im Bild eher schmal sichtbar (orange Kante der Mitten-Wand); eine Hinweistafel vor der Gabelung wäre
   eine nächste Verbesserung.
 

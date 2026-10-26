@@ -95,9 +95,14 @@ class OffenerBrowser:
         try: self.b.new_browser_cdp_session().send('Browser.close')
         except Exception: pass
         t0 = time.time()
-        while time.time() - t0 < 10 and subprocess.run(['pgrep', '-f', self.prof], capture_output=True).stdout.strip(): time.sleep(0.3)
-        if subprocess.run(['pgrep', '-f', self.prof], capture_output=True).stdout.strip():
-            subprocess.run(['pkill', '-f', self.prof])   # nur genau dieser Browser (eindeutiger Profil-Ordner)
+        while time.time() - t0 < 3 and subprocess.run(['pgrep', '-f', self.prof], capture_output=True).stdout.strip(): time.sleep(0.3)
+        # P2: der Hauptprozess bleibt nach Browser.close unter macOS oft stehen (per `open` gestartet) → TERM, notfalls KILL;
+        # nur genau dieser Browser (eindeutiger Profil-Ordner)
+        for sig in ('-TERM', '-KILL'):
+            if not subprocess.run(['pgrep', '-f', self.prof], capture_output=True).stdout.strip(): break
+            subprocess.run(['pkill', sig, '-f', self.prof])
+            t1 = time.time()
+            while time.time() - t1 < 5 and subprocess.run(['pgrep', '-f', self.prof], capture_output=True).stdout.strip(): time.sleep(0.3)
         shutil.rmtree(self.prof, ignore_errors=True)
 
 START = 'open' if sys.platform == 'darwin' else 'direkt'
