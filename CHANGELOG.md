@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P2: Orbital-Ring + Cup)
+## 0.1.13 – 26.10.2026 (P2: Orbital-Ring + Cup)
 - **Neue Strecke „Orbital-Ring“** (Show): Raumstation über der Erde – Sterne, die Erde groß unter der Bahn (Kontinente,
   Wolken, Tag/Nacht, Stadtlichter, Atmosphären-Saum), Stationsring mit Solarflügeln, gläserne Trommel. **Möbius-Band**
   (eine ganze, langsame Drehung um die Fahrtrichtung), **Wandfahrt in der Trommel** (eine Schrauben-Windung an der
