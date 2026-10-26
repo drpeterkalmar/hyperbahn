@@ -114,7 +114,7 @@ async function wechsleStrecke(id) {
   thema = km.THEMA; wendeThemaAn(thema);
   bahnMesh = baueBahnMesh(bahn, { look: thema.look });
   scene.add(bahnMesh.gruppe);
-  kulisse = km.baueKulisse(bahn, { scene, blitze, renderer });
+  kulisse = km.baueKulisse(bahn, { scene, blitze, renderer, himmel, hemi });
   scene.add(kulisse.gruppe);
   karte = new Minikarte(renderer, bahn, { modus: q.get('karte') || hud.einst.karte || '3d', nord: q.has('kartenord') ? q.get('kartenord') === '1' : hud.einst.karteNord });
   karte.reduziert = blitze.reduziert;

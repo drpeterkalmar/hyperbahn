@@ -17,6 +17,9 @@ export const STRECKEN = [
   { id: 'riff', name: 'Riff-Röhre', charakter: 'Technik', farbe: '#2be0ff', rundenzeit: 89.5,
     text: 'Glasröhren durch ein Korallenriff: Korkenzieher, Magnet-Überkopf, Gabelung mit engem Schnell-Weg.',
     daten: () => import('./strecke_riff.js'), kulisse: () => import('../gfx/kulisse_riff.js') },
+  { id: 'gebirge', name: 'Gewitter-Pass', charakter: 'Sprünge', farbe: '#9fb4ff', rundenzeit: 91.6,
+    text: 'Gebirgspass im Gewitter: Serpentinen-Steilkurven, Talsprünge, Schikanen, Grat ohne Bande als Abkürzung.',
+    daten: () => import('./strecke_gebirge.js'), kulisse: () => import('../gfx/kulisse_gebirge.js') },
   // lange Fassung der Megastadt (bis 0.1.3): nur über ?strecke=lang bzw. die Wahl auf der Megastadt-Karte, nicht im Cup
   { id: 'megastadt-lang', name: 'Neon-Megastadt (lang)', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'lang', rundenzeit: 158.3, versteckt: true,
     text: 'Die lange Fassung der Megastadt.', daten: () => import('./strecke1.js'), kulisse: () => import('../gfx/kulisse_megastadt.js') },

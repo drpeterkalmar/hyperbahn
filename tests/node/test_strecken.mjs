@@ -71,3 +71,24 @@ for (const id of P2) {
     assert.ok(ki.wandJeMin <= WAND_MEGASTADT, `Wandtreffer ${ki.wandJeMin.toFixed(2)} je Gleiter-Minute (Megastadt ${WAND_MEGASTADT})`);
   });
 }
+
+test('Gewitter-Pass: Blitze respektieren „Blitze reduzieren“ (≤ 3 je Sekunde, gedämpft, kein Flackern)', async () => {
+  await import('./three_haken.mjs');
+  const { GewitterTakt } = await import('../../src/gfx/kulisse_gebirge.js');
+  const { BlitzBremse } = await import('../../src/core/zeit.js');
+  for (const reduziert of [false, true]) {
+    const takt = new GewitterTakt(5), bremse = new BlitzBremse({ reduziert });
+    let pulse = 0, maxH = 0, an = false; const zeiten = [];
+    for (let t = 0; t < 120; t += 1 / 60) {
+      const h = takt.hell(t, bremse);
+      maxH = Math.max(maxH, h);
+      if (h > 0.3 && !an) { pulse++; zeiten.push(t); }
+      an = h > 0.3;
+    }
+    let maxJeSek = 0;
+    for (const t0 of zeiten) maxJeSek = Math.max(maxJeSek, zeiten.filter((t) => t >= t0 && t < t0 + 1).length);
+    console.log(`  ${reduziert ? 'reduziert' : 'voll'}: ${pulse} Pulse in 120 s, max ${maxJeSek}/s, Helligkeit ≤ ${maxH.toFixed(2)}`);
+    assert.ok(pulse >= 12, 'es gewittert');
+    if (reduziert) { assert.ok(maxJeSek <= 1, 'kein Flackern'); assert.ok(maxH <= 0.56, 'gedämpft'); } else assert.ok(maxJeSek >= 2, 'Flacker-Folge');
+  }
+});

@@ -2,9 +2,10 @@
 import * as megastadt from './strecke1.js';
 import * as wueste from './strecke_wueste.js';
 import * as riff from './strecke_riff.js';
+import * as gebirge from './strecke_gebirge.js';
 import { finde } from './strecken.js';
 
-export const MODULE = { megastadt, 'megastadt-lang': megastadt, wueste, riff };
+export const MODULE = { megastadt, 'megastadt-lang': megastadt, wueste, riff, gebirge };
 
 // Strecke synchron bauen (id oder Alias, z. B. kurz/lang); unbekannt → Megastadt
 export function baueStrecke(id = 'megastadt') {

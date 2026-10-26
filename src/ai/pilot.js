@@ -142,7 +142,11 @@ export function bauePlan(bahn, opt = {}) {
   for (let i = 0; i < N; i++) {
     if (bahn.flags[i] & (F_SPRUNG | F_LUECKE)) for (let k = 0; k < 350; k++) voll[(i - k + N) % N] = 1;
   }
+  // P2-Strecken: in engen Kurven vor einem Sprung (Haarnadel, Gabelung) trotzdem nach Kurventempo fahren
+  if (bahn.padsWeich) for (let i = 0; i < N; i++) if (voll[i] && vLim[i] < vmaxPlan * 0.75 && !(bahn.flags[i] & (F_SPRUNG | F_LUECKE))) voll[i] = 0;
   for (let i = 0; i < N; i++) if (voll[i]) vZiel[i] = vmaxPlan;
+  // (P2) nach dem Freigeben der Kurven: Bremsweg dorthin neu rechnen
+  if (bahn.padsWeich) for (let n = 0; n < 2 * N; n++) { const i = (2 * N - 1 - n) % N, j = (i + 1) % N; if (!voll[i]) vZiel[i] = Math.min(vZiel[i], Math.sqrt(vZiel[j] * vZiel[j] + 2 * verz * ds)); }
   // Drift-Kurven: zusammenhängend Radius < DRIFT_RADIUS (geglättet), ≥ 160 m lang, gleiche Richtung, nicht im Sprung
   const kurven = [], kurveId = new Int16Array(N).fill(-1);
   const glatt = new Float64Array(N);
@@ -277,6 +281,10 @@ export class Pilot {
     if (b.flags[i] & F_TEILER) {
       const sg = (b.flags[ig] & F_TEILER) ? (g.u >= b.tu[ig] ? 1 : -1) : (this.linieBei(sv) >= b.tu[i] ? 1 : -1);
       const gr = spurGrenzen(b, i, 0, 2.4, sg, _g);
+      uz = clamp(uz, gr[0], gr[1]);
+    } else if (b.flags[ig] & F_TEILER) {
+      // noch neben dem Teiler, Vorschau schon dahinter: erst am Teiler-Ende hinüberziehen
+      const gr = spurGrenzen(b, ig, 0, 2.4, g.u >= b.tu[ig] ? 1 : -1, _g);
       uz = clamp(uz, gr[0], gr[1]);
     }
     // offene Kante: Ziel nicht näher als 4 m an die Kante

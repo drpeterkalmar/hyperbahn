@@ -2,6 +2,14 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P2: Gewitter-Pass)
+- **Neue Strecke „Gewitter-Pass“** (Sprünge): Hochgebirge bei Nacht im Gewitter – zerklüftete Berge mit Schneegipfeln,
+  Nadelwald, Regen mit Wind, Blitze (mit „⚡ Blitze reduzieren“ nur ein gedämpfter Puls je Blitz, ≤ 3/s, kein Flackern).
+  Viele Höhenmeter, zwei Serpentinen-Haarnadeln mit Steilkurve, **Grat-Abkürzung** in der zweiten Haarnadel (innen schmal,
+  ohne Bande, ≈ 1 s schneller), Kamm ohne Bande, Sprung über die Scharte, Schikane, Riesensprung über das Tal.
+  Runde 1:32, 3 Runden.
+- KI: in engen Kurven vor Sprüngen nach Kurventempo statt Vollgas, am Ende einer Gabelung erst hinter dem Teiler hinüber.
+
 ## 0.1.11 – 26.10.2026 (P2: Riff-Röhre)
 - **Neue Strecke „Riff-Röhre“** (Technik): unter Wasser – Glasröhren durch ein Korallenriff, Lichtstrahlen von oben,
   wogender Seetang, Fischschwärme, Luftblasen. Korkenzieher, Doppel-Korkenzieher, Röhren-Schlange, lange

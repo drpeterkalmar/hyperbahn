@@ -11,8 +11,8 @@ NUR = ARG[ARG.index('--nur') + 1].split(',') if '--nur' in ARG else None
 FOLGE = {
   'megastadt': [('start', None), ('signatur', 'Großer Looping'), ('sprung', 'Häuserschlucht'), ('ziel', 'Zielanlauf')],
   'wueste': [('start', None), ('signatur', 'Startbahn'), ('sprung', 'Raketensilo'), ('hangar', 'Hangar'), ('duenen', 'Düne 1'), ('ziel', 'Zielkurve')],
-  'riff': [('start', None), ('signatur', 'Korkenzieher'), ('gabel', 'Gabelung'), ('sprung', 'Riffgraben'), ('ziel', 'Zielanlauf')],
-  'gebirge': [('start', None), ('signatur', 'Serpentine 1'), ('grat', 'Grat'), ('sprung', 'Talsprung'), ('ziel', 'Zielanlauf')],
+  'riff': [('start', None), ('signatur', 'Korkenzieher'), ('ueberkopf', 'Kopfüber-Röhre'), ('gabel', 'Gabelung'), ('sprung', 'Riffgraben'), ('ziel', 'Zielkurve')],
+  'gebirge': [('start', None), ('signatur', 'Serpentine 1'), ('abkuerzung', 'Serpentine 2'), ('grat', 'Kamm'), ('sprung', 'Talsprung'), ('ziel', 'Zielkurve')],
   'orbit': [('start', None), ('signatur', 'Trommel'), ('moebius', 'Möbius-Band'), ('sprung', 'Schwerelos'), ('ziel', 'Zielanlauf')],
 }
 os.makedirs('tests/shots', exist_ok=True)

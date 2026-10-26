@@ -53,6 +53,7 @@ Jedes Rennen dauert höchstens 5 Minuten (Rundenzahl je Strecke). Bestzeiten wer
 |---|---|---|---|
 | Neon-Megastadt (Kurz / Lang) | Allrounder: Looping, Röhre, Wandfahrt, Überkopf, zwei Riesensprünge | 2:15 / 2:38 | 2 / 1 |
 | Wüsten-Raumhafen | Vollgas: lange Geraden, Boost-Ketten, weite Bögen, Riesensprung über das Raketensilo | 1:28 | 3 |
+| Gewitter-Pass | Sprünge: Serpentinen-Haarnadeln, Grat-Abkürzung ohne Bande, Kamm, Scharte, Talsprung, Blitze | 1:32 | 3 |
 | Riff-Röhre | Technik: Glasröhren unter Wasser, Korkenzieher, Überkopf-Röhre, Gabelung (innen eng ohne Bande + Pads) | 1:30 | 3 |
 
 „🎲 Zufällig“ wählt nie zweimal hintereinander dieselbe Strecke.
@@ -76,7 +77,7 @@ weißem Ring. Antippen = groß/klein.
 `?speed=1.2` Höchsttempo · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
 der Luft · `?slowmo=0` Absprung-Zeitlupe aus · `?action=0|1|2` · `?blitze=0` Blitze reduzieren · `?horizont=1` ·
 `?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=2` (Standard: je Strecke, Rennen ≤ 5 min) ·
-`?strecke=megastadt|wueste|riff|lang|zufall` (Strecke; `lang` = lange Megastadt, 1 Runde) · `?nase=alt` (Nase in der Luft wie bis 0.1.3) · `?look=0|1|2` Grafikstufe ·
+`?strecke=megastadt|wueste|riff|gebirge|lang|zufall` (Strecke; `lang` = lange Megastadt, 1 Runde) · `?nase=alt` (Nase in der Luft wie bis 0.1.3) · `?look=0|1|2` Grafikstufe ·
 `?kl=-bloom` Kino-Look-Stufen · `?streak=1.2` Neon-Linsen-Streifen (0 = aus) · `?blur=0.3` Bewegungsunschärfe ·
 `?tacho=1.9` Anzeige-Faktor km/h · `?karte=3d|2d|aus` · `?kartenord=1` · `?startplatz=1…8` (Standard 6) ·
 `?online=1` (Test: Zeit-Logik wie online, nur Schein-Zeitlupe) · `?gpu=1` GPU-Zeit messen (Mess-Gate).
