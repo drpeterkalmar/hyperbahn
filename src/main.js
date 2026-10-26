@@ -7,10 +7,12 @@
 // Start), ?autopilot=1 (Spieler fährt per KI – Screenshots/Mess-Gate), ?nosw (ohne Service-Worker), ?look=, ?kl=.
 import * as THREE from 'three';
 import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST, VORLAGE } from './config.js';
-import { strecke1, SPRUNG_MINDEST, FASSUNGEN, STANDARD_FASSUNG, rundenDerFassung } from './track/strecke1.js';
-import { bestzeitSchluessel, trageBestzeitEin } from './game/bestzeiten.js';
+import { CUP, CUP_PUNKTE, cupBereit, finde, sichtbar, rundenDer, zufallsStrecke, ladeStrecke, STANDARD_STRECKE } from './track/strecken.js';
+import { bestzeitSchluessel, trageBestzeitEin, leseBestzeit } from './game/bestzeiten.js';
 import { F_MAGNET } from './track/bahn.js';
-import { bauePlan, Pilot, PROFILE } from './ai/pilot.js';
+import { bauePlaene, wegFuer, Pilot, PROFILE } from './ai/pilot.js';
+import { vorschauDaten } from './ui/vorschau.js';
+import { fmtTime } from './core/util.js';
 import { Rennen, TEAMS } from './game/rennen.js';
 import { Fahrhilfe } from './game/fahrhilfe.js';
 import { Eingabe } from './game/eingabe.js';
@@ -45,75 +47,178 @@ renderer.info.autoReset = false;
 const gpu = q.get('gpu') === '1' ? new GpuZeit(renderer.getContext()) : null;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0614, 0.00075);    // TODO Heavy-Job: Dunst-Dichte am Bild
+scene.fog = new THREE.FogExp2(0x0a0614, 0.00075);    // P2: Farbe/Dichte je Strecke (THEMA der Kulisse)
 const camera = new THREE.PerspectiveCamera(70, 1, 0.3, 9000);
-scene.add(new THREE.HemisphereLight(0x3a2a6a, 0x05030a, 0.5));
-const mond = new THREE.DirectionalLight(0x8fb4ff, 0.35);
+const hemi = new THREE.HemisphereLight(0x3a2a6a, 0x05030a, 0.5);
+scene.add(hemi);
+const mond = new THREE.DirectionalLight(0x8fb4ff, 0.35);   // Mond (Megastadt) bzw. Sonne (Wüste) – je Strecke
 mond.position.set(-0.4, 1, 0.3);
 scene.add(mond);
-scene.environment = neonUmgebung(renderer);
 const himmel = baueHimmel();
 scene.add(himmel);
 
 const lookStufe = q.has('look') ? +q.get('look') : 1;
 const kino = new KinoLook(renderer, { level: lookStufe, grade: 'neonnoir', stages: q.get('kl') || '', streak: q.has('streak') ? +q.get('streak') : 1.2 });
 
-// --- Strecke, Plan, Grafik der Bahn ---
-// Fassung (P1b): ?strecke=lang hat Vorrang, sonst die Menü-Wahl (Kurz = Standard); Wechsel im Menü lädt die Seite neu
+// --- Strecke (P2: Register track/strecken.js, Daten + Kulisse werden erst bei Bedarf geladen) ---
+// Wahl: ?strecke=<id|kurz|lang|zufall> hat Vorrang, sonst die gemerkte Menü-Wahl; ?cup=1 wählt den Cup
 const einst0 = ladeEinstellungen();
-const fassung = q.has('strecke') ? SPIEL.strecke : (FASSUNGEN[einst0.strecke] ? einst0.strecke : STANDARD_FASSUNG);
-const bahn = strecke1(fassung);
-// Runden je Fassung aus der gemessenen Rundenzeit (Rennen ≤ 5 min), ?runden= überschreibt
-const RUNDEN = q.has('runden') ? SPIEL.runden : rundenDerFassung(bahn.fassung);
+const LETZTE = 'hyperbahn-letzte-strecke';
+const letzte = () => { try { return localStorage.getItem(LETZTE) || ''; } catch { return ''; } };
+function startWahl() {
+  const v = q.get('strecke');
+  if (v === 'zufall') return zufallsStrecke(letzte());
+  if (v && finde(v)) return finde(v).id;
+  return (finde(einst0.strecke) || finde(STANDARD_STRECKE)).id;
+}
 const rundenText = (n) => `${n} ${n === 1 ? 'Runde' : 'Runden'}`;
-const plan = bauePlan(bahn);
-const bahnMesh = baueBahnMesh(bahn);
-scene.add(bahnMesh.gruppe);
+const rundenVon = (id) => (q.has('runden') ? SPIEL.runden : rundenDer(id));
+let bahn = null, plaene = null, plan = null, bahnMesh = null, kulisse = null, thema = null, RUNDEN = 2, absprungS = [], sonneDir = null;
+let ladeNr = 0, umgebung = null;
 const blitze = new BlitzBremse({ reduziert: BLITZE.reduziert });
 const funken = new Funken(scene);
 const bergung = new Bergung(scene);   // Bergungs-Drohne nach Abflügen (Vorlage)
-
-// Stadt, Regen, Ton: getrennte Module – fehlt eines oder scheitert es, läuft das Spiel trotzdem
-let stadt = null, regen = null, ton = null;
-import('./gfx/stadt.js').then((m) => { stadt = m.baueStadt(bahn, { seed: 11, blitze }); scene.add(stadt.gruppe); }).catch((e) => console.warn('Stadt', e));
-import('./gfx/regen.js').then((m) => { regen = new m.Regen(scene, {}); }).catch((e) => console.warn('Regen', e));
+let ton = null;
 import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => console.warn('Ton', e));
+
+// Thema der Kulisse anwenden: Himmel, Nebel, Licht, Farbkorrektur, Dunst, Umgebungs-Spiegelung
+function wendeThemaAn(t) {
+  himmel.setzeThema(t.himmel);
+  scene.fog.color.set(t.nebel.farbe); scene.fog.density = t.nebel.dichte;
+  hemi.color.set(t.licht.hemi[0]); hemi.groundColor.set(t.licht.hemi[1]); hemi.intensity = t.licht.hemi[2];
+  const r = t.licht.richtung;
+  mond.color.set(r.farbe); mond.intensity = r.staerke; mond.position.set(...r.dir);
+  kino.grade = t.grade || 'neonnoir';
+  kino.hazeCol.set(t.dunst ? t.dunst.farbe : 0xa9bbd0);
+  kino.aerial = { density: 0.0003, falloff: 0.012, base: 0, max: 0.34, ...((t.dunst && t.dunst.aerial) || {}) };
+  sonneDir = t.sonneKino ? new THREE.Vector3(...t.sonneKino).normalize() : null;
+  if (umgebung) umgebung.dispose();
+  umgebung = neonUmgebung(renderer, t.umgebung || {});
+  scene.environment = umgebung;
+}
+
+// Strecke wechseln: Daten + Kulisse laden, alte Teile entsorgen, Plan/Bahn/Kulisse/Minikarte neu (ohne Neuladen der Seite)
+async function wechsleStrecke(id) {
+  const e = finde(id) || finde(STANDARD_STRECKE);
+  if (bahn && bahn.id === e.id) return bahn;
+  const nr = ++ladeNr;
+  const [b, km] = await Promise.all([ladeStrecke(e.id), e.kulisse()]);
+  if (nr !== ladeNr) return null;   // inzwischen eine andere Strecke gewählt
+  laeuft = false;
+  for (const m of meshes) { scene.remove(m.gruppe); scene.remove(m.spur); }
+  meshes = []; rennen = null;
+  if (bahnMesh) { scene.remove(bahnMesh.gruppe); bahnMesh.dispose(); }
+  if (kulisse) { scene.remove(kulisse.gruppe); kulisse.dispose(); }
+  if (karte) karte.dispose();
+  bahn = b; plaene = bauePlaene(bahn); plan = plaene.sicher;
+  thema = km.THEMA; wendeThemaAn(thema);
+  bahnMesh = baueBahnMesh(bahn, { look: thema.look });
+  scene.add(bahnMesh.gruppe);
+  kulisse = km.baueKulisse(bahn, { scene, blitze, renderer });
+  scene.add(kulisse.gruppe);
+  karte = new Minikarte(renderer, bahn, { modus: q.get('karte') || hud.einst.karte || '3d', nord: q.has('kartenord') ? q.get('kartenord') === '1' : hud.einst.karteNord });
+  karte.reduziert = blitze.reduziert;
+  RUNDEN = rundenVon(e.id);
+  // „Speed OK“: Absprünge mit Mindesttempo der Strecke
+  absprungS = bahn.abschnitte.map((a, k) => (a.typ === 'sprung' ? { s: bahn.segStart[k], vmin: (bahn.sprungMindest || {})[a.name] || 75 } : null)).filter(Boolean);
+  hud.setzeStrecke(streckeInfo(e.id));
+  // Teilen-Link: URL zeigt die Strecke (ohne die Seite neu zu laden)
+  try { const u = new URL(location.href); u.searchParams.set('strecke', e.id); history.replaceState(null, '', u.toString()); } catch { /* file:// */ }
+  return bahn;
+}
+function streckeInfo(id) {
+  const e = finde(id), mega = e.id.startsWith('megastadt');
+  return { id: e.id, name: e.name, runden: rundenVon(e.id),
+    fassungen: mega ? [['megastadt', `Kurz · ${rundenText(rundenVon('megastadt'))}`], ['megastadt-lang', `Lang · ${rundenText(rundenVon('megastadt-lang'))}`]] : null };
+}
 
 // --- Spielzustand ---
 const eingabe = new Eingabe(window);
 const rig = new KameraRig();
 let rennen = null, hilfe = null, waechter = null, regie = null, uhr = null, meshes = [], spielerT = null;
-let galerie = null, fliegend = false;
+let galerie = null, fliegend = false, karte = null, cup = null;
 let laeuft = false, praes = 0, vibLetzt = -9, autopilot = null, scheinBis = 0;
 // ?at=Großer Looping | ?at=1600 → Bogenlänge oder null
 function startStelle() {
   if (!q.has('at')) return null;
   const v = q.get('at');
   if (/^-?\d+(\.\d+)?$/.test(v)) return ((+v % bahn.L) + bahn.L) % bahn.L;
-  const k = bahn.abschnitte.findIndex((a) => a.name.toLowerCase() === v.toLowerCase());
+  const k = bahn.abschnitte.findIndex((a) => a.name.toLowerCase() === v.toLowerCase());   // Abschnitt der geladenen Strecke
   return k >= 0 ? Math.max(0, bahn.segStart[k] - 120) : null;
 }
 
 // Gleiter-Modelle (GLB) laden; das Rennen startet erst danach (Rückfall-Keil, falls das Laden scheitert)
 const modelle = ladeGleiterModelle().catch((e) => console.warn('Gleiter-Modelle', e));
 const hud = new Hud(document.getElementById('ui'), {
-  strecke: { name: bahn.name, runden: RUNDEN, aktiv: bahn.fassung, wahl: Object.keys(FASSUNGEN).map((f) => [f, `${FASSUNGEN[f].kurz} · ${rundenText(q.has('runden') ? SPIEL.runden : rundenDerFassung(f))}`]) },
-  onStart: (e) => modelle.then(() => starte(e)),
+  strecke: streckeInfo(startWahl()),
+  cup: cupBereit(),
+  strecken: sichtbar().map((e) => ({ id: e.id, name: e.name, charakter: e.charakter, text: e.text, farbe: e.farbe, runden: rundenVon(e.id) })),
+  onStart: (e) => modelle.then(() => (hud.cupAn ? starteCup(e) : bereit().then(() => starte(e)))),
   onWeiter: () => { if (rennen && rennen.phase !== 'ziel') { laeuft = true; hud.zeigeMenue(false); if (ton && hud.einst.ton) ton.musik('assets/musik/cyber_runner.m4a'); } },
+  onStrecke: (id) => waehleStrecke(id),
+  onTeilen: (id) => teilen(id),
+  onNaechstes: () => naechstesCupRennen(),
   onEinstellung: (key, v) => {
     if (key === 'blitzeReduziert') blitze.reduziert = v;
     if (key === 'horizont') KAMERA.horizontHalten = v;
     if (key === 'action' && regie) regie.stufe = v;
     if (key === 'ton' && ton) ton.stumm(!v);
-    if (key === 'karte') { karte.modus = v; karteRechteck(); }
-    if (key === 'karteNord') karte.nord = v;
-    if (key === 'blitzeReduziert') karte.reduziert = v;
-    if (key === 'strecke' && v !== bahn.fassung) {
-      // andere Fassung: Strecke, Stadt und Minikarte neu bauen = Seite neu laden (URL-Regler ?strecke= fällt dabei weg)
-      const u = new URL(location.href); u.searchParams.delete('strecke'); location.replace(u.toString());
-    }
+    if (key === 'karte' && karte) { karte.modus = v; karteRechteck(); }
+    if (key === 'karteNord' && karte) karte.nord = v;
+    if (key === 'blitzeReduziert' && karte) karte.reduziert = v;
   },
 });
+// Menü: Strecke wählen (Karte, Zufällig, Cup, Fassung der Megastadt)
+let ladend = null;
+const bereit = () => ladend || Promise.resolve(bahn);
+function waehleStrecke(id) {
+  if (id === 'cup') { hud.setzeStrecke({ ...streckeInfo(CUP[0]), cupStart: finde(CUP[0]).name }, true); ladend = wechsleStrecke(CUP[0]); return ladend; }
+  if (id === 'zufall') { id = zufallsStrecke(bahn ? bahn.id : letzte()); hud.menueMeldung(`🎲 ${finde(id).name}`); }
+  hud.setzeStrecke(streckeInfo(id), false);
+  ladend = wechsleStrecke(id);
+  return ladend;
+}
+function teilen(id) {
+  const u = new URL(location.href); u.search = `?strecke=${id}`;
+  const url = u.toString(), titel = `Hyperbahn – ${finde(id).name}`;
+  if (navigator.share) navigator.share({ title: titel, url }).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => hud.menueMeldung('Link kopiert: ' + url, 3), () => hud.menueMeldung(url, 4));
+  else hud.menueMeldung(url, 4);
+}
+// Cup (P2): alle 5 Strecken nacheinander, Punkte je Platz (CUP_PUNKTE)
+async function starteCup(e) {
+  cup = { reihe: CUP.slice(), k: 0, punkte: {} };
+  await wechsleStrecke(cup.reihe[0]);
+  starte(e);
+}
+async function naechstesCupRennen() {
+  if (!cup) return;
+  cup.k++;
+  if (cup.k >= cup.reihe.length) { cup = null; hud.setzeStrecke(streckeInfo(bahn.id), false); return; }
+  hud.setzeStrecke({ ...streckeInfo(cup.reihe[cup.k]) }, true);
+  await wechsleStrecke(cup.reihe[cup.k]);
+  starte(hud.einst);
+}
+function cupWertung() {
+  const plus = {};
+  for (const t of rennen.rangliste) { const p = CUP_PUNKTE[t.platz - 1] || 0; plus[t.name] = p; cup.punkte[t.name] = (cup.punkte[t.name] || 0) + p; }
+  const tabelle = Object.entries(cup.punkte).map(([name, punkte]) => ({ name, punkte, plus: plus[name] || 0, ich: name === spielerT.name }))
+    .sort((a, b) => b.punkte - a.punkte || b.plus - a.plus);
+  const n = cup.reihe.length, naechste = cup.k + 1 < n ? finde(cup.reihe[cup.k + 1]).name : null;
+  return { k: cup.k, n, tabelle, naechste };
+}
+// Menü-Vorschauen: Strecken-Daten nacheinander (lazy, klein) laden, Band + Bestzeit je Karte
+(async () => {
+  let speicher = null; try { speicher = window.localStorage; } catch { /* privat */ }
+  for (const e of sichtbar()) {
+    try {
+      const b = await ladeStrecke(e.id);
+      const bz = leseBestzeit(speicher, bestzeitSchluessel(b, rundenVon(e.id)));
+      hud.setzeVorschau(e.id, vorschauDaten(b), bz && bz.rennen != null ? `★ ${fmtTime(bz.rennen)}` : '');
+    } catch (err) { console.warn('Vorschau', e.id, err); }
+    await new Promise((r) => setTimeout(r, 30));
+  }
+})();
 // Einstellungen aus dem Menü übernehmen, URL-Regler haben Vorrang
 {
   const e = hud.einst;
@@ -121,12 +226,9 @@ const hud = new Hud(document.getElementById('ui'), {
   if (!q.has('horizont')) KAMERA.horizontHalten = e.horizont;
   if (!q.has('action')) ACTION.stufe = e.action;
 }
-// 3D-Minikarte (?karte=3d|2d|aus, ?kartenord=1); Tippen = groß/klein
-const karte = new Minikarte(renderer, bahn, {
-  modus: q.get('karte') || hud.einst.karte || '3d', nord: q.has('kartenord') ? q.get('kartenord') === '1' : hud.einst.karteNord,
-});
-karte.reduziert = blitze.reduziert;
+// 3D-Minikarte (?karte=3d|2d|aus, ?kartenord=1) je Strecke in wechsleStrecke(); Tippen = groß/klein
 function karteRechteck() {
+  if (!karte) return;
   const e = hud.k.karte;
   e.classList.toggle('aus', karte.modus === 'aus');
   const r = e.getBoundingClientRect();
@@ -147,7 +249,9 @@ function starte(e) {
   const ki = q.has('ki') ? SPIEL.ki : e.ki;
   const stufe = q.has('hilfe') ? SPIEL.hilfe : e.hilfe;
   const teil = [];
-  for (let k = 1; k <= anzahl; k++) teil.push({ ...TEAMS[k], klasse: KLASSEN_LISTE[k % 3], pilot: new Pilot(bahn, plan, PROFILE[ki], 100 + k * 13) });
+  // Gabelungen (P2): jede KI nimmt je nach Stärke den schnellen oder den sicheren Weg
+  for (let k = 1; k <= anzahl; k++) teil.push({ ...TEAMS[k], klasse: KLASSEN_LISTE[k % 3], pilot: new Pilot(bahn, plaene[wegFuer(PROFILE[ki], 100 + k * 13)], PROFILE[ki], 100 + k * 13) });
+  try { localStorage.setItem(LETZTE, bahn.id); } catch { /* privat */ }
   // Startplatz des Spielers: hinten im Feld (Standard 6 von 8 → Überholen von Anfang an), ?startplatz=1…8
   const platz = Math.max(1, Math.min(anzahl + 1, q.has('startplatz') ? +q.get('startplatz') : Math.min(anzahl + 1, 6)));
   teil.splice(platz - 1, 0, { ...TEAMS[0], name: 'DU', klasse: q.get('klasse') || e.klasse || 'mittel' });
@@ -160,7 +264,7 @@ function starte(e) {
     rennen.alle.forEach((t, k) => { t.g.setzeAuf(at - k * 14, (k % 2 ? -1 : 1) * 4, GLEITER.vmax * 0.85); t.sAlt = t.g.s; });
   }
   autopilot = q.get('autopilot') === '1' ? new Pilot(bahn, plan, PROFILE.profi, 1) : null;
-  hilfe = new Fahrhilfe(bahn, plan, stufe);
+  hilfe = new Fahrhilfe(bahn, plaene, stufe);
   waechter = new MomentWaechter(bahn, plan);
   uhr = new Uhr({ online: SPIEL.online });
   if (regie) regie.ab && regie.ab();
@@ -252,8 +356,7 @@ function driftFunken() {
   }
 }
 
-// „Speed OK“: nächster Absprung in ≤ 900 m voraus → Tempo gegen Mindesttempo × 1,15
-const absprungS = bahn.abschnitte.map((a, k) => (a.typ === 'sprung' ? { s: bahn.segStart[k], vmin: SPRUNG_MINDEST[a.name] || 75 } : null)).filter(Boolean);
+// „Speed OK“: nächster Absprung in ≤ 900 m voraus → Tempo gegen Mindesttempo × 1,15 (absprungS je Strecke)
 function speedOk(g) {
   for (const a of absprungS) {
     let d = a.s - g.s; if (d < 0) d += bahn.L;
@@ -279,7 +382,8 @@ function bestzeit() {
   if (fliegend || autopilot || !spielerT.ziel) return null;
   let speicher = null; try { speicher = window.localStorage; } catch { /* privat */ }
   const r = trageBestzeitEin(speicher, bestzeitSchluessel(bahn, rennen.runden), spielerT.ziel.zeit, spielerT.beste);
-  return { ...r.neu, neuRennen: r.neuRennen && !!r.alt, neuRunde: r.neuRunde && !!r.alt, titel: `Bestzeit ${FASSUNGEN[bahn.fassung].kurz} · ${rundenText(rennen.runden)}` };
+  const name = bahn.id === 'megastadt' ? 'Megastadt Kurz' : bahn.id === 'megastadt-lang' ? 'Megastadt Lang' : bahn.name;
+  return { ...r.neu, neuRennen: r.neuRennen && !!r.alt, neuRunde: r.neuRunde && !!r.alt, titel: `Bestzeit ${name} · ${rundenText(rennen.runden)}` };
 }
 
 // ROLLE-Taste (P1b): am Boden Energie-Boost (ab Runde 2, genug Energie), in der Luft Rolle (1× je Sprung, genug Energie)
@@ -336,7 +440,11 @@ function bild() {
     driftFunken();
     // Notlauf (P1b): leere Energie sprüht Funken
     for (const t of rennen.alle) if (t.g.notlauf && t.g.zustand === 'fahrt') funken.spruehe(t.g.p, t.g.v, t === spielerT ? 2 : 1, 8, [3, 0.6, 0.2]);
-    if (rennen.phase === 'ziel' && laeuft) { laeuft = false; const best = bestzeit(); setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k, best), 1500); }
+    if (rennen.phase === 'ziel' && laeuft) {
+      laeuft = false; const best = bestzeit(), cw = cup && !fliegend && !autopilot ? cupWertung() : null;
+      setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k, best, cw), 1500);
+      if (cw && !cw.naechste) cup = null;
+    }
     const bergZeit = VORLAGE.bergung.zeit > 0 ? VORLAGE.bergung.zeit : 1.6;
     rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); bergung.update(dt, t.g, meshes[k], bergZeit); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
     rig.update(dt, g, fx);
@@ -369,18 +477,17 @@ function bild() {
   }
   himmel.update(praes, camera.position);
   bahnMesh.update(praes, { blitze, boost: rennen && laeuft ? Math.min(1, spielerT.g.boost) : 0 });
-  if (stadt) stadt.update(praes);
-  if (regen) regen.update(dt, camera.position, rennen ? spielerT.g.v : { x: 0, y: 0, z: 0 }, 1);
+  if (kulisse) kulisse.update(dt, praes, camera.position, rennen && laeuft ? spielerT.g.v : NULL3, { ruhig: blitze.reduziert, blitze });
   funken.update(dt);
   // Blitze abklingen lassen (Kino-Look: Bloom-Puls + Farbblitz)
   blitzK = Math.max(0, blitzK - dt * 4);
   weiss = fx ? fx.weiss : 0;
   const g = rennen ? spielerT.g : null;
-  const karteBild = rennen && laeuft ? karte.vorbereiten(praes, rennen.alle, spielerT.k) : null;
+  const karteBild = rennen && laeuft && karte ? karte.vorbereiten(praes, rennen.alle, spielerT.k) : null;
   if (gpu) gpu.start('szene');
   kino.render(scene, camera, {
     overlayTex: karteBild,
-    dt, run: !!(rennen && laeuft),
+    dt, run: !!(rennen && laeuft), sunDir: sonneDir,
     // Kino-Look ist auf 80–190 km/h geeicht → Tempo skaliert (?blur=); im Bullet-Time-Halbkreis keine Bewegungsunschärfe
     // (Zeit steht, nur die Kamera fährt – die Unschärfe würde sonst die ganze Stadt verschmieren)
     speed: g && !(fx && fx.orbitAn) ? g.tempo * KAMERA.unschaerfe * (g.boden ? 1 : 0.8) : 0,
@@ -391,8 +498,13 @@ function bild() {
   if (gpu) gpu.ende();
   if (karteBild && !kino.overlayGezeichnet) karte.zeichneDirekt();   // Stufe Einfach: eigener kleiner Durchgang
 }
-requestAnimationFrame(bild);
-if (q.get('autostart') === '1') modelle.then(() => starte(hud.einst));
+const NULL3 = { x: 0, y: 0, z: 0 };
+// erste Strecke laden, dann zeichnen; ?cup=1 wählt den Cup, ?autostart=1 startet sofort
+ladend = q.get('cup') === '1' && cupBereit() ? waehleStrecke('cup') : wechsleStrecke(startWahl());
+ladend.then(() => {
+  requestAnimationFrame(bild);
+  if (q.get('autostart') === '1') modelle.then(() => (hud.cupAn ? starteCup(hud.einst) : starte(hud.einst)));
+});
 
 // Qualitäts-Automatik (einfach): Bildrate je Sekunde → Kino-Look passt die Renderskala an. TODO Heavy-Job: Grafik-
 // Autopilot aus der Stuntbahn (kern/autopilot.js) übernehmen, sobald das Mess-Gate läuft.
@@ -407,7 +519,9 @@ let fpsN = 0, fpsT = 0;
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
-  version: VERSION, bahn, plan, kino, renderer, blitze, karte, gpu, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
+  version: VERSION, kino, renderer, blitze, gpu, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
+  get bahn() { return bahn; }, get plan() { return plan; }, get karte() { return karte; }, get strecke() { return bahn && bahn.id; },
+  get cup() { return cup; }, ladeStrecke: (id) => waehleStrecke(id), get kulisse() { return kulisse; },
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; }, get rig() { return rig; }, reset: () => zuruecksetzen(),
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'

@@ -15,7 +15,20 @@ export const LOOK = {
   ring: { farbe: 0xff2bd6, staerke: 3.5 },
   licht: { farbe: [1.0, 0.55, 0.1], staerke: 5.0, lauf: 9 },
   roehre: { glas: 0x0b1a2e, deckkraft: 0.22, ring: 0x00e5ff },
+  // P2: Deck, Bande, Stützen, Nässe je Strecke (Standard = Megastadt)
+  deck: { farbe: 0x0d0f15, rau: 0.55, metall: 0.6 },
+  wand: { farbe: 0x0a1424, deckkraft: 0.55, glimmen: 0x06223a },
+  stuetze: { farbe: 0x15171d, glimmen: 0x220833, an: true },
+  nass: 1,
+  teiler: { farbe: [1.0, 0.45, 0.1], staerke: 3.0 },
 };
+
+// P2: Look je Strecke = LOOK mit überschriebenen Gruppen (flach je Gruppe gemischt)
+export function mischeLook(over = {}) {
+  const out = {};
+  for (const k of Object.keys(LOOK)) out[k] = over[k] && typeof LOOK[k] === 'object' && !Array.isArray(LOOK[k]) ? { ...LOOK[k], ...over[k] } : over[k] ?? LOOK[k];
+  return out;
+}
 
 const ENDE = `
   #include <tonemapping_fragment>
@@ -49,6 +62,7 @@ function leuchtMaterial(fs, extraU = {}) {
 }
 
 export function baueBahnMesh(bahn, opt = {}) {
+  const LOOK = mischeLook(opt.look);
   const teile = opt.teile || baueBahnGeometrie(bahn);
   const ins = baueBahnInstanzen(bahn);
   const gruppe = new THREE.Group();
@@ -69,7 +83,7 @@ export function baueBahnMesh(bahn, opt = {}) {
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       // Pfützen: glatter (Spiegelungen der Neon-Lichter)
       float pf = smoothstep(0.55, 0.75, bRausch(vBahnUv * vec2(6.0, 9.0)));
-      roughnessFactor = mix(roughnessFactor, 0.04, pf);`)
+      roughnessFactor = mix(roughnessFactor, 0.04, pf * ${LOOK.nass.toFixed(2)});`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       // Spurlinien (Ränder + zwei Trennlinien), leicht pulsierend
       float q = vBahnUv.x;
@@ -81,9 +95,9 @@ export function baueBahnMesh(bahn, opt = {}) {
   gruppe.add(new THREE.Mesh(geo(teile.fahrbahn), fahrMat));
 
   // Deck + Wände
-  const deckMat = new THREE.MeshStandardMaterial({ color: 0x0d0f15, roughness: 0.55, metalness: 0.6 });
+  const deckMat = new THREE.MeshStandardMaterial({ color: LOOK.deck.farbe, roughness: LOOK.deck.rau, metalness: LOOK.deck.metall });
   gruppe.add(new THREE.Mesh(geo(teile.deck), deckMat));
-  const wandMat = new THREE.MeshStandardMaterial({ color: 0x0a1424, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.55, emissive: 0x06223a, emissiveIntensity: 0.6, side: THREE.DoubleSide, depthWrite: false });
+  const wandMat = new THREE.MeshStandardMaterial({ color: LOOK.wand.farbe, roughness: 0.1, metalness: 0.2, transparent: true, opacity: LOOK.wand.deckkraft, emissive: LOOK.wand.glimmen, emissiveIntensity: 0.6, side: THREE.DoubleSide, depthWrite: false });
   gruppe.add(new THREE.Mesh(geo(teile.wand), wandMat));
 
   // Kanten: Lauflicht + Strobo (Strobo-Stärke/Frequenz über die Blitz-Bremse gedämpft)
@@ -205,13 +219,26 @@ export function baueBahnMesh(bahn, opt = {}) {
   }
 
   // Stützen
-  if (ins.stuetzen.length) {
+  if (ins.stuetzen.length && LOOK.stuetze.an) {
     const sg = new THREE.BoxGeometry(3.2, 1, 3.2);
-    const sm = new THREE.MeshStandardMaterial({ color: 0x15171d, roughness: 0.8, metalness: 0.2, emissive: 0x220833, emissiveIntensity: 0.4 });
+    const sm = new THREE.MeshStandardMaterial({ color: LOOK.stuetze.farbe, roughness: 0.8, metalness: 0.2, emissive: LOOK.stuetze.glimmen, emissiveIntensity: 0.4 });
     const im = new THREE.InstancedMesh(sg, sm, ins.stuetzen.length);
     const mt = new THREE.Matrix4();
     ins.stuetzen.forEach((s, i) => { mt.makeScale(1, s.h, 1); mt.setPosition(s.x, s.y, s.z); im.setMatrixAt(i, mt); });
     gruppe.add(im);
+  }
+
+  // Gabelungs-Teiler (P2): Mittel-Wand mit Leuchtkante (orange Warnfarbe, Spitze vorn)
+  if (teile.teiler && teile.teiler.pos.length) {
+    gruppe.add(new THREE.Mesh(geo(teile.teiler), new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.5, metalness: 0.5, emissive: 0x1a0c02, side: THREE.DoubleSide })));
+    const t = LOOK.teiler;
+    const tkMat = leuchtMaterial(`
+      void main() {
+        float lauf = smoothstep(0.7, 1.0, fract((vWeg - uZeit * 30.0) / 18.0));
+        gl_FragColor = vec4(vec3(${t.farbe.join(', ')}) * (0.6 + 1.4 * lauf * (0.4 + 0.6 * uStrobo)) * ${t.staerke.toFixed(2)}, 1.0);
+        ${ENDE}
+      }`);
+    gruppe.add(new THREE.Mesh(geo(teile.teilerKante), tkMat));
   }
 
   // Start/Ziel: leuchtender Strich quer über die Fahrbahn
@@ -224,6 +251,7 @@ export function baueBahnMesh(bahn, opt = {}) {
 
   return {
     gruppe, teile, ins,
+    dispose() { gruppe.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); },
     // je Bild: Zeit, Blitz-Bremse (Strobo-Dämpfung), Boost-Puls (Kanten leuchten bei Boost heller)
     update(t, { blitze = null, boost = 0 } = {}) {
       BAHN_U.uZeit.value = t;

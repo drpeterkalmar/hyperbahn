@@ -5,10 +5,12 @@
 import { fmtTime } from '../core/util.js';
 import { ANZEIGE } from '../config.js';
 import { VERSION } from '../version.js';
+import { Vorschau } from './vorschau.js';
 
 const SPEICHER = 'hyperbahn-einstellungen';
 // P1b: `runden` nicht mehr gemerkt (kommt aus der Strecken-Fassung, Rennen ≤ 5 min); alte gespeicherte 3 Runden zählen nicht
-export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, strecke: 'kurz', karte: '3d', karteNord: false };
+// P2: `strecke` = Strecken-Id aus dem Register (alte Werte kurz/lang gelten als Megastadt kurz/lang)
+export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, strecke: 'megastadt', karte: '3d', karteNord: false };
 
 export function ladeEinstellungen() {
   try { const e = { ...STANDARD, ...JSON.parse(localStorage.getItem(SPEICHER) || '{}') }; delete e.runden; return e; } catch { return { ...STANDARD }; }
@@ -18,12 +20,15 @@ export function speichereEinstellungen(e) { try { localStorage.setItem(SPEICHER,
 const el = (tag, cls, html = '') => { const e = document.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };
 
 export class Hud {
-  // strecke = { name, runden, wahl: [[fassung, Beschriftung], …] } (Menü-Zeile + Strecken-Wahl)
-  constructor(root, { onStart, onEinstellung, onWeiter, strecke } = {}) {
+  // strecke = { id, name, runden } (Menü-Zeile); strecken = [{ id, name, charakter, text, farbe, runden }] (Karten);
+  // onStrecke(id) bei Wahl einer Karte (auch 'zufall', 'cup', 'megastadt-lang'), onTeilen(id), onNaechstes() im Cup
+  constructor(root, { onStart, onEinstellung, onWeiter, onStrecke, onTeilen, onNaechstes, strecke, strecken = [], cup = false } = {}) {
+    this.cupMoeglich = cup;
     this.root = root; this.onStart = onStart; this.onEinstellung = onEinstellung; this.onWeiter = onWeiter;
-    this.strecke = strecke || { name: 'Neon-Megastadt', runden: 2, wahl: [] };
+    this.onStrecke = onStrecke; this.onTeilen = onTeilen; this.onNaechstes = onNaechstes;
+    this.strecke = strecke || { id: 'megastadt', name: 'Neon-Megastadt', runden: 2 };
+    this.strecken = strecken; this.vorschauDaten = {}; this.bestTexte = {}; this.vorschauen = []; this.cupAn = false;
     this.einst = ladeEinstellungen();
-    if (this.strecke.aktiv) this.einst.strecke = this.strecke.aktiv;   // ?strecke= hat Vorrang: Wahl zeigt die geladene Fassung
     root.innerHTML = '';
     // Spiel-HUD
     this.hud = el('div', 'hud');
@@ -69,11 +74,22 @@ export class Hud {
     const wahl = (key, opts) => `<div class="wahl" data-wahl="${key}">${opts.map(([v, t]) => `<button data-v="${v}" class="${String(e[key]) === String(v) ? 'an' : ''}">${t}</button>`).join('')}</div>`;
     this.menue.innerHTML = `
       <h1 class="titel">HYPER<span>BAHN</span></h1>
-      <div class="unter">${this.strecke.name} · ${this.strecke.runden} ${this.strecke.runden === 1 ? 'Runde' : 'Runden'}</div>
+      ${this.strecken.length ? `<div class="strecken">${this.strecken.map((t) => `
+        <div class="sk" role="button" tabindex="0" data-id="${t.id}" style="--farbe:${t.farbe}">
+          <canvas width="240" height="120"></canvas>
+          <b>${t.name}</b><i>${t.charakter}</i><small>${t.text}</small>
+          <span class="sk-zeile"><span>${t.runden} ${t.runden === 1 ? 'Runde' : 'Runden'}</span><span class="sk-best" data-best="${t.id}">${this.bestTexte[t.id] || ''}</span></span>
+          <button class="sk-teilen" data-teilen="${t.id}" aria-label="Link teilen" title="Link zu dieser Strecke teilen">🔗</button>
+        </div>`).join('')}
+        <div class="sk sk-extra" role="button" tabindex="0" data-id="zufall" style="--farbe:#ffd400"><b>🎲 Zufällig</b><i>Überraschung</i><small>Eine zufällige Strecke – nie zweimal hintereinander dieselbe.</small></div>
+        ${this.cupMoeglich ? `<div class="sk sk-extra" role="button" tabindex="0" data-id="cup" style="--farbe:#00ffa0"><b>🏆 Cup</b><i>alle 5 Strecken</i><small>Fünf Rennen nacheinander, Punkte 9-7-5-3-2-1 je Platz. Wer am Ende vorn liegt, gewinnt den Cup.</small></div>` : ''}
+      </div>` : ''}
+      <div class="unter" data-k2="unter">${this.unterText()}</div>
+      <div class="fassung" data-k2="fassung"></div>
+      <div class="menue-meldung" data-k2="mm"></div>
       <button class="weiter">WEITER</button>
       <button class="start">RENNEN STARTEN</button>
       <div class="einst">
-        ${this.strecke.wahl.length > 1 ? `<label>Strecke</label>${wahl('strecke', this.strecke.wahl)}` : ''}
         <label>Fahrhilfe</label>${wahl('hilfe', [['leicht', 'Leicht'], ['mittel', 'Mittel'], ['profi', 'Profi']])}
         <label>Gleiter-Klasse</label>${wahl('klasse', [['leicht', 'Leicht (spritzig)'], ['mittel', 'Mittel'], ['schwer', 'Schwer (rammt)']])}
         <label>Gegner</label>${wahl('gegner', [[0, '0'], [3, '3'], [7, '7']])}
@@ -90,6 +106,22 @@ export class Hud {
       <div class="steuerung">← → lenken · ↑ Gas (kurz vor „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste: am Boden Boost (ab Runde 2), im Sprung Barrel-Roll (Turbo bei der Landung) · Y/X seitwärts · in der Luft ↓ = Nase hoch, ↑ neu drücken = Nase runter (über den Absprung gehaltenes Gas verstellt die Nase nie)</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
     this.menue.querySelector('.weiter').addEventListener('click', () => this.onWeiter && this.onWeiter());
+    // Strecken-Karten (P2): Tippen = wählen, 🔗 = Teilen-Link
+    this.menue.querySelectorAll('.sk').forEach((k) => {
+      const waehle = (ev) => {
+        const t = ev.target.closest('[data-teilen]');
+        if (t) { ev.stopPropagation(); this.onTeilen && this.onTeilen(t.dataset.teilen); return; }
+        this.onStrecke && this.onStrecke(k.dataset.id);
+      };
+      k.addEventListener('click', waehle);
+      k.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); waehle(ev); } });
+    });
+    this.vorschauen = [...this.menue.querySelectorAll('.sk canvas')].map((c) => {
+      const id = c.parentElement.dataset.id, t = this.strecken.find((x) => x.id === id);
+      return new Vorschau(c, this.vorschauDaten[id] || null, t ? t.farbe : '#4af');
+    });
+    this.markiere();
+    this.vorschauLauf();
     this.menue.querySelector('.credits-knopf').addEventListener('click', () => this.zeigeCredits());
     this.menue.querySelectorAll('[data-wahl]').forEach((w) => {
       w.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
@@ -102,6 +134,60 @@ export class Hud {
         this.onEinstellung && this.onEinstellung(key, v, this.einst);
       }));
     });
+  }
+
+  unterText() {
+    const st = this.strecke;
+    if (this.cupAn) return `CUP · 5 STRECKEN · BEGINNT MIT ${String(st.cupStart || st.name).toUpperCase()}`;
+    return `${st.name} · ${st.runden} ${st.runden === 1 ? 'Runde' : 'Runden'}`;
+  }
+
+  // P2: geladene Strecke (id, name, runden, fassungen: [[id, Text], …] für die Megastadt) bzw. Cup-Modus markieren
+  setzeStrecke(st, cupAn = this.cupAn) {
+    this.strecke = { ...this.strecke, ...st }; this.cupAn = cupAn;
+    this.einst.strecke = st.id; speichereEinstellungen(this.einst);
+    const u = this.menue.querySelector('[data-k2="unter"]'); if (u) u.textContent = this.unterText();
+    const f = this.menue.querySelector('[data-k2="fassung"]');
+    if (f) {
+      const liste = !cupAn && st.fassungen ? st.fassungen : [];
+      f.innerHTML = liste.length ? `<div class="wahl">${liste.map(([id, txt]) => `<button data-fassung="${id}" class="${id === st.id ? 'an' : ''}">${txt}</button>`).join('')}</div>` : '';
+      f.querySelectorAll('[data-fassung]').forEach((b) => b.addEventListener('click', () => this.onStrecke && this.onStrecke(b.dataset.fassung)));
+    }
+    const st2 = this.menue.querySelector('.start');
+    if (st2 && st2.textContent !== 'NOCHMAL' && !this.menue.classList.contains('pause')) st2.textContent = cupAn ? 'CUP STARTEN' : 'RENNEN STARTEN';
+    this.markiere();
+  }
+
+  markiere() {
+    const id = this.cupAn ? 'cup' : (this.strecke.id || '').replace(/-lang$/, '');
+    this.menue.querySelectorAll('.sk').forEach((k) => k.classList.toggle('an', k.dataset.id === id));
+  }
+
+  // Vorschau-Daten (vorschau.js) und Bestzeit-Text je Strecke (kommen nach und nach, Strecken werden lazy gebaut)
+  setzeVorschau(id, daten, best = '') {
+    this.vorschauDaten[id] = daten; this.bestTexte[id] = best;
+    for (const v of this.vorschauen) if (v.c.parentElement.dataset.id === id) v.d = daten;
+    const b = this.menue.querySelector(`[data-best="${id}"]`); if (b) b.textContent = best;
+  }
+
+  // Vorschauen drehen, solange das Menü sichtbar ist (≈ 20 Bilder/s)
+  vorschauLauf() {
+    if (this._vl) return;
+    let letzt = 0;
+    const lauf = (ts) => {
+      if (this.menue.style.display === 'none' || !this.vorschauen.length) { this._vl = 0; return; }
+      this._vl = requestAnimationFrame(lauf);
+      if (ts - letzt < 50) return;
+      letzt = ts;
+      for (const v of this.vorschauen) if (v.d && v.c.isConnected) v.zeichne(ts / 1000);
+    };
+    this._vl = requestAnimationFrame(lauf);
+  }
+
+  menueMeldung(text, dauer = 2) {
+    const m = this.menue.querySelector('[data-k2="mm"]'); if (!m) return;
+    m.textContent = text; m.classList.add('an');
+    clearTimeout(this._mmT); this._mmT = setTimeout(() => m.classList.remove('an'), dauer * 1000);
   }
 
   // Credits (CC-BY verlangt Namensnennung im Spiel; Liste wie LICENSES.md)
@@ -121,7 +207,8 @@ export class Hud {
   zeigeMenue(an = true, pause = false) {
     document.body.dataset.mode = an ? 'menu' : 'rennen'; this.menue.style.display = an ? '' : 'none';
     this.menue.classList.toggle('pause', an && pause);
-    const st = this.menue.querySelector('.start'); if (st && st.textContent !== 'NOCHMAL') st.textContent = an && pause ? 'NEU STARTEN' : 'RENNEN STARTEN';
+    const st = this.menue.querySelector('.start'); if (st && st.textContent !== 'NOCHMAL' && !st.dataset.cup) st.textContent = an && pause ? 'NEU STARTEN' : this.cupAn ? 'CUP STARTEN' : 'RENNEN STARTEN';
+    if (an) this.vorschauLauf();
   }
 
   // z = { tempo (m/s), platz, von, runde, runden, zeit, beste, schild (= Energie), warn, boost, magnet, speedOk, countdown,
@@ -205,12 +292,24 @@ export class Hud {
   // Weißblitz/Farbflash als DOM-Ebene (zusätzlich zum Kino-Look): k 0…1 (schon durch die Blitz-Bremse)
   blitz(k, farbe = '#fff') { const b = this.k.blitz; b.style.background = farbe; b.style.opacity = String(Math.min(1, k)); }
 
-  // best = { rennen, runde, neuRennen, neuRunde, titel } (Bestzeiten je Fassung/Rundenzahl, game/bestzeiten.js) oder null
-  ziel(rangliste, spielerK, best = null) {
+  // best = { rennen, runde, neuRennen, neuRunde, titel } (Bestzeiten je Strecke/Fassung/Rundenzahl, game/bestzeiten.js) oder null
+  // cup (P2) = { k, n, tabelle: [{ name, punkte, plus, ich }], naechste (Name) | null } oder null
+  ziel(rangliste, spielerK, best = null, cup = null) {
     const zeilen = rangliste.map((t) => `<tr class="${t.k === spielerK ? 'ich' : ''}"><td>${t.platz}.</td><td>${t.name}</td><td>${t.ziel ? fmtTime(t.ziel.zeit) : '—'}</td><td>${isFinite(t.beste) ? fmtTime(t.beste) : ''}</td></tr>`).join('');
     const bz = best ? `<div class="bestzeit">${best.titel}: Rennen ${best.rennen != null ? fmtTime(best.rennen) : '—'}${best.neuRennen ? ' <b>NEU!</b>' : ''} · Runde ${best.runde != null ? fmtTime(best.runde) : '—'}${best.neuRunde ? ' <b>NEU!</b>' : ''}</div>` : '';
-    this.menue.innerHTML = `<h1 class="titel">ZIEL</h1><table class="rang"><tr><th></th><th>Fahrer</th><th>Zeit</th><th>Beste Runde</th></tr>${zeilen}</table>${bz}<button class="start">NOCHMAL</button>`;
-    this.menue.querySelector('.start').addEventListener('click', () => { this.baueMenue(); this.onStart && this.onStart(this.einst); });
+    let cz = '';
+    if (cup) {
+      const fertig = !cup.naechste;
+      cz = `<h2 class="cup-titel">${fertig ? '🏆 CUP-ENDSTAND' : `CUP · RENNEN ${cup.k + 1}/${cup.n}`}</h2>
+        <table class="rang cup"><tr><th></th><th>Fahrer</th><th>Punkte</th><th></th></tr>${cup.tabelle.map((z, i) => `<tr class="${z.ich ? 'ich' : ''}"><td>${i + 1}.</td><td>${z.name}</td><td>${z.punkte}</td><td>${z.plus ? '+' + z.plus : ''}</td></tr>`).join('')}</table>
+        ${fertig ? `<div class="bestzeit">${cup.tabelle[0].ich ? '<b>DU GEWINNST DEN CUP!</b>' : `Cup-Sieger: ${cup.tabelle[0].name}`}</div>` : ''}`;
+    }
+    const knoepfe = cup && cup.naechste ? `<button class="start naechstes">NÄCHSTES RENNEN · ${cup.naechste}</button>` : `<button class="start">NOCHMAL</button>`;
+    this.menue.innerHTML = `<h1 class="titel">ZIEL</h1><table class="rang"><tr><th></th><th>Fahrer</th><th>Zeit</th><th>Beste Runde</th></tr>${zeilen}</table>${bz}${cz}${knoepfe}<button class="credits-knopf zurueck">MENÜ</button>`;
+    const nx = this.menue.querySelector('.naechstes');
+    if (nx) nx.addEventListener('click', () => { this.baueMenue(); this.onNaechstes && this.onNaechstes(); });
+    else this.menue.querySelector('.start').addEventListener('click', () => { this.baueMenue(); this.onStart && this.onStart(this.einst); });
+    this.menue.querySelector('.zurueck').addEventListener('click', () => { this.baueMenue(); this.setzeStrecke(this.strecke, false); this.onStrecke && this.onStrecke(this.strecke.id, { nurMenue: true }); this.zeigeMenue(true); });
     this.zeigeMenue(true);
   }
 }

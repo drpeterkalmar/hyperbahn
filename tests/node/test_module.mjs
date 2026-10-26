@@ -31,7 +31,7 @@ test('main.js: alle importierten Namen existieren (statisch + dynamisch)', async
       n++;
     }
   }
-  const dyn = { './gfx/stadt.js': 'baueStadt', './gfx/regen.js': 'Regen', './audio/ton.js': 'Ton' };
+  const dyn = { './audio/ton.js': 'Ton' };
   for (const [datei, name] of Object.entries(dyn)) {
     assert.ok(quelle.includes(`import('${datei}')`), `main.js lädt ${datei}`);
     const p = path.join(SRC, datei);
@@ -40,6 +40,16 @@ test('main.js: alle importierten Namen existieren (statisch + dynamisch)', async
     assert.ok(name in mod, `${datei} exportiert ${name} nicht`);
   }
   assert.ok(n > 25);
+});
+
+test('Strecken-Register (P2): jede Strecke lädt Daten (baue) und Kulisse (THEMA, baueKulisse)', async () => {
+  const { STRECKEN } = await import(pathToFileURL(path.join(SRC, 'track/strecken.js')).href);
+  for (const e of STRECKEN) {
+    const d = await e.daten(), k = await e.kulisse();
+    assert.equal(typeof d.baue, 'function', `${e.id}: baue`);
+    assert.equal(typeof k.baueKulisse, 'function', `${e.id}: baueKulisse`);
+    for (const f of ['himmel', 'nebel', 'licht']) assert.ok(k.THEMA && k.THEMA[f], `${e.id}: THEMA.${f}`);
+  }
 });
 
 test('index.html und Manifest: Importmap, Hoch+Quer, Icons vorhanden', () => {

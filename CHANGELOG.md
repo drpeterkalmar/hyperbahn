@@ -2,6 +2,16 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P2: Streckenwahl + Wüsten-Raumhafen)
+- **Streckenwahl im Menü:** Karten mit drehender 3D-Vorschau der Strecke (Höhen, Magnet/Röhre/Landezone farbig, Pads gelb),
+  Name, Charakter, Rundenzahl und Bestzeit; „🎲 Zufällig“ (nie zweimal hintereinander dieselbe), 🔗 Teilen-Link je Strecke.
+  URL `?strecke=wueste|megastadt|lang|zufall`; die Megastadt behält Kurz/Lang und alle Bestzeiten. Wechsel ohne Neuladen.
+- **Neue Strecke „Wüsten-Raumhafen“** (Vollgas): Dämmerung mit tiefer Sonne, Dünen, Tafelberge, Raumhafen mit Rakete,
+  Startturm, Hangar-Tunnel, Pistenlichtern und Sandsturm. Lange Geraden mit Boost-Ketten, weite schnelle Bögen, Kuppen-Hüpfer,
+  Riesensprung über das Raketensilo (500 m Lücke, 5–8 s Flug, bis ≈ 900 m weit). Runde 1:28 (KI Mittel), 3 Runden ≈ 4:30.
+- Technik: Strecken-Register mit Lazy-Laden (Daten + Kulisse je Strecke), Himmel/Nebel/Licht/Farbkorrektur je Strecke,
+  neue Bahn-Eigenschaften für die nächsten Strecken (offene Kante ohne Bande, Gabelungs-Teiler, schwache Schwerkraft).
+
 ## 0.1.9 – 26.10.2026 (P1b Abschluss)
 - Bericht `P1B_VORLAGEN_BERICHT.md` (Messtabelle Vorlage / Ziel / vorher / nachher, Handy-Testhinweise, Regler, Grenzen),
   Messprotokolle `docs/mess/`, Bilder `docs/bilder/p1b_*`. Rundenzeit der langen Fassung neu gemessen (158 s, weiter 1 Runde).

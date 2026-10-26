@@ -69,6 +69,12 @@ export const GRADES = {
   // Hyperbahn: Neon-Noir – kühle Cyan-Schatten, Magenta-Lichter, hoher Kontrast (Startwerte, TODO Heavy-Job: am Bild abstimmen)
   neonnoir: { wb: [0.94, 0.98, 1.08], lift: [0.0, 0.004, 0.018], gamma: [1.02, 1.0, 0.97], gain: [1.04, 0.98, 1.06], shadow: [-0.012, 0.01, 0.035], high: [0.03, -0.004, 0.02], split: 1.3, sat: 1.15, vib: 0.22, contrast: 0.3 },
   neutral: { wb: [1, 1, 1], lift: [0, 0, 0], gamma: [1, 1, 1], gain: [1, 1, 1], shadow: [0, 0, 0], high: [0, 0, 0], split: 0, sat: 1, vib: 0, contrast: 0 },
+  // Hyperbahn P2 – Strecken-Kulissen: Wüste (Dämmerung, warme Lichter, violette Schatten), Riff (türkis, weiche Lichter),
+  // Gewitter (kalt, entsättigt, harter Kontrast), Orbit (neutral-kühl, tiefes Schwarz)
+  wueste: { wb: [1.06, 0.99, 0.92], lift: [0.008, 0.002, 0.014], gamma: [0.98, 1.0, 1.03], gain: [1.06, 0.99, 0.9], shadow: [0.004, -0.006, 0.03], high: [0.04, 0.012, -0.03], split: 1.3, sat: 1.12, vib: 0.2, contrast: 0.26 },
+  riff: { wb: [0.9, 1.02, 1.06], lift: [0.0, 0.012, 0.02], gamma: [1.04, 0.99, 0.97], gain: [0.94, 1.02, 1.04], shadow: [-0.012, 0.014, 0.03], high: [-0.01, 0.02, 0.016], split: 1.0, sat: 1.1, vib: 0.2, contrast: 0.18 },
+  gewitter: { wb: [0.93, 0.98, 1.08], lift: [0.004, 0.006, 0.016], gamma: [1.03, 1.01, 0.98], gain: [0.98, 1.0, 1.06], shadow: [-0.01, 0.0, 0.03], high: [0.0, 0.006, 0.02], split: 1.0, sat: 0.92, vib: 0.12, contrast: 0.32 },
+  orbit: { wb: [0.97, 0.99, 1.04], lift: [0.0, 0.0, 0.008], gamma: [1.02, 1.0, 0.98], gain: [1.02, 1.0, 1.02], shadow: [-0.006, 0.0, 0.02], high: [0.02, 0.006, -0.004], split: 1.0, sat: 1.1, vib: 0.18, contrast: 0.3 },
   // Kulissen (n20): je Landschafts-Thema (gfx/themes.js)
   wueste: { wb: [1.04, 1.0, 0.93], lift: [0.012, 0.006, 0.006], gamma: [0.99, 1.0, 1.03], gain: [1.05, 1.0, 0.94], shadow: [-0.004, -0.004, 0.018], high: [0.026, 0.01, -0.02], split: 1.1, sat: 1.06, vib: 0.12, contrast: 0.26 },
   alpen: { wb: [0.995, 1.0, 1.02], lift: [0.0, 0.004, 0.016], gamma: [1.0, 1.0, 1.02], gain: [1.01, 1.01, 1.02], shadow: [-0.012, 0.0, 0.02], high: [0.01, 0.006, -0.006], split: 1, sat: 1.06, vib: 0.16, contrast: 0.26, green: 1 },

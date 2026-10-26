@@ -13,7 +13,7 @@ const teile = baueBahnGeometrie(bahn);
 
 test('Teile vorhanden, Werte endlich, Indizes gültig', () => {
   for (const [name, b] of Object.entries(teile)) {
-    assert.ok(b.pos.length > 0, `${name} leer`);
+    if (!['teiler', 'teilerKante'].includes(name)) assert.ok(b.pos.length > 0, `${name} leer`);   // P2: Teiler nur an Gabelungen
     assert.ok(b.pos.every(Number.isFinite) && b.nor.every(Number.isFinite) && b.uv.every(Number.isFinite), `${name} NaN`);
     const nv = b.pos.length / 3;
     assert.ok(b.idx.every((i) => i >= 0 && i < nv), `${name} Index`);

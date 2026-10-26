@@ -3,7 +3,7 @@
 // Wänden), Magnet-Streifen (nur Magnet-Abschnitte), Röhren-Hülle, Boost-Pads, Landezonen-Lichter, Stützen.
 // Lücken (Sprünge) bekommen keine Fahrbahn – die Bänder werden dort unterbrochen.
 // Alle Zahlen sind Startwerte (TODO Heavy-Job: am Bild abstimmen).
-import { F_LUECKE, F_ROEHRE, F_MAGNET, F_LANDEZONE } from '../track/bahn.js';
+import { F_LUECKE, F_ROEHRE, F_MAGNET, F_LANDEZONE, F_OFFEN_L, F_OFFEN_R, F_TEILER } from '../track/bahn.js';
 import { GEFUEHL } from '../physics/fahrgefuehl.js';
 
 export const GEO = {
@@ -81,7 +81,7 @@ function band(b, bahn, i0, i1, profilFn, { schritt = GEO.schritt, geschlossen = 
 }
 
 export function baueBahnGeometrie(bahn) {
-  const teile = { fahrbahn: puffer(), deck: puffer(), wand: puffer(), kante: puffer(), magnet: puffer(), roehre: puffer(), pads: puffer(), stoerfeld: puffer(), box: puffer() };
+  const teile = { fahrbahn: puffer(), deck: puffer(), wand: puffer(), kante: puffer(), magnet: puffer(), roehre: puffer(), pads: puffer(), stoerfeld: puffer(), box: puffer(), teiler: puffer(), teilerKante: puffer() };
   const C = GEO.spalten;
   const fahrbar = bereiche(bahn, (i) => !(bahn.flags[i] & F_LUECKE));
   for (const [i0, i1] of fahrbar) {
@@ -96,8 +96,11 @@ export function baueBahnGeometrie(bahn) {
       const hw = bahn.hw[k], d = GEO.deck;
       return [[hw, -0.02], [hw, -d], [-hw, -d], [-hw, -0.02]];
     }, { normalFn: (j) => [[1, 0], [0, -1], [0, -1], [-1, 0]][j] });
-    // Begrenzung links und rechts (Innenseite zur Fahrbahn)
-    for (const sg of [1, -1]) {
+  }
+  // Begrenzung links und rechts (Innenseite zur Fahrbahn); P2: nicht an offenen Kanten (dort nur das Kantenlicht flach)
+  for (const sg of [1, -1]) {
+    const offen = sg > 0 ? F_OFFEN_L : F_OFFEN_R;
+    for (const [i0, i1] of bereiche(bahn, (i) => !(bahn.flags[i] & F_LUECKE) && !(bahn.flags[i] & offen))) {
       band(teile.wand, bahn, i0, i1, (k) => {
         const hw = bahn.hw[k];
         return sg > 0 ? [[hw, 0], [hw, GEO.wandH]] : [[-hw, GEO.wandH], [-hw, 0]];
@@ -107,6 +110,24 @@ export function baueBahnGeometrie(bahn) {
         return sg > 0 ? [[hw - GEO.kanteB, GEO.wandH], [hw + 0.05, GEO.wandH]] : [[-hw - 0.05, GEO.wandH], [-hw + GEO.kanteB, GEO.wandH]];
       }, { schritt: 1 });
     }
+    // offene Kante: Leuchtlinie flach auf der Fahrbahnkante (kein Hindernis, nur Warnung)
+    for (const [i0, i1] of bereiche(bahn, (i) => !(bahn.flags[i] & F_LUECKE) && (bahn.flags[i] & offen))) {
+      band(teile.kante, bahn, i0, i1, (k) => {
+        const hw = bahn.hw[k];
+        return sg > 0 ? [[hw - 0.6, 0.06], [hw, 0.06]] : [[-hw, 0.06], [-hw + 0.6, 0.06]];
+      }, { schritt: 1 });
+    }
+  }
+  // Gabelungs-Teiler (P2): Mittel-Wand (Höhe wie die Bande) + Leuchtkante oben
+  for (const [i0, i1] of bereiche(bahn, (i) => (bahn.flags[i] & F_TEILER) && !(bahn.flags[i] & F_LUECKE))) {
+    band(teile.teiler, bahn, i0, i1, (k) => {
+      const tu = bahn.tu[k], tb = bahn.tb[k], h = GEO.wandH + 0.6;
+      return [[tu - tb, 0], [tu - tb, h], [tu + tb, h], [tu + tb, 0]];
+    }, { schritt: 1, normalFn: (j) => [[-1, 0], [0, 1], [0, 1], [1, 0]][j] });
+    band(teile.teilerKante, bahn, i0, i1, (k) => {
+      const tu = bahn.tu[k], tb = bahn.tb[k], h = GEO.wandH + 0.62;
+      return [[tu - tb * 0.7, h], [tu + tb * 0.7, h]];
+    }, { schritt: 1 });
   }
   // Störfeld am Bahnrand (Fahrgefühl: dort −30 % Schub, Abkürzen lohnt nicht): Warnstreifen innen an der Begrenzung
   for (const [i0, i1] of fahrbar) {

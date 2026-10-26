@@ -14,20 +14,13 @@ export const STRECKEN = [
   { id: 'wueste', name: 'Wüsten-Raumhafen', charakter: 'Vollgas', farbe: '#ff9a3c', rundenzeit: 87.7,
     text: 'Dämmerung, Sandsturm: lange Geraden mit Boost-Ketten, weite schnelle Bögen, Riesensprung über das Raketensilo.',
     daten: () => import('./strecke_wueste.js'), kulisse: () => import('../gfx/kulisse_wueste.js') },
-  { id: 'riff', name: 'Riff-Röhre', charakter: 'Technik', farbe: '#2be0ff', rundenzeit: 90,
-    text: 'Glasröhren durch ein Korallenriff: Korkenzieher, Magnet-Überkopf, Gabelung mit engem Schnell-Weg.',
-    daten: () => import('./strecke_riff.js'), kulisse: () => import('../gfx/kulisse_riff.js') },
-  { id: 'gebirge', name: 'Gewitter-Pass', charakter: 'Sprünge', farbe: '#9fb4ff', rundenzeit: 90,
-    text: 'Gebirgspass im Gewitter: Serpentinen-Steilkurven, Talsprünge, Schikanen, Grat ohne Bande als Abkürzung.',
-    daten: () => import('./strecke_gebirge.js'), kulisse: () => import('../gfx/kulisse_gebirge.js') },
-  { id: 'orbit', name: 'Orbital-Ring', charakter: 'Show', farbe: '#b18cff', rundenzeit: 90,
-    text: 'Raumstation über der Erde: Möbius-Band, Wandfahrt in der Trommel, schwerelos durch Boost-Ringe.',
-    daten: () => import('./strecke_orbit.js'), kulisse: () => import('../gfx/kulisse_orbit.js') },
   // lange Fassung der Megastadt (bis 0.1.3): nur über ?strecke=lang bzw. die Wahl auf der Megastadt-Karte, nicht im Cup
   { id: 'megastadt-lang', name: 'Neon-Megastadt (lang)', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'lang', rundenzeit: 158.3, versteckt: true,
     text: 'Die lange Fassung der Megastadt.', daten: () => import('./strecke1.js'), kulisse: () => import('../gfx/kulisse_megastadt.js') },
 ];
+// Cup: alle sichtbaren Strecken nacheinander (erst freigeschaltet, wenn alle fünf gebaut sind)
 export const CUP = ['megastadt', 'wueste', 'riff', 'gebirge', 'orbit'];
+export const cupBereit = () => CUP.every((id) => STRECKEN.some((e) => e.id === id));
 // Cup-Punkte je Platz (Plan antigrav-racer: 9-7-5-3-2-1-0-0)
 export const CUP_PUNKTE = [9, 7, 5, 3, 2, 1, 0, 0];
 const ALIAS = { kurz: 'megastadt', lang: 'megastadt-lang', stadt: 'megastadt', wuestenraumhafen: 'wueste', unterwasser: 'riff', pass: 'gebirge', ring: 'orbit' };
