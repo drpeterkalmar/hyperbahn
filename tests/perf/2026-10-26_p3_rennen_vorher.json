@@ -1,0 +1,142 @@
+{
+ "n": 9225,
+ "dauer_s": 154.2,
+ "fps": 59.8,
+ "p50": 16.7,
+ "p95": 16.7,
+ "p99": 16.8,
+ "ueber50": 2,
+ "ueber100": 1,
+ "max": 349.9,
+ "groesster": {
+  "t": 0,
+  "phase": "countdown",
+  "ms": 349.9,
+  "wo": "Zielanlauf",
+  "ursache": "LongTask 134 ms"
+ },
+ "haenger": [
+  {
+   "t": 0,
+   "phase": "countdown",
+   "ms": 349.9,
+   "wo": "Zielanlauf",
+   "ursache": "LongTask 134 ms"
+  },
+  {
+   "t": 98.57,
+   "phase": "rennen",
+   "ms": 83.3,
+   "wo": "Hafenkurve Einfahrt",
+   "ursache": "unbekannt"
+  }
+ ],
+ "programme": 40,
+ "skalen": [
+  0.76,
+  0.8,
+  0.84,
+  0.88,
+  0.92
+ ],
+ "erstauftritte": [
+  {
+   "t": 0.1,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 1,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.15,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 3,
+   "geometrie": 1
+  },
+  {
+   "t": 0.18,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 3,
+   "geometrie": 1
+  },
+  {
+   "t": 0.21,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.25,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.91,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 2,
+   "textur": 1,
+   "geometrie": 0
+  },
+  {
+   "t": 0.95,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 63.95,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Neon-Bogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  }
+ ],
+ "skala_wechsel": [
+  {
+   "t": 0,
+   "von": 0.76,
+   "nach": 0.8
+  },
+  {
+   "t": 0.08,
+   "von": 0.8,
+   "nach": 0.84
+  },
+  {
+   "t": 1.08,
+   "von": 0.84,
+   "nach": 0.88
+  },
+  {
+   "t": 2.1,
+   "von": 0.88,
+   "nach": 0.92
+  }
+ ],
+ "gc": 150,
+ "heap_mb": 79.8,
+ "fehler": [],
+ "version": "0.1.18"
+}

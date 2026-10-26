@@ -82,7 +82,8 @@ weißem Ring. Antippen = groß/klein.
 
 ## URL-Regler (A/B-Vergleich)
 `?speed=1.2` Höchsttempo (P3: Basis 105 m/s) · `?tempo=alt` (95 m/s, Lenkung wie bis 0.1.17) · `?kurven=alt` · `?pads=0` ·
-`?sog=0|0.15` Windschatten · `?streuung=0|1.5` KI-Handschrift · `?autogas=0` · `?airbrake=1` · `?energie=1` · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
+`?sog=0|0.15` Windschatten · `?streuung=0|1.5` KI-Handschrift · `?autogas=0` · `?airbrake=1` · `?energie=1` ·
+`?vorwaermen=0` · `?planworker=0` · `?skalaruhe=0` (P3 Etappe 2: Start/Ruckeln wie bis 0.1.18) · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
 der Luft · `?slowmo=0` Absprung-Zeitlupe aus · `?action=0|1|2` · `?blitze=0` Blitze reduzieren · `?horizont=1` ·
 `?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=2` (Standard: je Strecke, Rennen ≤ 5 min) ·
 `?strecke=megastadt|wueste|riff|gebirge|orbit|lang|zufall` · `?cup=1` (Strecke; `lang` = lange Megastadt, 1 Runde) · `?nase=alt` (Nase in der Luft wie bis 0.1.3) · `?look=0|1|2` Grafikstufe ·
@@ -121,6 +122,7 @@ Konsole: `__hb.galerie()` zeigt alle Gleiter nebeneinander, `__hb.moment('sprung
 P3: `node tools/feld_mess.mjs [alle] [läufe]` (Positionswechsel, Tempo-Streuung, Boost-/Windschatten-Anteil im Rennen wie im
 Spiel), `node tools/kurven_mess.mjs` (kleinster Radius bei Vollgas, Kurven ohne Luftbremse je Strecke), `python3 tests/p3_bilder.py`
 (Bildfolgen Windschatten + Boost-Kette hoch/quer).
+`python3 tests/p3_ruckeln.py start|rennen` (Kaltstart mit Fast 4G + CPU ×4, Hänger im Rennen mit Ursache).
 
 ## Recht
 Eigener Name, eigene Teams; nur Spielmechaniken des Genres. Gleiter-Modelle von Sketchfab (CC BY 4.0: Nikcore, Mattdude,

@@ -15,14 +15,19 @@ export const THEMA = {
   look: {},
 };
 
-export function baueKulisse(bahn, { scene, blitze } = {}) {
+// stadtPlan (P3 Etappe 2): Promise auf den Stadt-Plan aus dem Plan-Worker – dann steht die Bahn sofort und die Stadt kommt
+// dazu, sobald der Plan da ist (bei CPU ×4 ≈ 0,6 s Rechenzeit weniger im Hauptfaden); ohne: wie bisher sofort
+export function baueKulisse(bahn, { scene, blitze, stadtPlan = null } = {}) {
   const gruppe = new THREE.Group(); gruppe.name = 'kulisse-megastadt';
-  const stadt = baueStadt(bahn, { seed: 11, blitze });
-  gruppe.add(stadt.gruppe);
   const regen = new Regen(scene, {});
-  return {
-    gruppe, stadt,
-    update(dt, t, kamPos, kamVel) { stadt.update(t); regen.update(dt, kamPos, kamVel, 1); },
-    dispose() { stadt.dispose(); regen.dispose(); },
+  let stadt = null, weg = false;
+  const bau = (plan) => { if (weg) return; stadt = baueStadt(bahn, { seed: 11, blitze, plan }); gruppe.add(stadt.gruppe); k.stadt = stadt; };
+  const k = {
+    gruppe, stadt: null,
+    bereit: stadtPlan ? stadtPlan.then((p) => bau(p), () => bau(null)) : Promise.resolve(),
+    update(dt, t, kamPos, kamVel) { if (stadt) stadt.update(t); regen.update(dt, kamPos, kamVel, 1); },
+    dispose() { weg = true; if (stadt) stadt.dispose(); regen.dispose(); },
   };
+  if (!stadtPlan) bau(null);
+  return k;
 }

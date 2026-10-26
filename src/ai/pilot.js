@@ -255,13 +255,7 @@ export class Pilot {
     let saugt = false;
     // nicht in Röhren/Magnet-Passagen und nicht ≤ 250 m vor einem Absprung (dort zählt die Linie)
     // und nur, wo der Tempoplan Vollgas erlaubt (keine Kurve/Bremszone, keine Gabelung, keine offene Kante)
-    const ruhig = (() => {
-      for (let d = 0; d <= 250; d += 25) {
-        const j = ((Math.floor((g.s + d) / b.ds) % b.N) + b.N) % b.N;
-        if (b.flags[j] & (F_ROEHRE | F_MAGNET | F_SPRUNG | F_LUECKE | F_TEILER | F_OFFEN_L | F_OFFEN_R) || this.plan.vZiel[j] < GLEITER.vmax * KI.sogPlan) return false;
-      }
-      return true;
-    })();
+    const ruhig = P ? this.ruhigBei(g.s) : false;
     if (!ruhig) this.ueberholT = 0;
     if (P && SOG.staerke > 0 && ruhig) {
       this.ueberholT -= dt;
@@ -430,6 +424,17 @@ export class Pilot {
     }
     if (g.boden) this.rolleGeplant = false;
     return e;
+  }
+
+  // P3: ruhiges Stück für Windschatten/Überholen (250 m voraus keine Röhre/Magnet/Sprung/Gabelung/offene Kante, Tempoplan
+  // ≥ KI.sogPlan × Höchsttempo) – als Methode, nicht als Funktion je Schritt (Speicherbereinigung)
+  ruhigBei(s) {
+    const b = this.bahn, sperre = F_ROEHRE | F_MAGNET | F_SPRUNG | F_LUECKE | F_TEILER | F_OFFEN_L | F_OFFEN_R, vmin = GLEITER.vmax * KI.sogPlan;
+    for (let d = 0; d <= 250; d += 25) {
+      const j = ((Math.floor((s + d) / b.ds) % b.N) + b.N) % b.N;
+      if (b.flags[j] & sperre || this.plan.vZiel[j] < vmin) return false;
+    }
+    return true;
   }
 
   // Drift in langen Kurven: Luftbremse innen halten, im Rhythmus pumpen (0,33 s halten, dann 0,07 s los / 0,17 s halten),

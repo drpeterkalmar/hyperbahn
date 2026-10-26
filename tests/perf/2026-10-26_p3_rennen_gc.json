@@ -1,0 +1,105 @@
+{
+ "n": 2766,
+ "dauer_s": 46.1,
+ "fps": 60.0,
+ "p50": 16.7,
+ "p95": 16.7,
+ "p99": 16.8,
+ "ueber50": 1,
+ "ueber100": 0,
+ "max": 66.7,
+ "groesster": {
+  "t": 0,
+  "phase": "countdown",
+  "ms": 66.7,
+  "wo": "Zielanlauf",
+  "ursache": "LongTask 57 ms"
+ },
+ "haenger": [
+  {
+   "t": 0,
+   "phase": "countdown",
+   "ms": 66.7,
+   "wo": "Zielanlauf",
+   "ursache": "LongTask 57 ms"
+  }
+ ],
+ "programme": 43,
+ "skalen": [
+  0.84,
+  0.88,
+  0.92
+ ],
+ "erstauftritte": [
+  {
+   "t": 0.15,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.18,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.2,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.23,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.92,
+   "phase": "rennen",
+   "ms": 16.8,
+   "wo": "Zielanlauf",
+   "shader": 1,
+   "textur": 1,
+   "geometrie": 0
+  },
+  {
+   "t": 0.95,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  }
+ ],
+ "skala_wechsel": [
+  {
+   "t": 0,
+   "von": 0.84,
+   "nach": 0.88
+  },
+  {
+   "t": 0,
+   "von": 0.88,
+   "nach": 0.92
+  }
+ ],
+ "gc": 31,
+ "heap_mb": 64.1,
+ "fehler": [],
+ "version": "0.1.18"
+}

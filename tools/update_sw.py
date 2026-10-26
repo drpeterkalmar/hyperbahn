@@ -19,6 +19,55 @@ for d in ['src', 'lib', 'icons', 'assets']:
             if f.endswith(('.js', '.png', '.css', '.webp', '.jpg', '.json', '.glb', '.hdr', '.bin', '.m4a', '.ktx2', '.wasm')) and not f.startswith('.') and not twin and rel != os.path.join('assets', 'sammlung_stil.json'):
                 files.append(rel.replace(os.sep, '/'))   # Windows (rog17): Pfade in sw.js immer mit /
 files = sorted(set(files))
+
+# P3 Etappe 2 (Peter: „starten langsam“): Vorab-Ladeliste in index.html – alle statisch importierten Module von
+# src/main.js (sonst lädt der Browser den Import-Baum Ebene für Ebene, je Ebene eine Netz-Rundreise ≈ 170 ms auf 4G). Zwischen den Markierungen <!-- vorab:anfang --> … <!-- vorab:ende -->.
+import re, json
+IMPORT = re.compile(r'''^\s*import\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]''', re.M)
+def modul_baum(start):
+    gesehen, offen = [], [start]
+    while offen:
+        rel = offen.pop(0)
+        if rel in gesehen: continue
+        gesehen.append(rel)
+        quelle = open(os.path.join(ROOT, rel), encoding='utf-8').read()
+        for spec in IMPORT.findall(quelle):
+            if spec == 'three': ziel = 'lib/three.module.min.js'
+            elif spec.startswith('three/addons/'): ziel = 'lib/addons/' + spec[len('three/addons/'):]
+            elif spec.startswith('.'): ziel = os.path.normpath(os.path.join(os.path.dirname(rel), spec)).replace(os.sep, '/')
+            else: continue
+            if os.path.exists(os.path.join(ROOT, ziel)): offen.append(ziel)
+    return gesehen
+module = modul_baum('src/main.js')
+if os.path.exists(os.path.join(ROOT, 'lib/three.module.min.js')) and 'lib/three.core.min.js' not in module:
+    if "three.core.min.js" in open(os.path.join(ROOT, 'lib/three.module.min.js'), encoding='utf-8').read(): module.append('lib/three.core.min.js')
+# dynamisch, aber beim Start immer gebraucht: Gleiter-Lader und Ton
+for extra in ['lib/addons/loaders/GLTFLoader.js', 'lib/addons/utils/SkeletonUtils.js', 'src/audio/ton.js']:
+    for m in modul_baum(extra):
+        if m not in module: module.append(m)
+# je Strecke Daten + Kulisse samt Import-Baum: das Inline-Skript in index.html lädt die gewählte Strecke gleich mit vor
+STRECKEN_DYN = re.findall(r"id: '([a-z-]+)'.*?daten: \(\) => import\('\./([^']+)'\), kulisse: \(\) => import\('\.\./gfx/([^']+)'\)",
+                          open(os.path.join(ROOT, 'src/track/strecken.js'), encoding='utf-8').read(), re.S)
+strecken_vorab = {}
+for sid, daten, kul in STRECKEN_DYN:
+    liste = []
+    for start in ('src/track/' + daten, 'src/gfx/' + kul):
+        for m in modul_baum(start):
+            if m not in module and m not in liste: liste.append(m)
+    strecken_vorab[sid] = liste
+glb = sorted(f for f in files if f.startswith('assets/gleiter/') and f.endswith('.glb'))
+# Gleiter-Modelle NICHT vorab: gemessen (Fast 4G) verdrängen sie three.core.min.js und das Menü kommt später
+zeilen = [f'<link rel="modulepreload" href="{m}">' for m in module]
+ih = os.path.join(ROOT, 'index.html')
+html = open(ih, encoding='utf-8').read()
+if '<!-- vorab:anfang -->' in html:
+    a, rest = html.split('<!-- vorab:anfang -->', 1); _, e = rest.split('<!-- vorab:ende -->', 1)
+    html = a + '<!-- vorab:anfang -->\n' + '\n'.join(zeilen) + '\n<!-- vorab:ende -->' + e
+    if '/*vorab-strecken*/' in html:
+        a, rest = html.split('/*vorab-strecken*/', 1); _, e = rest.split('/*ende*/', 1)
+        html = a + '/*vorab-strecken*/' + json.dumps(strecken_vorab, separators=(',', ':')) + '/*ende*/' + e
+    open(ih, 'w', encoding='utf-8', newline='\n').write(html)
+    print('index.html: Vorab-Liste', len(module), 'Module')
 # Inhalts-Hash auch über die Themen-Pakete (nicht vorab gecacht, aber eine Änderung muss die Version wechseln)
 hashed = list(files)
 for dp, dn, fn in os.walk(os.path.join(ROOT, 'assets', 'themes')):

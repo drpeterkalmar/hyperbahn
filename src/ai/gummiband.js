@@ -18,36 +18,42 @@ export function waehleRivalen(rennen) {
   return kis.slice().sort((a, b) => (b.pilot.profil.tempo - a.pilot.profil.tempo) || (a.k - b.k)).slice(0, 2).map((t) => t.k);
 }
 
+// P3: ohne neue Listen je Aufruf (läuft 240× je Sekunde; vorher filter/reduce = ständige Speicherbereinigung)
 export function gummiband(rennen, staerke = GEFUEHL.gummiband) {
-  const menschen = rennen.alle.filter((t) => t.spieler);
-  const kis = rennen.alle.filter((t) => t.pilot && !t.spieler);
-  for (const t of kis) t.pilot.gummi = null;
-  if (staerke <= 0 || !menschen.length || !kis.length || rennen.phase !== 'rennen') return null;
-  const best = menschen.reduce((a, b) => (b.fortschritt > a.fortschritt ? b : a));
+  const alle = rennen.alle;
+  let best = null, nKi = 0;
+  for (const t of alle) {
+    if (t.pilot && !t.spieler) { t.pilot.gummi = null; nKi++; }
+    if (t.spieler && (!best || t.fortschritt > best.fortschritt)) best = t;
+  }
+  if (staerke <= 0 || !best || !nKi || rennen.phase !== 'rennen') return null;
   const vref = GLEITER.vmax * GUMMI.ref;
   const anteil = clamp(best.fortschritt / (rennen.bahn.L * rennen.runden), 0, 1);
   const grenze = lerp(GUMMI.grenze0, GUMMI.grenze1, anteil);
   // KI-Führender (nur wer noch nicht im Ziel ist)
-  const offen = kis.filter((t) => !t.ziel);
-  if (offen.length) {
-    const f = offen.reduce((a, b) => (b.fortschritt > a.fortschritt ? b : a));
+  let f = null;
+  for (const t of alle) if (t.pilot && !t.spieler && !t.ziel && (!f || t.fortschritt > f.fortschritt)) f = t;
+  if (f) {
     const vorsprung = (f.fortschritt - best.fortschritt) / vref;
     if (vorsprung > grenze) f.pilot.gummi = { tempo: 1 - GUMMI.bremsFuehrer * staerke * clamp(0.5 + (vorsprung - grenze) / 2, 0, 1), schnell: false };
   }
-  // Feld dahinter: wer mehr als die Nachzügler-Grenze hinter dem Menschen liegt, fährt „schnell“ (volles Profil)
+  // Feld dahinter: wer mehr als die Nachzügler-Grenze hinter dem Menschen liegt, fährt „schnell“ (eigenes Profil +4 %)
   const nach = GUMMI.nachzuegler / Math.max(0.25, staerke * 2);
-  for (const t of offen) {
-    if (t.pilot.gummi) continue;
-    if ((best.fortschritt - t.fortschritt) / vref > nach) t.pilot.gummi = { tempo: 1, schnell: true };
+  for (const t of alle) {
+    if (!t.pilot || t.spieler || t.ziel || t.pilot.gummi) continue;
+    if ((best.fortschritt - t.fortschritt) / vref > nach) t.pilot.gummi = SCHNELL;
   }
   // Rivalen
   if (!rennen.rivalen) rennen.rivalen = waehleRivalen(rennen);
   for (const k of rennen.rivalen) {
-    const t = rennen.alle[k];
+    const t = alle[k];
     if (!t || t.ziel) continue;
     const d = (t.fortschritt - best.fortschritt) / vref;
-    if (d < 0) t.pilot.gummi = { tempo: 1, schnell: true };
+    if (d < 0) t.pilot.gummi = SCHNELL;
     else if (d > GUMMI.rivalFenster) t.pilot.gummi = { tempo: Math.min(t.pilot.gummi ? t.pilot.gummi.tempo : 1, 1 - GUMMI.bremsRival * staerke), schnell: false };
   }
-  return { grenze, best: best.k };
+  rennen.gummiInfo = rennen.gummiInfo || { grenze: 0, best: 0 };
+  rennen.gummiInfo.grenze = grenze; rennen.gummiInfo.best = best.k;
+  return rennen.gummiInfo;
 }
+const SCHNELL = Object.freeze({ tempo: 1, schnell: true });

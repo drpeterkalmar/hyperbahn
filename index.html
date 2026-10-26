@@ -15,6 +15,48 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }</script>
+<!-- vorab:anfang -->
+<link rel="modulepreload" href="src/main.js">
+<link rel="modulepreload" href="lib/three.module.min.js">
+<link rel="modulepreload" href="src/config.js">
+<link rel="modulepreload" href="src/track/strecken.js">
+<link rel="modulepreload" href="src/game/bestzeiten.js">
+<link rel="modulepreload" href="src/track/bahn.js">
+<link rel="modulepreload" href="src/ai/pilot.js">
+<link rel="modulepreload" href="src/ui/vorschau.js">
+<link rel="modulepreload" href="src/core/util.js">
+<link rel="modulepreload" href="src/game/rennen.js">
+<link rel="modulepreload" href="src/game/fahrhilfe.js">
+<link rel="modulepreload" href="src/game/eingabe.js">
+<link rel="modulepreload" href="src/game/momente.js">
+<link rel="modulepreload" href="src/core/zeit.js">
+<link rel="modulepreload" href="src/gfx/bahnmesh.js">
+<link rel="modulepreload" href="src/gfx/gleitermesh.js">
+<link rel="modulepreload" href="src/gfx/kamera.js">
+<link rel="modulepreload" href="src/gfx/kinolook.js">
+<link rel="modulepreload" href="src/gfx/himmel.js">
+<link rel="modulepreload" href="src/gfx/funken.js">
+<link rel="modulepreload" href="src/gfx/drohne.js">
+<link rel="modulepreload" href="src/gfx/sog.js">
+<link rel="modulepreload" href="src/ui/hud.js">
+<link rel="modulepreload" href="src/gfx/minikarte.js">
+<link rel="modulepreload" href="src/gfx/gpuzeit.js">
+<link rel="modulepreload" href="src/physics/fahrgefuehl.js">
+<link rel="modulepreload" href="src/physics/gleiter.js">
+<link rel="modulepreload" href="src/version.js">
+<link rel="modulepreload" href="src/game/gvignette.js">
+<link rel="modulepreload" href="src/track/runden.js">
+<link rel="modulepreload" href="src/core/vec.js">
+<link rel="modulepreload" href="src/ai/gummiband.js">
+<link rel="modulepreload" href="src/gfx/bahn_geo.js">
+<link rel="modulepreload" href="lib/addons/utils/BufferGeometryUtils.js">
+<link rel="modulepreload" href="src/gfx/kern/taau.js">
+<link rel="modulepreload" href="src/gfx/kern/taau_mathe.js">
+<link rel="modulepreload" href="lib/three.core.min.js">
+<link rel="modulepreload" href="lib/addons/loaders/GLTFLoader.js">
+<link rel="modulepreload" href="lib/addons/utils/SkeletonUtils.js">
+<link rel="modulepreload" href="src/audio/ton.js">
+<!-- vorab:ende -->
 </head>
 <body data-mode="menu">
 <canvas id="c"></canvas>
@@ -24,9 +66,25 @@
   window.__errors = [];
   addEventListener('error', function (e) { __errors.push(String(e.message || e)); });
   addEventListener('unhandledrejection', function (e) { __errors.push('Promise: ' + String(e.reason && e.reason.message || e.reason)); });
-  if ('serviceWorker' in navigator && !/[?&]nosw/.test(location.search) && location.protocol === 'https:') {
-    var hadCtl = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js').catch(function () {});
+  // P3: Service-Worker erst registrieren, wenn das Spiel bereit ist (main.js ruft __swRegistrieren nach Menü + Modellen) –
+  // sonst lädt sein Vorab-Cache (≈ 4 MB) beim ersten Besuch gleichzeitig mit dem Spiel über dieselbe Leitung; spätestens 20 s
+  // nach „load“. ?sw=1 erlaubt ihn auch ohne https (Messungen am Mac)
+  // P3: Module der gewählten Strecke (URL ?strecke= bzw. zuletzt gewählt, sonst Megastadt) gleich vorab laden (tools/update_sw.py)
+  (function () {
+    var V = /*vorab-strecken*/{"megastadt":["src/track/strecke1.js","src/gfx/kulisse_megastadt.js","src/gfx/stadt.js","src/gfx/regen.js","src/gfx/stadt_plan.js"],"wueste":["src/track/strecke_wueste.js","src/gfx/kulisse_wueste.js","src/gfx/regen.js","src/gfx/kulisse_kern.js"],"riff":["src/track/strecke_riff.js","src/gfx/kulisse_riff.js","src/gfx/regen.js","src/gfx/kulisse_kern.js"],"gebirge":["src/track/strecke_gebirge.js","src/gfx/kulisse_gebirge.js","src/gfx/regen.js","src/gfx/kulisse_kern.js"],"orbit":["src/track/strecke_orbit.js","src/gfx/kulisse_orbit.js","src/gfx/regen.js","src/gfx/kulisse_kern.js"],"megastadt-lang":["src/track/strecke1.js","src/gfx/kulisse_megastadt.js","src/gfx/stadt.js","src/gfx/regen.js","src/gfx/stadt_plan.js"]}/*ende*/, id = 'megastadt';
+    try { id = (JSON.parse(localStorage.getItem('hyperbahn-einstellungen') || '{}').strecke) || id; } catch (e) {}
+    var m = /[?&]strecke=([a-z-]+)/.exec(location.search); if (m) id = m[1] === 'lang' ? 'megastadt-lang' : m[1];
+    (V[id] || V.megastadt || []).forEach(function (h) { var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = h; document.head.appendChild(l); });
+  })();
+  window.__swRegistrieren = function () {};
+  if ('serviceWorker' in navigator && !/[?&]nosw/.test(location.search) && (location.protocol === 'https:' || /[?&]sw=1/.test(location.search))) {
+    var hadCtl = !!navigator.serviceWorker.controller, swDa = false;
+    window.__swRegistrieren = function () {
+      if (swDa) return; swDa = true;
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    };
+    if (hadCtl) window.__swRegistrieren();   // schon installiert: sofort (Update-Prüfung)
+    addEventListener('load', function () { setTimeout(window.__swRegistrieren, 20000); });
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (hadCtl && document.body.dataset.mode === 'menu') location.reload();
     });

@@ -24,7 +24,7 @@ import { KameraRig, wendeAn, leseKamera } from './gfx/kamera.js';
 import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
-import { Bergung } from './gfx/drohne.js';
+import { Bergung, baueDrohne } from './gfx/drohne.js';
 import { SogSchlieren } from './gfx/sog.js';
 import { Hud, ladeEinstellungen } from './ui/hud.js';
 import { Minikarte } from './gfx/minikarte.js';
@@ -76,12 +76,20 @@ const rundenText = (n) => `${n} ${n === 1 ? 'Runde' : 'Runden'}`;
 const rundenVon = (id) => (q.has('runden') ? SPIEL.runden : rundenDer(id));
 let bahn = null, plaene = null, plan = null, bahnMesh = null, kulisse = null, thema = null, RUNDEN = 2, absprungS = [], sonneDir = null;
 let ladeNr = 0, umgebung = null;
+let szeneDa = () => {}, planFertig = null;
+const szeneBereit = new Promise((ok) => { szeneDa = ok; });
 const blitze = new BlitzBremse({ reduziert: BLITZE.reduziert });
 const funken = new Funken(scene);
 const bergung = new Bergung(scene);   // Bergungs-Drohne nach Abflügen (Vorlage)
 const schlieren = new SogSchlieren(scene);   // Windschatten-Schlieren (P3)
 let ton = null;
 import('./audio/ton.js').then((m) => { ton = new m.Ton(); }).catch((e) => console.warn('Ton', e));
+// P3: Audio-Kontext schon im Menü anlegen (im Leerlauf nach dem Vorwärmen, bzw. beim ersten Antippen) – nicht erst im
+// Start-Klick (kostete ≈ 75 ms bei CPU ×4 genau im Moment des Starts). Ohne Geste bleibt er „suspended“, der Start-Klick
+// weckt ihn nur noch auf; still bis zum Rennen (ruhe()), die Musik startet wie bisher im Rennen
+const tonFrueh = () => { if (ton && hud.einst.ton && !(rennen && laeuft)) ton.start().then(() => { if (!(rennen && laeuft)) ton.ruhe(); }).catch(() => {}); };
+addEventListener('pointerdown', tonFrueh, { once: true, capture: true });
+addEventListener('keydown', tonFrueh, { once: true, capture: true });
 
 // Thema der Kulisse anwenden: Himmel, Nebel, Licht, Farbkorrektur, Dunst, Umgebungs-Spiegelung
 function wendeThemaAn(t) {
@@ -99,10 +107,40 @@ function wendeThemaAn(t) {
   scene.environment = umgebung;
 }
 
+// P3 Etappe 2: KI-Pläne im Worker (src/ai/plan_worker.js) parallel zu Bahn-Mesh und Kulisse; ohne Worker (oder bei Fehler)
+// wie bisher im Hauptfaden. ?planworker=0 = immer im Hauptfaden
+let planWorker = null, planNr = 0;
+const planWarte = new Map();
+function planeBerechnen(id, b, stadt = null) {
+  let stadtOk = null, stadtP = null;
+  if (stadt) stadtP = new Promise((ok) => { stadtOk = ok; });
+  if (q.get('planworker') !== '0' && typeof Worker !== 'undefined') {
+    try {
+      if (!planWorker) {
+        planWorker = new Worker(new URL('./ai/plan_worker.js', import.meta.url), { type: 'module' });
+        planWorker.onmessage = (ev) => {
+          const w = planWarte.get(ev.data.nr); if (!w) return;
+          if (ev.data.stadtPlan) { if (w.stadt) w.stadt(ev.data.stadtPlan); return; }   // Zwischenergebnis: Stadt-Plan
+          planWarte.delete(ev.data.nr); w(ev.data);
+        };
+        planWorker.onerror = (ev) => { console.warn('Plan-Worker', ev.message); for (const w of planWarte.values()) w({ fehler: ev.message || 'Worker' }); planWarte.clear(); planWorker = null; };
+      }
+      const nr = ++planNr;
+      const plaeneP = new Promise((ok) => { ok.stadt = stadtOk; planWarte.set(nr, ok); planWorker.postMessage({ nr, id, suche: location.search, stadt }); })
+        .then((d) => (d.plaene && d.N === b.N && Math.abs(d.L - b.L) < 1e-6 ? d.plaene : (d.fehler && console.warn('Plan-Worker', d.fehler), bauePlaene(b))));
+      // ohne Stadt-Plan (Fehler im Worker) baut die Kulisse ihn selbst
+      if (stadtOk) plaeneP.then(() => stadtOk(null));
+      return { plaeneP, stadtP };
+    } catch (e) { console.warn('Plan-Worker', e); }
+  }
+  if (stadtOk) stadtOk(null);
+  return { plaeneP: Promise.resolve(bauePlaene(b)), stadtP };
+}
+
 // Strecke wechseln: Daten + Kulisse laden, alte Teile entsorgen, Plan/Bahn/Kulisse/Minikarte neu (ohne Neuladen der Seite)
 async function wechsleStrecke(id) {
   const e = finde(id) || finde(STANDARD_STRECKE);
-  if (bahn && bahn.id === e.id) return bahn;
+  if (bahn && bahn.id === e.id) return plaene ? bahn : planFertig;   // P3: Pläne noch im Worker → darauf warten
   const nr = ++ladeNr;
   const [b, km] = await Promise.all([ladeStrecke(e.id), e.kulisse()]);
   if (nr !== ladeNr) return null;   // inzwischen eine andere Strecke gewählt
@@ -112,11 +150,13 @@ async function wechsleStrecke(id) {
   if (bahnMesh) { scene.remove(bahnMesh.gruppe); bahnMesh.dispose(); }
   if (kulisse) { scene.remove(kulisse.gruppe); kulisse.dispose(); }
   if (karte) karte.dispose();
-  bahn = b; plaene = bauePlaene(bahn); plan = plaene.sicher;
+  const { plaeneP: planJob, stadtP } = planeBerechnen(e.id, b, e.id.startsWith('megastadt') ? { seed: 11, dichte: 1 } : null);   // P3: parallel im Worker
+  planFertig = planJob.then(() => (nr === ladeNr ? bahn : null));
+  bahn = b; plaene = null; plan = null;
   thema = km.THEMA; wendeThemaAn(thema);
   bahnMesh = baueBahnMesh(bahn, { look: thema.look });
   scene.add(bahnMesh.gruppe);
-  kulisse = km.baueKulisse(bahn, { scene, blitze, renderer, himmel, hemi });
+  kulisse = km.baueKulisse(bahn, { scene, blitze, renderer, himmel, hemi, stadtPlan: stadtP });
   scene.add(kulisse.gruppe);
   karte = new Minikarte(renderer, bahn, { modus: q.get('karte') || hud.einst.karte || '3d', nord: q.has('kartenord') ? q.get('kartenord') === '1' : hud.einst.karteNord });
   karte.reduziert = blitze.reduziert;
@@ -124,8 +164,13 @@ async function wechsleStrecke(id) {
   // „Speed OK“: Absprünge mit Mindesttempo der Strecke
   absprungS = bahn.abschnitte.map((a, k) => (a.typ === 'sprung' ? { s: bahn.segStart[k], vmin: (bahn.sprungMindest || {})[a.name] || 75 } : null)).filter(Boolean);
   hud.setzeStrecke(streckeInfo(e.id));
+  if (gewaermt) modelle.then(() => setTimeout(() => vorwaermen(), 300));   // P3: neue Strecke = neue Kulisse/Materialien vorwärmen
   // Teilen-Link: URL zeigt die Strecke (ohne die Seite neu zu laden)
   try { const u = new URL(location.href); u.searchParams.set('strecke', e.id); history.replaceState(null, '', u.toString()); } catch { /* file:// */ }
+  szeneDa();   // Menü kann die Strecke schon zeigen, die KI-Pläne rechnet der Worker noch
+  const p = await planJob;
+  if (nr !== ladeNr) return null;
+  plaene = p; plan = p.sicher;
   return bahn;
 }
 function streckeInfo(id) {
@@ -248,6 +293,8 @@ hud.zeigeMenue(true);
 
 function starte(e) {
   startAnalog = false;
+  if (waermGruppe) { waermBilder = 0; vorwaermenEnde(); }
+  performance.mark('hb-starte');
   for (const m of meshes) { scene.remove(m.gruppe); scene.remove(m.spur); }
   const anzahl = q.has('gegner') ? SPIEL.gegner : e.gegner;
   const ki = q.has('ki') ? SPIEL.ki : e.ki;
@@ -275,7 +322,8 @@ function starte(e) {
   regie = new ActionRegie({ stufe: q.has('action') ? ACTION.stufe : e.action, online: SPIEL.online, blitze });
   regie.ab = regie.verbinde(bus);
   meshes = rennen.alle.map((t, k) => {
-    const m = baueGleiter(t.farbe, BAUFORM_LISTE[k % BAUFORM_LISTE.length]);
+    const bf = BAUFORM_LISTE[k % BAUFORM_LISTE.length], i = meshVorrat.findIndex((x) => x.key === t.farbe + '|' + bf);
+    const m = i >= 0 ? meshVorrat.splice(i, 1)[0].m : baueGleiter(t.farbe, bf);   // P3: vorgewärmt, sonst neu
     scene.add(m.gruppe); scene.add(m.spur);
     return m;
   });
@@ -286,7 +334,9 @@ function starte(e) {
   hud.zeigeMenue(false);
   laeuft = true;
   karteRechteck();
+  performance.mark('hb-starte-fertig'); ersteRennBilder = 3;
 }
+let ersteRennBilder = 0;
 
 // --- Effekte aus Gleiter-Ereignissen (nur Spieler bekommt Blitze/Kamera; alle bekommen Funken) ---
 let blitzK = 0, blitzFarbe = [1, 1, 1], weiss = 0;
@@ -407,7 +457,7 @@ let tAlt = performance.now() / 1000;
 window.__app = { ready: true, frames: 0 };   // wie Stuntbahn: tests/util.py wartet auf ready + frames
 function bild() {
   requestAnimationFrame(bild);
-  window.__app.frames++;
+  if (++window.__app.frames === 1) performance.mark('hb-erstes-bild');   // P3: Messpunkt Kaltstart (tests/p3_ruckeln.py)
   renderer.info.reset();
   if (gpu) gpu.sammle();
   const tJetzt = performance.now() / 1000;
@@ -491,39 +541,100 @@ function bild() {
   blitzK = Math.max(0, blitzK - dt * 4);
   weiss = fx ? fx.weiss : 0;
   const g = rennen ? spielerT.g : null;
-  const karteBild = rennen && laeuft && karte ? karte.vorbereiten(praes, rennen.alle, spielerT.k) : null;
+  const karteBild = rennen && laeuft && karte ? karte.vorbereiten(praes, rennen.alle, spielerT.k)
+    : waermBilder > 0 && karte ? karte.vorbereiten(praes, scheinFeld, 1) : null;
   if (gpu) gpu.start('szene');
   kino.render(scene, camera, {
     overlayTex: karteBild,
-    dt, run: !!(rennen && laeuft), sunDir: sonneDir,
+    dt, run: !!(rennen && laeuft) || waermBilder > 0, sunDir: sonneDir,
     // Kino-Look ist auf 80–190 km/h geeicht → Tempo skaliert (?blur=); im Bullet-Time-Halbkreis keine Bewegungsunschärfe
     // (Zeit steht, nur die Kamera fährt – die Unschärfe würde sonst die ganze Stadt verschmieren)
-    speed: g && !(fx && fx.orbitAn) ? g.tempo * KAMERA.unschaerfe * (g.boden ? 1 : 0.8) : 0,
+    speed: waermBilder > 0 ? 30 : g && !(fx && fx.orbitAn) ? g.tempo * KAMERA.unschaerfe * (g.boden ? 1 : 0.8) : 0,
     // P3: Windschatten verstärkt die Tempo-Streifen des Kino-Looks (Sog zieht sichtbar)
-    boost: g ? Math.min(1, g.boost + 0.4 * g.sog * g.sogNah) : 0, car: meshes[0] ? meshes[0].gruppe : null,
+    boost: waermBilder > 0 ? 0.6 : g ? Math.min(1, g.boost + 0.4 * g.sog * g.sogNah) : 0, car: meshes[0] ? meshes[0].gruppe : null,
     flash: { k: blitzK, col: blitzFarbe }, white: weiss,
     action: fx ? { sat: fx.saettigung, vig: fx.vignette, ca: fx.ca, radial: fx.radial } : null,
   });
   if (gpu) gpu.ende();
   if (karteBild && !kino.overlayGezeichnet) karte.zeichneDirekt();   // Stufe Einfach: eigener kleiner Durchgang
+  if (waermBilder > 0 && --waermBilder === 0) vorwaermenEnde();
+  if (ersteRennBilder > 0) performance.mark('hb-rennbild-' + (4 - ersteRennBilder--));
 }
 const NULL3 = { x: 0, y: 0, z: 0 };
+// P3 Etappe 2 (Peter: „ruckeln zeitweise und starten langsam“): Vorwärmen im Menü – sobald Strecke und Gleiter-Modelle da
+// sind, liegen für 2 Bilder alle Gleiter-Bauformen, Funken, Windschatten-Schlieren und eine Bergungs-Drohne vor der
+// Menü-Kamera (unter dem Menü kaum sichtbar) und der Kino-Look rechnet einen Renn-Durchgang (Bewegungsunschärfe, Boost):
+// Shader kompiliert (parallel, wo der Browser es kann) und Geometrie/Texturen hochgeladen, bevor der Countdown läuft.
+// ?vorwaermen=0 = wie bisher (alles erst im ersten Rennbild)
+const VORWAERMEN = q.get('vorwaermen') !== '0';
+let waermBilder = 0, waermGruppe = null, gewaermt = '';
+const meshVorrat = [];   // vorgewärmte Gleiter { key: 'farbe|bauform', m }
+// Minikarte im Vorwärm-Bild: zwei Schein-Teilnehmer an der Kamera (kompiliert Karten-Shader + Overlay-Durchgang)
+const scheinFeld = [{ g: { p: new THREE.Vector3(), vor: { x: 0, y: 0, z: -1 }, oben: { x: 0, y: 1, z: 0 }, s: 0 }, platz: 1, farbe: 0xffffff },
+  { g: { p: new THREE.Vector3(), vor: { x: 0, y: 0, z: -1 }, oben: { x: 0, y: 1, z: 0 }, s: 0 }, platz: 2, farbe: 0xff2bd6 }];
+async function vorwaermen() {
+  if (!VORWAERMEN || !bahn || gewaermt === bahn.id || rennen) return;
+  gewaermt = bahn.id;
+  const t0 = performance.now();
+  const g = new THREE.Group();
+  // Gleiter für die Standard-Aufstellung (7 Gegner, DU auf Platz 6) gleich fertig bauen – starte() nimmt sie aus dem Vorrat
+  if (!meshVorrat.length) {
+    const reihe = TEAMS.slice(1, 8).map((t) => t.farbe); reihe.splice(5, 0, TEAMS[0].farbe);
+    reihe.forEach((farbe, k) => { const bf = BAUFORM_LISTE[k % BAUFORM_LISTE.length]; meshVorrat.push({ key: farbe + '|' + bf, m: baueGleiter(farbe, bf) }); });
+  }
+  meshVorrat.forEach(({ m }, k) => { m.gruppe.position.set((k % 4 - 1.5) * 5, Math.floor(k / 4) * 3, 0); g.add(m.gruppe); g.add(m.spur); });
+  const d = baueDrohne(); d.gruppe.position.set(0, 4, 0); d.gruppe.visible = true; g.add(d.gruppe);
+  // vor die aktuelle Menü-Kamera stellen
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+  g.position.copy(camera.position).addScaledVector(dir, 22); g.lookAt(camera.position);
+  scene.add(g); waermGruppe = g;
+  funken.spruehe(g.position, NULL3, 30, 4); funken.spruehe(g.position, NULL3, 10, 4, DRIFT_FARBEN[2]);
+  schlieren.linien.visible = true;
+  karteRechteck();
+  for (const t of scheinFeld) t.g.p.copy(g.position);
+  try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); } catch (e) { console.warn('Vorwärmen', e); }
+  if (!waermGruppe) return;   // inzwischen gestartet
+  waermBilder = 2;   // die nächsten 2 Menü-Bilder: Kino-Look im Renn-Modus, danach weg
+  window.__hb.vorgewaermt = { strecke: bahn.id, ms: Math.round(performance.now() - t0), programme: renderer.info.programs.length };
+}
+function vorwaermenEnde() {
+  if (waermGruppe) { scene.remove(waermGruppe); waermGruppe = null; }
+  schlieren.linien.visible = false;
+}
+
 // erste Strecke laden, dann zeichnen; ?cup=1 wählt den Cup, ?autostart=1 startet sofort
 ladend = q.get('cup') === '1' && cupBereit() ? waehleStrecke('cup') : wechsleStrecke(startWahl());
+szeneBereit.then(() => requestAnimationFrame(bild));   // P3: erstes Bild, sobald Bahn + Kulisse stehen (Pläne evtl. noch im Worker)
 ladend.then(() => {
-  requestAnimationFrame(bild);
+  performance.mark('hb-strecke-bereit');
+  // Vorwärmen erst, wenn das Menü steht und die Modelle geladen sind (nicht vor dem ersten Bild)
+  modelle.then(() => setTimeout(() => vorwaermen(), 300));
+  modelle.then(() => setTimeout(tonFrueh, 1200));
+  modelle.then(() => setTimeout(() => window.__swRegistrieren && window.__swRegistrieren(), 2000));   // P3: Offline-Cache erst jetzt
   if (q.get('autostart') === '1') modelle.then(() => (hud.cupAn ? starteCup(hud.einst) : starte(hud.einst)));
 });
 
 // Qualitäts-Automatik (einfach): Bildrate je Sekunde → Kino-Look passt die Renderskala an. TODO Heavy-Job: Grafik-
 // Autopilot aus der Stuntbahn (kern/autopilot.js) übernehmen, sobald das Mess-Gate läuft.
-let fpsN = 0, fpsT = 0;
+let fpsN = 0, fpsT = 0, skalaLang = 0;
+const SKALA_RUHE = q.get('skalaruhe') !== '0';
 (function fpsMessen() {
   requestAnimationFrame(fpsMessen);
   fpsN++;
   const t = performance.now() / 1000;
   if (!fpsT) fpsT = t;
-  if (t - fpsT >= 1) { const fps = fpsN / (t - fpsT); fpsN = 0; fpsT = t; if (laeuft && !q.has('look')) kino.adapt(fps); window.__hb.fps = fps; }
+  if (t - fpsT >= 1) {
+    const fps = fpsN / (t - fpsT); fpsN = 0; fpsT = t; window.__hb.fps = fps;
+    if (laeuft && !q.has('look')) {
+      // P3: Auflösungs-Regler mit Ruhe – jede Änderung legt die Render-Ziele neu an (Hänger). Runter erst nach 2 s in Folge
+      // unter 52 Bildern/s, rauf erst nach 4 s über 58,5, und nicht in den ersten 3 s eines Rennens. ?skalaruhe=0 = jede Sekunde
+      if (!SKALA_RUHE) kino.adapt(fps);
+      else {
+        skalaLang = fps < 52 ? Math.min(0, skalaLang) - 1 : fps > 58.5 ? Math.max(0, skalaLang) + 1 : 0;
+        if (rennen && rennen.zeit > 3 && (skalaLang <= -2 || skalaLang >= 4)) { kino.adapt(fps); skalaLang = 0; }
+      }
+    }
+  }
 })();
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
@@ -532,7 +643,7 @@ window.__hb = {
   get bahn() { return bahn; }, get plan() { return plan; }, get karte() { return karte; }, get strecke() { return bahn && bahn.id; },
   get cup() { return cup; }, ladeStrecke: (id) => waehleStrecke(id), get kulisse() { return kulisse; },
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; }, get rig() { return rig; }, reset: () => zuruecksetzen(),
-  starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
+  starte: () => modelle.then(() => bereit()).then(() => starte(hud.einst)), regie: () => regie,   // P3: wartet auch auf die KI-Pläne (Worker)
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'
   moment: (art = 'sprungScheitel') => { if (!regie) return null; regie.letzt = -Infinity; const g = spielerT.g; return regie.melde(art, 1, { x: g.p.x, y: g.p.y, z: g.p.z }, {}, praes); },
   // Gleiter-Galerie (Abnahme-Bild): alle Bauformen in Teamfarben nebeneinander auf der Start-Geraden, Kamera schräg vorn

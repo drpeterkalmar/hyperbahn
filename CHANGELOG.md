@@ -2,6 +2,21 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P3 Etappe 2: weniger Ruckeln, schnellerer Start)
+- **Vorwärmen im Menü:** sobald Strecke und Gleiter-Modelle da sind, werden alle Gleiter der Aufstellung, Funken,
+  Windschatten-Schlieren, Bergungs-Drohne, Minikarte und die Renn-Durchgänge des Kino-Looks einmal unsichtbar gerechnet
+  (Shader kompiliert, Geometrie hochgeladen) – der Countdown startet ohne Hänger (CPU ×4: erstes Rennbild 350 → 50 ms).
+  `?vorwaermen=0`.
+- **Start-Klick leichter:** Gleiter aus dem Vorrat statt neu gebaut, Audio-Kontext schon im Menü angelegt, HUD im Menü nur
+  unsichtbar statt ausgeblendet (kein Layout im Start-Klick) – Klick bis Rennen läuft: 0,30 → 0,04 s (CPU ×4).
+- **KI-Pläne und Stadt-Plan im Worker** (`src/ai/plan_worker.js`) parallel zu Bahn und Kulisse: das Menü zeigt die Strecke
+  früher (CPU ×4: erstes Bild 1,6 → 0,7 s), Strecken-Wechsel und Cup schneller. Ergebnis bitgleich. `?planworker=0`.
+- **Vorab-Laden** aller Start-Module (`<link rel="modulepreload">`, von `tools/update_sw.py` erzeugt, auch für die zuletzt
+  gewählte Strecke) statt Ebene für Ebene; der Offline-Cache (Service-Worker) lädt erst, wenn das Spiel bereit ist, statt
+  beim ersten Besuch die Leitung zu teilen.
+- **Weniger Speicherbereinigung** im Physik-Takt (Rangliste an Ort und Stelle sortiert, Gummiband/KI/Drift ohne neue
+  Objekte je Schritt); **Auflösungs-Regler mit Ruhe** (runter nach 2 s, rauf nach 4 s, nicht in den ersten 3 s; `?skalaruhe=0`).
+
 ## 0.1.18 – 26.10.2026 (P3 Etappe 1: schneller, schärfere Kurven, mehr Boost, Windschatten, Energie weg)
 - **Energie standardmäßig aus** (Peter: „Das mit der Energie ist doof“): kein Balken, kein manueller Boost, keine Boxengasse,
   kein Notlauf. Boost wird verdient (Pads, Windschatten, Flug-Boost, Mini-Turbo, Start-Boost). Barrel-Roll kostet nichts,

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 const KOERPER = new THREE.MeshStandardMaterial({ color: 0x15121f, metalness: 0.8, roughness: 0.35, emissive: 0x2a0a3a, emissiveIntensity: 0.6 });
 
-function baueDrohne() {
+export function baueDrohne() {
   const gruppe = new THREE.Group();
   const rumpf = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.35, 1.6), KOERPER);
   gruppe.add(rumpf);

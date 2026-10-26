@@ -45,8 +45,9 @@ const U = {
 };
 const v3s = (a) => `vec3(${a.map((x) => x.toFixed(3)).join(', ')})`;
 
-export function baueStadt(bahn, { seed = 11, qualitaet = 1, blitze = null } = {}) {
-  const plan = stadtPlan(bahn, { seed, dichte: qualitaet >= 1 ? 1 : 0.6 });
+// plan (P3): fertiger stadtPlan (z. B. aus dem Plan-Worker), sonst hier berechnet
+export function baueStadt(bahn, { seed = 11, qualitaet = 1, blitze = null, plan: fertig = null } = {}) {
+  const plan = fertig || stadtPlan(bahn, { seed, dichte: qualitaet >= 1 ? 1 : 0.6 });
   const r = rng((seed * 7919 + 13) >>> 0);
   const gruppe = new THREE.Group();
   gruppe.name = 'stadt';

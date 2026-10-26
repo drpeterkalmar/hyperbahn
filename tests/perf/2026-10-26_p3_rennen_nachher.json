@@ -1,0 +1,60 @@
+{
+ "n": 9229,
+ "dauer_s": 153.8,
+ "fps": 60.0,
+ "p50": 16.7,
+ "p95": 16.7,
+ "p99": 16.8,
+ "ueber50": 1,
+ "ueber100": 0,
+ "max": 50.1,
+ "groesster": {
+  "t": 98.92,
+  "phase": "rennen",
+  "ms": 50.1,
+  "wo": "Hafenkurve",
+  "ursache": "unbekannt"
+ },
+ "haenger": [
+  {
+   "t": 98.92,
+   "phase": "rennen",
+   "ms": 50.1,
+   "wo": "Hafenkurve",
+   "ursache": "unbekannt"
+  }
+ ],
+ "programme": 42,
+ "skalen": [
+  0.84,
+  0.88,
+  0.92
+ ],
+ "erstauftritte": [
+  {
+   "t": 63.95,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Neon-Bogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  }
+ ],
+ "skala_wechsel": [
+  {
+   "t": 3.41,
+   "von": 0.84,
+   "nach": 0.88
+  },
+  {
+   "t": 7.45,
+   "von": 0.88,
+   "nach": 0.92
+  }
+ ],
+ "gc": 135,
+ "heap_mb": 79.9,
+ "fehler": [],
+ "version": "0.1.18"
+}

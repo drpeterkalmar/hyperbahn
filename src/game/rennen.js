@@ -181,13 +181,11 @@ export class Rennen {
         }
       }
     }
-    // Rangliste: Ziel nach Reihenfolge, sonst nach Fortschritt
-    const sortiert = this.alle.slice().sort((a, b) => {
-      if (a.ziel && b.ziel) return a.ziel.platz - b.ziel.platz;
-      if (a.ziel) return -1; if (b.ziel) return 1;
-      return b.fortschritt - a.fortschritt;
-    });
-    sortiert.forEach((t, i) => { t.platz = i + 1; });
+    // Rangliste: Ziel nach Reihenfolge, sonst nach Fortschritt. P3: feste Liste, an Ort und Stelle sortiert (240× je Sekunde –
+    // vorher je Schritt eine neue Liste + Vergleichsfunktion = ständige Speicherbereinigung)
+    const sortiert = this.rangliste && this.rangliste.length === this.alle.length ? this.rangliste : this.alle.slice();
+    sortiert.sort(rangVergleich);
+    for (let i = 0; i < sortiert.length; i++) sortiert[i].platz = i + 1;
     this.rangliste = sortiert;
     if (this.alle.every((t) => t.ziel) || (this.spieler && this.spieler.ziel && this.phase === 'rennen' && this.alleKiNachZiel())) this.phase = 'ziel';
   }
@@ -281,6 +279,12 @@ export class Rennen {
     }
     return out;
   }
+}
+
+function rangVergleich(a, b) {
+  if (a.ziel && b.ziel) return a.ziel.platz - b.ziel.platz;
+  if (a.ziel) return -1; if (b.ziel) return 1;
+  return b.fortschritt - a.fortschritt;
 }
 
 // Abgestufter Start-Boost (P1b): Tipp-Zeitpunkt relativ zu Grün → Stärke 0…1 (Idealpunkt = 1, Fensterrand = rand)

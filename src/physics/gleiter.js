@@ -190,7 +190,9 @@ export class Gleiter {
       }
     }
     if (steuerlos) { gas = 0; lenk = 0; bl = 0; br = 0; }
-    const dr = this.drift.schritt(dt, { boden: amBoden, x: tempo / vmaxK, lenk, bremseL: bl, bremseR: br, magnet: this.magnet > 0.5 });
+    // P3: Eingabe-Objekt wiederverwenden (240× je Sekunde und Gleiter – sonst ständige Speicherbereinigung)
+    _dein.boden = amBoden; _dein.x = tempo / vmaxK; _dein.lenk = lenk; _dein.bremseL = bl; _dein.bremseR = br; _dein.magnet = this.magnet > 0.5;
+    const dr = this.drift.schritt(dt, _dein);
     // Luftbremsen-Wirkung (Vorlage): baut sich in VB.aufbau s auf und ab; im Drift wirkt sie sofort (Pump-Rhythmus des
     // Mini-Turbos, Drift-Werte aus fahrgefuehl.js bleiben)
     const VB = VORLAGE.bremse;
@@ -236,19 +238,18 @@ export class Gleiter {
     if (amBoden) { addSk(_d, _d, q.Us, -dot(_d, q.Us)); norm(_d, _d); }
     // Landehilfe richtet nur die Lage aus: Schub dann entlang der Flugbahn statt der Nase (Sprungweite bleibt wie ohne)
     else if (this.landeW > 0 && tempo > 1) { addSk(_d, _d, _d, -this.landeW); addSk(_d, _d, this.v, this.landeW / tempo); norm(_d, _d); }
-    const zugBei = (v) => GLEITER.schub * (v / vmax) ** 2;
     const band = bandBeschl(this.kl, tempo / vz) * (this.neustartBonus > 0 ? this.kl.neustart : 1)
       // Reserve läuft: Antrieb ×beschl – am Boden und nur ohne gezogene Luftbremse (sonst käme man vor Kurven nicht mehr runter)
       * (VORLAGE.reserve.an && this.boostZeit > 0 && amBoden && this.blW + this.brW < 0.1 ? VORLAGE.reserve.beschl : 1)
       * (rev ? rev.beschl : 1);
-    const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
+    const schub = gas * (band + zugBei(Math.min(tempo, vz), vmax)) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
     addSk(a, a, _d, schub);
     if (tempo > 1e-6) {
       // Luftbremsen-Widerstand: im Drift wie bisher (Drift = Rutschen, nicht Bremsen); sonst Vorlage: eine ≈ 80 %, beide ≈ 45 %
       const eine = Math.max(this.blW, this.brW), beide = Math.min(this.blW, this.brW);
       const bremsZug = !amBoden ? 0 : (dr.aktiv || !VB.an) ? GLEITER.luftbremseZug * (this.blW + this.brW) * 0.5 * (dr.aktiv ? GEFUEHL.driftZug : 1)
         : (VB.zug * (eine - beide) + VB.zugBeide * beide) * (GLEITER.basis / 95);   // P3: mit dem Grundtempo skaliert (wie die Bänder)
-      const zug = zugBei(tempo) + bremsZug;
+      const zug = zugBei(tempo, vmax) + bremsZug;
       addSk(a, a, this.v, -zug / tempo);
     }
 
@@ -744,4 +745,7 @@ function lueckenEnde(b) {
   return e;
 }
 
+// Luftwiderstand (quadratisch, bei Höchsttempo = GLEITER.schub)
+function zugBei(v, vmax) { const x = v / vmax; return GLEITER.schub * x * x; }
+const _dein = { boden: true, x: 0, lenk: 0, bremseL: 0, bremseR: 0, magnet: false };
 const _e = v3(), _a = v3(), _tau = v3(), _r = v3(), _pi = v3(), _vp = v3(), _f = v3(), _t = v3(), _d = v3(), _l = v3(), _n = v3();

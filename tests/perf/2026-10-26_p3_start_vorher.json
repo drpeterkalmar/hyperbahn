@@ -1,0 +1,1527 @@
+{
+ "leer": {
+  "menu_s": 3.4,
+  "rennen_s": 3.98,
+  "start_klick_bis_rennen_s": 0.58,
+  "sw_aktiv": true,
+  "anfragen": 71,
+  "kb_gesamt": 413,
+  "groesste": [
+   {
+    "url": "lib/three.core.min.js",
+    "kb": 103.4,
+    "ab_ms": 863,
+    "dauer_ms": 383,
+    "sw": false
+   },
+   {
+    "url": "lib/three.module.min.js",
+    "kb": 91.4,
+    "ab_ms": 506,
+    "dauer_ms": 354,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kinolook.js",
+    "kb": 19.2,
+    "ab_ms": 507,
+    "dauer_ms": 280,
+    "sw": false
+   },
+   {
+    "url": "src/physics/gleiter.js",
+    "kb": 14.4,
+    "ab_ms": 508,
+    "dauer_ms": 244,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/loaders/GLTFLoader.js",
+    "kb": 13.7,
+    "ab_ms": 1361,
+    "dauer_ms": 251,
+    "sw": false
+   },
+   {
+    "url": "src/main.js",
+    "kb": 12.9,
+    "ab_ms": 304,
+    "dauer_ms": 200,
+    "sw": false
+   },
+   {
+    "url": "src/ai/pilot.js",
+    "kb": 10.5,
+    "ab_ms": 506,
+    "dauer_ms": 599,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kern/taau.js",
+    "kb": 9.1,
+    "ab_ms": 789,
+    "dauer_ms": 359,
+    "sw": false
+   },
+   {
+    "url": "src/track/bahn.js",
+    "kb": 8.9,
+    "ab_ms": 506,
+    "dauer_ms": 608,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/stadt.js",
+    "kb": 8.4,
+    "ab_ms": 1597,
+    "dauer_ms": 190,
+    "sw": false
+   }
+  ],
+  "doppelt": [
+   "icons/icon-192.png"
+  ],
+  "start_haenger": {
+   "n": 260,
+   "dauer_s": 4.7,
+   "fps": 55.7,
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 33.4,
+   "ueber50": 1,
+   "ueber100": 1,
+   "max": 299.9,
+   "groesster": {
+    "t": 0,
+    "phase": "countdown",
+    "ms": 299.9,
+    "wo": "Zielanlauf",
+    "ursache": "LongTask 117 ms"
+   },
+   "haenger": [
+    {
+     "t": 0,
+     "phase": "countdown",
+     "ms": 299.9,
+     "wo": "Zielanlauf",
+     "ursache": "LongTask 117 ms"
+    }
+   ],
+   "programme": 38,
+   "skalen": [
+    0.76,
+    0.8,
+    0.84,
+    0.88
+   ],
+   "erstauftritte": [
+    {
+     "t": 0.09,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 1,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.23,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 3,
+     "geometrie": 1
+    },
+    {
+     "t": 0.3,
+     "phase": "rennen",
+     "ms": 16.8,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 3,
+     "geometrie": 2
+    },
+    {
+     "t": 0.38,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.8,
+     "phase": "rennen",
+     "ms": 16.8,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.9,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.96,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.06,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.11,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 2
+    },
+    {
+     "t": 1.13,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.22,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.25,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    }
+   ],
+   "skala_wechsel": [
+    {
+     "t": 0,
+     "von": 0.84,
+     "nach": 0.76
+    },
+    {
+     "t": 0,
+     "von": 0.76,
+     "nach": 0.8
+    },
+    {
+     "t": 0,
+     "von": 0.8,
+     "nach": 0.84
+    },
+    {
+     "t": 0.61,
+     "von": 0.84,
+     "nach": 0.88
+    }
+   ],
+   "gc": 5,
+   "heap_mb": 55.8
+  },
+  "wasserfall": [
+   {
+    "url": "",
+    "kb": 1.4,
+    "ab_ms": 0,
+    "dauer_ms": 288,
+    "sw": false
+   },
+   {
+    "url": "css/style.css",
+    "kb": 4.9,
+    "ab_ms": 303,
+    "dauer_ms": 189,
+    "sw": false
+   },
+   {
+    "url": "src/main.js",
+    "kb": 12.9,
+    "ab_ms": 304,
+    "dauer_ms": 200,
+    "sw": false
+   },
+   {
+    "url": "lib/three.module.min.js",
+    "kb": 91.4,
+    "ab_ms": 506,
+    "dauer_ms": 354,
+    "sw": false
+   },
+   {
+    "url": "src/config.js",
+    "kb": 7.9,
+    "ab_ms": 506,
+    "dauer_ms": 658,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecken.js",
+    "kb": 2.0,
+    "ab_ms": 506,
+    "dauer_ms": 265,
+    "sw": false
+   },
+   {
+    "url": "src/game/bestzeiten.js",
+    "kb": 1.1,
+    "ab_ms": 506,
+    "dauer_ms": 179,
+    "sw": false
+   },
+   {
+    "url": "src/track/bahn.js",
+    "kb": 8.9,
+    "ab_ms": 506,
+    "dauer_ms": 608,
+    "sw": false
+   },
+   {
+    "url": "src/ai/pilot.js",
+    "kb": 10.5,
+    "ab_ms": 506,
+    "dauer_ms": 599,
+    "sw": false
+   },
+   {
+    "url": "src/ui/vorschau.js",
+    "kb": 1.8,
+    "ab_ms": 506,
+    "dauer_ms": 656,
+    "sw": false
+   },
+   {
+    "url": "src/core/util.js",
+    "kb": 1.4,
+    "ab_ms": 506,
+    "dauer_ms": 192,
+    "sw": false
+   },
+   {
+    "url": "src/game/rennen.js",
+    "kb": 6.6,
+    "ab_ms": 507,
+    "dauer_ms": 205,
+    "sw": false
+   },
+   {
+    "url": "src/game/fahrhilfe.js",
+    "kb": 2.2,
+    "ab_ms": 507,
+    "dauer_ms": 222,
+    "sw": false
+   },
+   {
+    "url": "src/game/eingabe.js",
+    "kb": 3.1,
+    "ab_ms": 507,
+    "dauer_ms": 623,
+    "sw": false
+   },
+   {
+    "url": "src/game/momente.js",
+    "kb": 1.9,
+    "ab_ms": 507,
+    "dauer_ms": 594,
+    "sw": false
+   },
+   {
+    "url": "src/core/zeit.js",
+    "kb": 3.9,
+    "ab_ms": 507,
+    "dauer_ms": 283,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/bahnmesh.js",
+    "kb": 5.0,
+    "ab_ms": 507,
+    "dauer_ms": 175,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/gleitermesh.js",
+    "kb": 6.5,
+    "ab_ms": 507,
+    "dauer_ms": 608,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kamera.js",
+    "kb": 4.9,
+    "ab_ms": 507,
+    "dauer_ms": 287,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kinolook.js",
+    "kb": 19.2,
+    "ab_ms": 507,
+    "dauer_ms": 280,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/himmel.js",
+    "kb": 3.6,
+    "ab_ms": 507,
+    "dauer_ms": 239,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/funken.js",
+    "kb": 1.1,
+    "ab_ms": 507,
+    "dauer_ms": 215,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/drohne.js",
+    "kb": 1.6,
+    "ab_ms": 507,
+    "dauer_ms": 277,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/sog.js",
+    "kb": 1.8,
+    "ab_ms": 508,
+    "dauer_ms": 219,
+    "sw": false
+   },
+   {
+    "url": "src/ui/hud.js",
+    "kb": 7.8,
+    "ab_ms": 508,
+    "dauer_ms": 228,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/minikarte.js",
+    "kb": 5.6,
+    "ab_ms": 508,
+    "dauer_ms": 577,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/gpuzeit.js",
+    "kb": 1.0,
+    "ab_ms": 508,
+    "dauer_ms": 220,
+    "sw": false
+   },
+   {
+    "url": "src/physics/fahrgefuehl.js",
+    "kb": 4.7,
+    "ab_ms": 508,
+    "dauer_ms": 661,
+    "sw": false
+   },
+   {
+    "url": "src/physics/gleiter.js",
+    "kb": 14.4,
+    "ab_ms": 508,
+    "dauer_ms": 244,
+    "sw": false
+   },
+   {
+    "url": "src/version.js",
+    "kb": 0.3,
+    "ab_ms": 508,
+    "dauer_ms": 184,
+    "sw": false
+   },
+   {
+    "url": "src/game/gvignette.js",
+    "kb": 0.5,
+    "ab_ms": 509,
+    "dauer_ms": 208,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/bahn_geo.js",
+    "kb": 4.2,
+    "ab_ms": 684,
+    "dauer_ms": 437,
+    "sw": false
+   },
+   {
+    "url": "src/ai/gummiband.js",
+    "kb": 1.5,
+    "ab_ms": 712,
+    "dauer_ms": 406,
+    "sw": false
+   },
+   {
+    "url": "src/core/vec.js",
+    "kb": 1.3,
+    "ab_ms": 754,
+    "dauer_ms": 241,
+    "sw": false
+   },
+   {
+    "url": "src/track/runden.js",
+    "kb": 0.7,
+    "ab_ms": 772,
+    "dauer_ms": 266,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kern/taau.js",
+    "kb": 9.1,
+    "ab_ms": 789,
+    "dauer_ms": 359,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kern/taau_mathe.js",
+    "kb": 6.6,
+    "ab_ms": 789,
+    "dauer_ms": 344,
+    "sw": false
+   },
+   {
+    "url": "lib/three.core.min.js",
+    "kb": 103.4,
+    "ab_ms": 863,
+    "dauer_ms": 383,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/utils/BufferGeometryUtils.js",
+    "kb": 4.7,
+    "ab_ms": 1116,
+    "dauer_ms": 181,
+    "sw": false
+   },
+   {
+    "url": "src/audio/ton.js",
+    "kb": 3.1,
+    "ab_ms": 1360,
+    "dauer_ms": 239,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/loaders/GLTFLoader.js",
+    "kb": 13.7,
+    "ab_ms": 1361,
+    "dauer_ms": 251,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke1.js",
+    "kb": 3.7,
+    "ab_ms": 1365,
+    "dauer_ms": 238,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/kulisse_megastadt.js",
+    "kb": 0.8,
+    "ab_ms": 1367,
+    "dauer_ms": 229,
+    "sw": false
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 1472,
+    "dauer_ms": 12,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/stadt.js",
+    "kb": 8.4,
+    "ab_ms": 1597,
+    "dauer_ms": 190,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/regen.js",
+    "kb": 2.1,
+    "ab_ms": 1597,
+    "dauer_ms": 173,
+    "sw": false
+   },
+   {
+    "url": "lib/addons/utils/SkeletonUtils.js",
+    "kb": 0.0,
+    "ab_ms": 1741,
+    "dauer_ms": 108,
+    "sw": false
+   },
+   {
+    "url": "src/track/strecke_wueste.js",
+    "kb": 2.2,
+    "ab_ms": 1758,
+    "dauer_ms": 173,
+    "sw": false
+   },
+   {
+    "url": "src/gfx/stadt_plan.js",
+    "kb": 7.9,
+    "ab_ms": 1789,
+    "dauer_ms": 179,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/pfeil.glb",
+    "kb": 0.0,
+    "ab_ms": 1853,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/klinge.glb",
+    "kb": 0.0,
+    "ab_ms": 1854,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/hammer.glb",
+    "kb": 0.0,
+    "ab_ms": 1854,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "assets/gleiter/stachel.glb",
+    "kb": 0.0,
+    "ab_ms": 1854,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/487e9c3e-7dc2-423e-bed0-b2d567c9b060",
+    "kb": 0.0,
+    "ab_ms": 1893,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/3f884d2e-d053-478e-872b-b26be6563437",
+    "kb": 0.0,
+    "ab_ms": 1893,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/1f86c638-8208-49a2-be7c-3f748773cbe0",
+    "kb": 0.0,
+    "ab_ms": 1893,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/2133b312-9d3e-436a-b2c1-d12f6abb7286",
+    "kb": 0.0,
+    "ab_ms": 1893,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/dcdb7fd3-ccd1-415e-b6b8-1a56cda6bf83",
+    "kb": 0.0,
+    "ab_ms": 1894,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/5c5995c1-476e-4df8-a626-f0a1593b2e55",
+    "kb": 0.0,
+    "ab_ms": 1894,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/f462944f-e7cb-4f84-8cca-462c2e72239f",
+    "kb": 0.0,
+    "ab_ms": 1894,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/650bf1a5-a54a-4fd4-87cd-531d32710b61",
+    "kb": 0.0,
+    "ab_ms": 1894,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/452c1da2-6101-4e34-af9b-1a05e7bbd22a",
+    "kb": 0.0,
+    "ab_ms": 1895,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/e6f51381-6efd-4815-9c0c-adbe253bc3e2",
+    "kb": 0.0,
+    "ab_ms": 1899,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/3f5ead28-d24f-4735-a449-4db0e4fc1ff7",
+    "kb": 0.0,
+    "ab_ms": 1899,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/3b7def30-0f18-4fb5-b46d-95e1851715b2",
+    "kb": 0.0,
+    "ab_ms": 1899,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 3323,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_riff.js",
+    "kb": 0.0,
+    "ab_ms": 3325,
+    "dauer_ms": 3,
+    "sw": true
+   },
+   {
+    "url": "assets/musik/cyber_runner.m4a",
+    "kb": 0.0,
+    "ab_ms": 3603,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_gebirge.js",
+    "kb": 0.0,
+    "ab_ms": 3724,
+    "dauer_ms": 3,
+    "sw": true
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 3745,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_orbit.js",
+    "kb": 0.0,
+    "ab_ms": 3849,
+    "dauer_ms": 2,
+    "sw": true
+   }
+  ]
+ },
+ "sw_cache": {
+  "menu_s": 1.87,
+  "rennen_s": 2.38,
+  "start_klick_bis_rennen_s": 0.51,
+  "sw_aktiv": true,
+  "anfragen": 71,
+  "kb_gesamt": 0,
+  "groesste": [
+   {
+    "url": "",
+    "kb": 0.0,
+    "ab_ms": 0,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "css/style.css",
+    "kb": 0.0,
+    "ab_ms": 19,
+    "dauer_ms": 2,
+    "sw": true
+   },
+   {
+    "url": "src/main.js",
+    "kb": 0.0,
+    "ab_ms": 20,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "lib/three.module.min.js",
+    "kb": 0.0,
+    "ab_ms": 29,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "src/config.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecken.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "src/game/bestzeiten.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/track/bahn.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/ai/pilot.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/ui/vorschau.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   }
+  ],
+  "doppelt": [
+   "icons/icon-192.png"
+  ],
+  "start_haenger": {
+   "n": 261,
+   "dauer_s": 4.6,
+   "fps": 56.5,
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 33.4,
+   "ueber50": 2,
+   "ueber100": 1,
+   "max": 233.4,
+   "groesster": {
+    "t": 0,
+    "phase": "countdown",
+    "ms": 233.4,
+    "wo": "Zielanlauf",
+    "ursache": "LongTask 112 ms"
+   },
+   "haenger": [
+    {
+     "t": 0,
+     "phase": "countdown",
+     "ms": 233.4,
+     "wo": "Zielanlauf",
+     "ursache": "LongTask 112 ms"
+    },
+    {
+     "t": 0,
+     "phase": "countdown",
+     "ms": 50.1,
+     "wo": "Zielanlauf",
+     "ursache": "unbekannt"
+    }
+   ],
+   "programme": 38,
+   "skalen": [
+    0.76,
+    0.8,
+    0.84,
+    0.88
+   ],
+   "erstauftritte": [
+    {
+     "t": 0.09,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 1,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.23,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 3,
+     "geometrie": 1
+    },
+    {
+     "t": 0.29,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 3,
+     "geometrie": 1
+    },
+    {
+     "t": 0.31,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.37,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.79,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.9,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 0.96,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.06,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.11,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 2
+    },
+    {
+     "t": 1.14,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.22,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.26,
+     "phase": "rennen",
+     "ms": 16.7,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    },
+    {
+     "t": 1.56,
+     "phase": "rennen",
+     "ms": 16.6,
+     "wo": "Zielanlauf",
+     "shader": 0,
+     "textur": 0,
+     "geometrie": 1
+    }
+   ],
+   "skala_wechsel": [
+    {
+     "t": 0,
+     "von": 0.84,
+     "nach": 0.76
+    },
+    {
+     "t": 0,
+     "von": 0.76,
+     "nach": 0.8
+    },
+    {
+     "t": 0,
+     "von": 0.8,
+     "nach": 0.84
+    },
+    {
+     "t": 0.64,
+     "von": 0.84,
+     "nach": 0.88
+    }
+   ],
+   "gc": 6,
+   "heap_mb": 54.4
+  },
+  "wasserfall": [
+   {
+    "url": "",
+    "kb": 0.0,
+    "ab_ms": 0,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "css/style.css",
+    "kb": 0.0,
+    "ab_ms": 19,
+    "dauer_ms": 2,
+    "sw": true
+   },
+   {
+    "url": "src/main.js",
+    "kb": 0.0,
+    "ab_ms": 20,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "lib/three.module.min.js",
+    "kb": 0.0,
+    "ab_ms": 29,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "src/config.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecken.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 4,
+    "sw": true
+   },
+   {
+    "url": "src/game/bestzeiten.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/track/bahn.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/ai/pilot.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/ui/vorschau.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/core/util.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/game/rennen.js",
+    "kb": 0.0,
+    "ab_ms": 30,
+    "dauer_ms": 5,
+    "sw": true
+   },
+   {
+    "url": "src/game/fahrhilfe.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 6,
+    "sw": true
+   },
+   {
+    "url": "src/game/eingabe.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 8,
+    "sw": true
+   },
+   {
+    "url": "src/game/momente.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 8,
+    "sw": true
+   },
+   {
+    "url": "src/core/zeit.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/bahnmesh.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/gleitermesh.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/kamera.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/kinolook.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/himmel.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/funken.js",
+    "kb": 0.0,
+    "ab_ms": 31,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/drohne.js",
+    "kb": 0.0,
+    "ab_ms": 32,
+    "dauer_ms": 9,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/sog.js",
+    "kb": 0.0,
+    "ab_ms": 32,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/ui/hud.js",
+    "kb": 0.0,
+    "ab_ms": 32,
+    "dauer_ms": 11,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/minikarte.js",
+    "kb": 0.0,
+    "ab_ms": 32,
+    "dauer_ms": 11,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/gpuzeit.js",
+    "kb": 0.0,
+    "ab_ms": 33,
+    "dauer_ms": 11,
+    "sw": true
+   },
+   {
+    "url": "src/physics/fahrgefuehl.js",
+    "kb": 0.0,
+    "ab_ms": 33,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/physics/gleiter.js",
+    "kb": 0.0,
+    "ab_ms": 33,
+    "dauer_ms": 10,
+    "sw": true
+   },
+   {
+    "url": "src/version.js",
+    "kb": 0.0,
+    "ab_ms": 33,
+    "dauer_ms": 11,
+    "sw": true
+   },
+   {
+    "url": "src/game/gvignette.js",
+    "kb": 0.0,
+    "ab_ms": 33,
+    "dauer_ms": 11,
+    "sw": true
+   },
+   {
+    "url": "src/track/runden.js",
+    "kb": 0.0,
+    "ab_ms": 42,
+    "dauer_ms": 3,
+    "sw": true
+   },
+   {
+    "url": "src/core/vec.js",
+    "kb": 0.0,
+    "ab_ms": 44,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/ai/gummiband.js",
+    "kb": 0.0,
+    "ab_ms": 45,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "lib/three.core.min.js",
+    "kb": 0.0,
+    "ab_ms": 49,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/bahn_geo.js",
+    "kb": 0.0,
+    "ab_ms": 53,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "lib/addons/utils/BufferGeometryUtils.js",
+    "kb": 0.0,
+    "ab_ms": 53,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/kern/taau.js",
+    "kb": 0.0,
+    "ab_ms": 54,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/kern/taau_mathe.js",
+    "kb": 0.0,
+    "ab_ms": 54,
+    "dauer_ms": 2,
+    "sw": true
+   },
+   {
+    "url": "src/audio/ton.js",
+    "kb": 0.0,
+    "ab_ms": 118,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "lib/addons/loaders/GLTFLoader.js",
+    "kb": 0.0,
+    "ab_ms": 119,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke1.js",
+    "kb": 0.0,
+    "ab_ms": 123,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/kulisse_megastadt.js",
+    "kb": 0.0,
+    "ab_ms": 124,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "lib/addons/utils/SkeletonUtils.js",
+    "kb": 0.0,
+    "ab_ms": 247,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/stadt.js",
+    "kb": 0.0,
+    "ab_ms": 247,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/regen.js",
+    "kb": 0.0,
+    "ab_ms": 247,
+    "dauer_ms": 2,
+    "sw": true
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 248,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "assets/gleiter/pfeil.glb",
+    "kb": 0.0,
+    "ab_ms": 376,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "assets/gleiter/klinge.glb",
+    "kb": 0.0,
+    "ab_ms": 377,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "assets/gleiter/hammer.glb",
+    "kb": 0.0,
+    "ab_ms": 377,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "assets/gleiter/stachel.glb",
+    "kb": 0.0,
+    "ab_ms": 377,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/gfx/stadt_plan.js",
+    "kb": 0.0,
+    "ab_ms": 378,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_wueste.js",
+    "kb": 0.0,
+    "ab_ms": 379,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/425cc64c-fdc0-4407-8c1f-6c7cbf3e7bd4",
+    "kb": 0.0,
+    "ab_ms": 428,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/54ec3569-7de3-41e9-9f4e-9b5982a942e7",
+    "kb": 0.0,
+    "ab_ms": 428,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/ccfc352c-a426-459b-83a3-3c48de4f440a",
+    "kb": 0.0,
+    "ab_ms": 428,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/e6ee226b-1c91-4fb4-bb11-789ed8f4e801",
+    "kb": 0.0,
+    "ab_ms": 428,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/c07c49f3-588e-4353-83de-e96ee895f6ff",
+    "kb": 0.0,
+    "ab_ms": 429,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/42164e8d-b126-4ecc-812c-9d3b715dc73d",
+    "kb": 0.0,
+    "ab_ms": 429,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/d6e8e239-d087-4288-ad7a-1ebc94fb81a9",
+    "kb": 0.0,
+    "ab_ms": 429,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/49be5885-3bef-4ab1-8707-9c19938a6044",
+    "kb": 0.0,
+    "ab_ms": 429,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/e36bba28-c6af-4561-a1d1-b03fc260d02a",
+    "kb": 0.0,
+    "ab_ms": 429,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/7b81f9fd-6ec3-4e9a-bbe3-b2adca6e3fe2",
+    "kb": 0.0,
+    "ab_ms": 434,
+    "dauer_ms": 1,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/4df742d9-6b38-4b2d-b651-ef06330f26ed",
+    "kb": 0.0,
+    "ab_ms": 435,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "blob:https://drpeterkalmar.github.io/4359cf8e-eca4-4e72-8a7a-af0dda4b1b0c",
+    "kb": 0.0,
+    "ab_ms": 435,
+    "dauer_ms": 0,
+    "sw": false
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 1784,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_riff.js",
+    "kb": 0.0,
+    "ab_ms": 1814,
+    "dauer_ms": 8,
+    "sw": true
+   },
+   {
+    "url": "assets/musik/cyber_runner.m4a",
+    "kb": 0.0,
+    "ab_ms": 2010,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_gebirge.js",
+    "kb": 0.0,
+    "ab_ms": 2124,
+    "dauer_ms": 2,
+    "sw": true
+   },
+   {
+    "url": "icons/icon-192.png",
+    "kb": 0.0,
+    "ab_ms": 2137,
+    "dauer_ms": 1,
+    "sw": true
+   },
+   {
+    "url": "src/track/strecke_orbit.js",
+    "kb": 0.0,
+    "ab_ms": 2249,
+    "dauer_ms": 2,
+    "sw": true
+   }
+  ]
+ }
+}

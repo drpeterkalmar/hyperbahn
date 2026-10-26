@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = 'ebd8317453';
+const VERSION = 'fb5129695b';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -22,6 +22,7 @@ const ASSETS = [
   'manifest.webmanifest',
   'src/ai/gummiband.js',
   'src/ai/pilot.js',
+  'src/ai/plan_worker.js',
   'src/audio/ton.js',
   'src/build.js',
   'src/config.js',

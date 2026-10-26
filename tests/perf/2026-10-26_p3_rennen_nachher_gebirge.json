@@ -1,0 +1,36 @@
+{
+ "n": 7367,
+ "dauer_s": 122.8,
+ "fps": 60.0,
+ "p50": 16.7,
+ "p95": 16.8,
+ "p99": 16.8,
+ "ueber50": 0,
+ "ueber100": 0,
+ "max": 33.3,
+ "groesster": null,
+ "haenger": [],
+ "programme": 45,
+ "skalen": [
+  0.84,
+  0.88,
+  0.92
+ ],
+ "erstauftritte": [],
+ "skala_wechsel": [
+  {
+   "t": 3.35,
+   "von": 0.84,
+   "nach": 0.88
+  },
+  {
+   "t": 7.38,
+   "von": 0.88,
+   "nach": 0.92
+  }
+ ],
+ "gc": 51,
+ "heap_mb": 60.1,
+ "fehler": [],
+ "version": "0.1.18"
+}

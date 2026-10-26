@@ -1,0 +1,270 @@
+{
+ "n": 7366,
+ "dauer_s": 123.1,
+ "fps": 59.8,
+ "p50": 16.7,
+ "p95": 16.7,
+ "p99": 16.8,
+ "ueber50": 1,
+ "ueber100": 1,
+ "max": 333.4,
+ "groesster": {
+  "t": 0,
+  "phase": "countdown",
+  "ms": 333.4,
+  "wo": "Zielanlauf",
+  "ursache": "LongTask 126 ms"
+ },
+ "haenger": [
+  {
+   "t": 0,
+   "phase": "countdown",
+   "ms": 333.4,
+   "wo": "Zielanlauf",
+   "ursache": "LongTask 126 ms"
+  }
+ ],
+ "programme": 44,
+ "skalen": [
+  0.76,
+  0.8,
+  0.84,
+  0.88,
+  0.92
+ ],
+ "erstauftritte": [
+  {
+   "t": 0.09,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 1,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.15,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 3,
+   "geometrie": 1
+  },
+  {
+   "t": 0.19,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 3,
+   "geometrie": 1
+  },
+  {
+   "t": 0.21,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.24,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 0.92,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Zielanlauf",
+   "shader": 2,
+   "textur": 1,
+   "geometrie": 1
+  },
+  {
+   "t": 2.2,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Start-Ziel",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 2.28,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Start-Ziel",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 2.61,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Start-Ziel",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 2.65,
+   "phase": "rennen",
+   "ms": 16.8,
+   "wo": "Start-Ziel",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 8.47,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Riffbogen",
+   "shader": 2,
+   "textur": 0,
+   "geometrie": 2
+  },
+  {
+   "t": 8.86,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 8.99,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 9.41,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 9.42,
+   "phase": "rennen",
+   "ms": 16.8,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 13.12,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Korkenzieher",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 45.75,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Gabelung",
+   "shader": 1,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 77.84,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Ostgerade",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 77.92,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Ostgerade",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 77.95,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Ostgerade",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 77.97,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Ostgerade",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 78,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Ostgerade",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 78.1,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Ostgerade",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  }
+ ],
+ "skala_wechsel": [
+  {
+   "t": 0,
+   "von": 0.76,
+   "nach": 0.8
+  },
+  {
+   "t": 0.1,
+   "von": 0.8,
+   "nach": 0.84
+  },
+  {
+   "t": 1.1,
+   "von": 0.84,
+   "nach": 0.88
+  },
+  {
+   "t": 2.11,
+   "von": 0.88,
+   "nach": 0.92
+  }
+ ],
+ "gc": 117,
+ "heap_mb": 65.5,
+ "fehler": [],
+ "version": "0.1.18"
+}

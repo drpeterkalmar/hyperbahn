@@ -1,0 +1,82 @@
+{
+ "n": 7390,
+ "dauer_s": 123.2,
+ "fps": 60.0,
+ "p50": 16.7,
+ "p95": 16.7,
+ "p99": 16.8,
+ "ueber50": 0,
+ "ueber100": 0,
+ "max": 33.4,
+ "groesster": null,
+ "haenger": [],
+ "programme": 46,
+ "skalen": [
+  0.84,
+  0.88,
+  0.92
+ ],
+ "erstauftritte": [
+  {
+   "t": 8.48,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 2
+  },
+  {
+   "t": 9.41,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 9.45,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Riffbogen",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 13.13,
+   "phase": "rennen",
+   "ms": 16.6,
+   "wo": "Korkenzieher",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  },
+  {
+   "t": 45.75,
+   "phase": "rennen",
+   "ms": 16.7,
+   "wo": "Gabelung",
+   "shader": 0,
+   "textur": 0,
+   "geometrie": 1
+  }
+ ],
+ "skala_wechsel": [
+  {
+   "t": 3.47,
+   "von": 0.84,
+   "nach": 0.88
+  },
+  {
+   "t": 7.51,
+   "von": 0.88,
+   "nach": 0.92
+  }
+ ],
+ "gc": 60,
+ "heap_mb": 65.9,
+ "fehler": [],
+ "version": "0.1.18"
+}
