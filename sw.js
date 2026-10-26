@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = 'fd1566e3c2';
+const VERSION = '291870ab85';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -46,6 +46,7 @@ const ASSETS = [
   'src/gfx/kern/taau.js',
   'src/gfx/kern/taau_mathe.js',
   'src/gfx/kinolook.js',
+  'src/gfx/kulisse_gebirge.js',
   'src/gfx/kulisse_kern.js',
   'src/gfx/kulisse_megastadt.js',
   'src/gfx/kulisse_riff.js',
@@ -61,6 +62,7 @@ const ASSETS = [
   'src/track/bahn.js',
   'src/track/runden.js',
   'src/track/strecke1.js',
+  'src/track/strecke_gebirge.js',
   'src/track/strecke_riff.js',
   'src/track/strecke_wueste.js',
   'src/track/strecken.js',

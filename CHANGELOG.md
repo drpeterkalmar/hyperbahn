@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P2: Gewitter-Pass)
+## 0.1.12 – 26.10.2026 (P2: Gewitter-Pass)
 - **Neue Strecke „Gewitter-Pass“** (Sprünge): Hochgebirge bei Nacht im Gewitter – zerklüftete Berge mit Schneegipfeln,
   Nadelwald, Regen mit Wind, Blitze (mit „⚡ Blitze reduzieren“ nur ein gedämpfter Puls je Blitz, ≤ 3/s, kein Flackern).
   Viele Höhenmeter, zwei Serpentinen-Haarnadeln mit Steilkurve, **Grat-Abkürzung** in der zweiten Haarnadel (innen schmal,
