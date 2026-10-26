@@ -36,6 +36,10 @@ Boost-Taste am Boden +35 % Tempo für 1,6 s (12 %), eine Barrel-Roll im Sprung k
 Turbo. Aufladen in der grünen Boxengasse rechts auf der Start-Ziel-Geraden (leer → voll ≈ 3 s). Unter 25 % glüht der Gleiter
 rot, bei 0 % läuft er nur noch im Notlauf (70 % Tempo).
 
+**Flug-Boost:** Wer nach einem Sprung sauber landet (Nase gerade), bekommt je nach Flugzeit Stufe 1–3 Boost – der
+Flugmesser in der Bildmitte zeigt Flugzeit und Stufe. **Pad-Ketten** sammeln Boost-Zeit (bis 4 s) und werden mit jedem Pad
+schneller (+50 → +80 %).
+
 **Abflug:** Eine Bergungs-Drohne holt den Gleiter in 1,5 s zurück; wer einen Sprung nicht schafft, wird hinter der Lücke
 abgesetzt. Wandtreffer bremsen je nach Winkel (−10…−30 %), der Gleiter gleitet an der Wand ab. Luftbremse geradeaus
 gehalten bremst kräftig (eine ≈ 80 %, beide ≈ 45 % Tempo).
@@ -72,7 +76,7 @@ Fahrgefühl: `?klasse=leicht|mittel|schwer` · `?beschl=1` · `?gewicht=0` (alle
 `?items=hb|ref` (Phase 2).
 Vorlagen-Mechaniken (P1b, je 0/alt = bisher): `?schwebe=0` (1/h-Feder) · `?bremse=0` / `?rutsch=1.2` (Luftbremse) ·
 `?lenk=alt` (Gegenlenken) · `?wand=0` (Wandschaden) · `?bergung=1.5` (Bergungs-Drohne, s) · `?nicken=0` (harte Landung) ·
-`?schraeg=0` (Schräglage) · `?energie=0` (Energie/Boxengasse aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10`.
+`?schraeg=0` (Schräglage) · `?energie=0` (Energie/Boxengasse aus) · `?boostkosten=12` · `?box=35` (%/s) · `?rollkosten=10` · `?flugboost=0` · `?reserve=4` (s, 0 = bisher).
 Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Start), `?autopilot=1`, `?nosw`.
 
 ## Tests (ohne Browser)

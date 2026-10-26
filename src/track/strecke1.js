@@ -23,7 +23,7 @@ export const SCHLUSS_KURZ = { a: 159.61, b: 505.85, c: 90.000, d: 15.099 };
 // rundenzeit = gemessene Median-Rundenzeit der KI „Mittel“ (tools/rundenzeit_mess.mjs; test_rennen.mjs prüft ±6 s) →
 // Rundenzahl je Fassung über rundenFuer() (Ziel ≤ 5:00 inkl. Countdown).
 export const FASSUNGEN = {
-  kurz: { name: 'Neon-Megastadt', kurz: 'Kurz', schluss: SCHLUSS_KURZ, rundenzeit: 139.2 },
+  kurz: { name: 'Neon-Megastadt', kurz: 'Kurz', schluss: SCHLUSS_KURZ, rundenzeit: 135.4 },
   lang: { name: 'Neon-Megastadt (lang)', kurz: 'Lang', schluss: SCHLUSS, rundenzeit: 165.1 },
 };
 export const STANDARD_FASSUNG = 'kurz';

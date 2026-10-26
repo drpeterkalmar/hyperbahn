@@ -6,7 +6,7 @@
 //   hoch          ↑ dauerhaft gehalten (über den Absprung und den ganzen Flug)
 //   kurz T        ↑ gehalten, in der Luft kurz los (0,25 s) und NEU gedrückt für T s (Nase senken = kürzer)
 //   weit T        ↓ in der Luft für T s (Nase heben = weiter); T aus einem Raster, bestes sauberes Ergebnis zählt
-// Je Sprung: Absturz, Bauchlandung (Nase > 20° gegen die Fahrfläche, schief > 45° oder harter Aufsetzer), Airtime, Weite.
+// Je Sprung: Absturz, Bauchlandung (Nase > 20° gegen die Fahrfläche, schief > 45°, Patzer), harte Landung, Airtime, Weite.
 // Aufruf: node tools/luft_mess.mjs [url-regler]      z. B. node tools/luft_mess.mjs "?nase=alt"
 import { leseRegler, GLEITER, ZEIT } from '../src/config.js';
 import { strecke1 } from '../src/track/strecke1.js';
@@ -70,8 +70,10 @@ export function sprungMessen(bahn, { anlauf, sprung, u, tasten }) {
   }
   const sp = g.statistik.sprunge[0];
   const absturz = g.statistik.sprungAbstuerze > 0 || g.zustand !== 'fahrt' || !sp;
-  const bauch = !!landung && (Math.abs(landung.pitch) > 20 || landung.aufrecht < 0.7 || landung.aufsetzer >= 0.3 || landung.patzer > 0);
-  return { absturz, bauch, luft: sp ? sp.luft : luftMax, weite: sp ? sp.weite : 0, vAb: g.absprung ? g.absprung.v : sp ? sp.v : vAb, grund: g.absturzGrund, landung, nickMin, nickMax };
+  // Bauchlandung = Nase > 20° gegen die Fahrfläche, schief > 45° oder Patzer; hart = Aufsetzer ≥ 0,3 (≈ 7,5 m/s senkrecht)
+  const bauch = !!landung && (Math.abs(landung.pitch) > 20 || landung.aufrecht < 0.7 || landung.patzer > 0);
+  const hart = !!landung && landung.aufsetzer >= 0.3;
+  return { absturz, bauch, hart, luft: sp ? sp.luft : luftMax, weite: sp ? sp.weite : 0, vAb: g.absprung ? g.absprung.v : sp ? sp.v : vAb, grund: g.absturzGrund, landung, nickMin, nickMax };
 }
 
 export const SPRUENGE = [
@@ -135,7 +137,7 @@ export function rundenMessung(regler = '', runden = 2, profil = 'mittel') {
 if (process.argv[1] && process.argv[1].endsWith('luft_mess.mjs')) {
   const regler = process.argv[2] || '';
   const z = luftMessung(regler);
-  const f = (r) => r ? `${r.absturz ? 'ABSTURZ(' + r.grund + ')' : r.bauch ? 'BAUCH' : 'ok'} ${r.luft.toFixed(2)} s ${r.weite.toFixed(0)} m${r.landung ? ` (Nase ${r.landung.pitch.toFixed(0)}°)` : ''}` : '–';
+  const f = (r) => r ? `${r.absturz ? 'ABSTURZ(' + r.grund + ')' : r.bauch ? 'BAUCH' : r.hart ? 'ok (hart)' : 'ok'} ${r.luft.toFixed(2)} s ${r.weite.toFixed(0)} m${r.landung ? ` (Nase ${r.landung.pitch.toFixed(0)}°)` : ''}` : '–';
   console.log(`Luft-Messung ${regler || '(Standard)'}`);
   let abst = 0, bauch = 0, spanne = 0;
   for (const r of z) {

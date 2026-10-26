@@ -182,6 +182,55 @@ export function m5ki() {
   return { zeilen, boosts: zeilen.reduce((a, z) => a + z.boosts, 0) / zeilen.length, boxen: zeilen.filter((z) => z.box > 0).length, notlauf: zeilen.reduce((a, z) => a + z.notlauf, 0) };
 }
 
+// 6) Flugzeit-Boost je Riesensprung (mit Pad-Kette, Spurhalter): Stufe, sauber, Zeit bis Landezonen-Ende + 300 m mit und
+// ohne Flugzeit-Boost (Zeitgewinn)
+function spurLenk(g, u = 0) {
+  const q = g.q, vt = dot(g.v, q.T), vl = dot(g.v, q.Ls);
+  return Math.max(-1, Math.min(1, 0.05 * (u - g.u) - 2.2 * Math.atan2(vl, Math.max(vt, 1))));
+}
+function sprungZeit(bahn, anlauf, landung, u) {
+  const k = bahn.abschnitte.findIndex((a) => a.name === anlauf), kl = bahn.abschnitte.findIndex((a) => a.name === landung);
+  const ziel = bahn.segStart[kl] + bahn.abschnitte[kl].len + 300;
+  const g = new Gleiter(bahn, { s: bahn.segStart[k] - 30, u, v0: GLEITER.vmax });
+  let t = 0, stufe = -1, luft = 0, sauber = null;
+  for (let i = 0; i < 30 / dt && g.s < ziel; i++) {
+    g.schritt(dt, { ...AUS, gas: 1, lenk: spurLenk(g, u) });
+    t += dt;
+    for (const e of g.ereignisse) if (e.art === 'flugBoost') { stufe = e.stufe; luft = e.luft; sauber = e.sauber; }
+    g.ereignisse.length = 0;
+  }
+  return { t, stufe, luft, sauber, abfluege: g.statistik.abfluege };
+}
+export function m6() {
+  const out = [];
+  for (const [name, anlauf, landung] of [['Häuserschlucht', 'Häuserschlucht Anlauf', 'Landezone 1'], ['Neon-Schlucht', 'Hafen Anlauf', 'Landezone 2']]) {
+    for (const u of [0, 11]) {
+      const regler = REGLER_JETZT;
+      leseRegler(regler); const bahn = strecke1();
+      const mit = sprungZeit(bahn, anlauf, landung, u);
+      leseRegler(regler + '&flugboost=0');
+      const ohne = sprungZeit(bahn, anlauf, landung, u);
+      leseRegler(regler);
+      out.push({ name: `${name} ${u ? 'ohne' : 'mit'} Pads`, stufe: mit.stufe, luft: mit.luft, sauber: mit.sauber, gewinn: ohne.t - mit.t });
+    }
+  }
+  return out;
+}
+
+// 7) Pad-Kette: höchste Boost-Stufe nach 1/2/3/4 Pads (Gerade mit Pad-Reihe), Reserve höchstens
+export function m7() {
+  const b = baueBahn([{ typ: 'gerade', len: 3000, pads: [0, 1, 2, 3, 4, 5].map((k) => ({ at: 300 + k * 70, u: 0, b: 6, l: 12 })) }], { ohneSchluss: true });
+  const g = new Gleiter(b, { s: 100, v0: GLEITER.vmax });
+  const stufen = [], reserve = [];
+  let pads = 0, resMax = 0;
+  for (let i = 0; i < 8 / dt; i++) {
+    g.schritt(dt, { ...AUS, gas: 1, lenk: spurLenk(g) });
+    resMax = Math.max(resMax, g.boostZeit);
+    if (g.statistik.pads > pads) { pads = g.statistik.pads; stufen.push(g.boost); reserve.push(g.boostZeit); }
+  }
+  return { stufen, reserve, resMax };
+}
+
 const MESS = {
   1: ['Schwebe-Ruhelage & Federweg nach Landung aus 10 m', '1,15–1,25 m; Einfedern ≤ 0,4 m, ruhig ≤ 0,5 s, kein Durchschlag',
     (r) => `Ruhe ${r.ruhe.toFixed(2)} m · Einfedern ${r.einfedern.toFixed(2)} m (tiefste ${r.hMin.toFixed(2)} m) · ruhig nach ${r.ruhig.toFixed(2)} s · Aufsetzer ${r.durchschlag}`, m1],
@@ -195,6 +244,10 @@ const MESS = {
     (r) => `${r.boosts} Boosts (Energie nie unter ${(r.minE * 100).toFixed(0)} %) · Boxengasse voll nach ${r.boxVoll.toFixed(2)} s`, m5],
   K: ['KI-Rennen 2 Runden: Energie-Nutzung', 'KI nutzt Boost und Boxengasse, kein Notlauf',
     (r) => `Ø ${r.boosts.toFixed(1)} Boosts je Gleiter · ${r.boxen}/8 durch die Boxengasse · Notlauf gesamt ${r.notlauf.toFixed(1)} s · ${r.zeilen.map((z) => `${z.name} ${z.boosts}/${z.box}s/${Math.round(z.energie * 100)}%`).join(' ')}`, m5ki],
+  6: ['Flugzeit-Boost je Riesensprung', 'jeder Riesensprung mit sauberer Landung = Stufe 3; Zeitgewinn 0,4–0,7 s',
+    (r) => r.map((x) => `${x.name}: Stufe ${x.stufe} (${x.luft.toFixed(1)} s, ${x.sauber ? 'sauber' : 'schief'}) +${x.gewinn.toFixed(2)} s`).join(' · '), m6],
+  7: ['Pad-Kette (Reserve + Ketten-Deckel)', '3er-Kette +70–80 %, nie über +80 %; Reserve ≤ 4 s',
+    (r) => `Stufe nach Pad 1…${r.stufen.length}: ${r.stufen.map((x) => '+' + Math.round(x * 100) + ' %').join(' / ')} · Reserve ${r.reserve.map((x) => x.toFixed(1)).join(' / ')} s (max ${r.resMax.toFixed(2)} s)`, m7],
   8: ['Wandtreffer 30° bei Top', '−15…−25 % Tempo, −4…−8 % Energie',
     (r) => `Tempo ${(r.tempo * 100).toFixed(0)} % · Energie ${(r.energie * 100).toFixed(1)} %`, m8],
   L: ['Lenkwechsel bei 60 m/s (Gegenlenken)', 'Gegenlenken ≈ doppelt so schnell wie Anlenken (Vorlage), Gierrate ≤ 100°/s',
@@ -203,7 +256,9 @@ const MESS = {
     (r) => `Zeitverlust ${r.verlust.toFixed(2)} s · Abflüge ${r.schlecht.abfluege} · vor den Sprung zurück: ${r.schlecht.vorDemSprung ? 'JA' : 'nein'}`, m9],
 };
 
+let REGLER_JETZT = '';
 export function vorlagenMessung(regler = '', nur = null) {
+  REGLER_JETZT = regler || '?';
   leseRegler(regler); leseGefuehl(regler);
   const out = [];
   for (const [nr, [name, ziel, fmt, fn]] of Object.entries(MESS)) {

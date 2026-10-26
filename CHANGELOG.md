@@ -2,6 +2,17 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P1b Etappe C: Flugzeit-Boost, Boost-Reserve mit Ketten-Deckel)
+- **Flugzeit-Boost** (`?flugboost=0` aus): saubere Landung (Nase ≤ 12° zur Bahn) nach ≥ 0,8 / 1,6 / 3,0 s Flug gibt Stufe
+  1/2/3 (+1,0 s/+15 %, +1,5 s/+20 %, +1,5 s/+25 %). Jeder Riesensprung = Stufe 3, Zeitgewinn 0,55–0,67 s.
+  **HUD-Flugmesser** in der Bildmitte: Flugzeit mit Marken bei 0,8/1,6/3,0 s, nach der Landung 1,5 s das Ergebnis.
+- **Pads als Reserve** (`?reserve=4`, 0 = bisher): jedes Pad legt 1,3 s Boost-Zeit drauf (höchstens 4 s), jedes weitere Pad
+  der Kette hebt die Stufe (+50 → +60 → +70 → Deckel +80 %); solange Reserve läuft, zieht der Antrieb doppelt (am Boden,
+  ohne gezogene Luftbremse). Luftbremse während eines Boosts nimmt das Zwangs-Vollgas weg (sonst käme man vor Kurven nicht
+  mehr runter). Kamera-Nachlauf in Fahrtrichtung weich auf 0,5 m begrenzt.
+- KI: Energie-Boost nie vor Magnet-/Röhren-/Sprung-Passagen (über ~120 m/s hebt der Gleiter dort ab), weicher Spurwechsel
+  in die Boxengasse. Rundenzeit Kurzfassung (KI Mittel) 135 s, Rennen 4:38.
+
 ## 0.1.6 – 26.10.2026 (P1b Etappe B: Energie = Schild = Boost, Boxengasse)
 - **Ein Energie-Balken** (HUD „ENERGIE“, vorher „SCHILD“): Wandtreffer/Rempler kosten wie bisher, dazu **manueller Boost**
   am Boden (Leertaste/ROLLE-Taste, die am Boden „⚡ BOOST“ zeigt; Gamepad A/X) ab Runde 2 (1-Runden-Rennen: ab der Hälfte):

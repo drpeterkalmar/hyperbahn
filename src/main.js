@@ -208,6 +208,7 @@ function ereignisse() {
         case 'rolle': if (VE.an && VE.rolle > 0) hud.meldung('ROLLE ✓ – TURBO BEI DER LANDUNG', praes, 1); else { hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); } break;
         case 'rolleTurbo': hud.meldung('TURBO!', praes, 1); blitz(0.55, [1, 0.85, 0.2]); rig.stoss(0.3); break;
         case 'rolleNein': hud.meldung(e.grund === 'einmal' ? 'NUR EINE ROLLE JE SPRUNG' : 'ROLLE: ZU WENIG ENERGIE', praes, 0.9); break;
+        case 'flugBoost': if (VORLAGE.flug.an) { hud.flugMesser(false, 0, praes, e, VORLAGE.flug.messer); if (e.stufe) { blitz(0.3 + 0.1 * e.stufe, [1, 0.85, 0.2]); rig.stoss(0.2); } } break;
         case 'energieBoost': hud.meldung('BOOST', praes, 0.7); blitz(0.4, [1, 0.85, 0.2]); rig.stoss(0.25); break;
         case 'boostNein': hud.meldung(e.grund === 'runde' ? (rennen.runden > 1 ? 'BOOST AB RUNDE 2' : 'BOOST AB DER HÄLFTE') : 'ZU WENIG ENERGIE', praes, 0.9); break;
         case 'box': hud.meldung('BOXENGASSE – LADEN', praes, 1.2); break;
@@ -342,6 +343,7 @@ function bild() {
       warn: VE.an && g.schild < VE.warnung, taste: VE.an ? tasteZustand(g) : null,
     }, praes);
     document.body.classList.toggle('ruhig', blitze.reduziert);
+    if (VORLAGE.flug.an) hud.flugMesser(!g.boden && g.zustand === 'fahrt', g.luftZeit, praes);
     WARNLICHT.ruhig = blitze.reduziert;
     if (ton) ton.update({ tempo: g.tempo, vmax: GLEITER.vmax, boost: g.boost, magnet: g.magnet, wand: g.wandKontakt > 0, luft: !g.boden, tonFaktor: fx.ton * (praes < scheinBis ? 0.8 : 1) });
   } else {

@@ -49,6 +49,15 @@ body.ruhig .schild.warn i { animation: none; }
 .countdown { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: clamp(80px, 26vmin, 200px); font-weight: 900; font-style: italic; color: #fff; text-shadow: var(--glow-m); }
 .meldung { position: absolute; left: 50%; top: 32%; transform: translate(-50%, -50%) scale(0.9); font-weight: 900; font-style: italic; letter-spacing: 0.12em; font-size: clamp(22px, 6vmin, 46px); color: var(--gelb); text-shadow: 0 0 10px var(--gelb); opacity: 0; transition: opacity 0.15s, transform 0.15s; white-space: nowrap; }
 .meldung.an { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+/* P1b: Flugmesser – Flugzeit mit Stufen-Marken (0,8 / 1,6 / 3,0 s), bleibt nach der Landung kurz mit dem Ergebnis stehen */
+.flug { position: absolute; left: 50%; top: 43%; transform: translateX(-50%); width: min(46vw, 280px); text-align: center; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.flug.an { opacity: 1; }
+.flug-balken { position: relative; height: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 4px; overflow: hidden; }
+.flug-balken i { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(90deg, var(--cyan), var(--magenta, #ff2bd6), var(--gelb)); }
+.flug-balken s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; opacity: 0.7; }
+.flug span { display: block; margin-top: 4px; font: 800 italic clamp(11px, 2.6vmin, 15px) var(--schrift); letter-spacing: 0.12em; color: #fff; text-shadow: 0 0 6px #000, var(--glow-c); white-space: nowrap; }
+.flug.stufe span { color: var(--gelb); text-shadow: 0 0 8px var(--gelb); }
+.flug.schief span { color: #ff6a5a; }
 .blitz { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen; }
 @keyframes puls { from { opacity: 0.55; } to { opacity: 1; } }
 

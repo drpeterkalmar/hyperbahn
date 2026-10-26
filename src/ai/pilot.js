@@ -12,7 +12,7 @@
 import { GLEITER, VORLAGE } from '../config.js';
 import { clamp, rng } from '../core/util.js';
 import { v3, setze, dot } from '../core/vec.js';
-import { F_LUECKE, F_SPRUNG, F_MAGNET, rahmenBei, neueAbfrage } from '../track/bahn.js';
+import { F_LUECKE, F_SPRUNG, F_MAGNET, F_ROEHRE, rahmenBei, neueAbfrage } from '../track/bahn.js';
 import { lenkFaktor } from '../physics/fahrgefuehl.js';
 
 export const PROFILE = {
@@ -118,7 +118,7 @@ export class Pilot {
     this.ausweich = 0;
     this.q = neueAbfrage();
     this.ein = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0 };
-    this.boostT = 0; this.zurBox = false;
+    this.boostT = 0; this.zurBox = false; this.boxU = 0;
     this.rolleGeplant = false;
     this.gummi = null;
     this.driftT = 0; this.driftKurve = -1;
@@ -200,7 +200,10 @@ export class Pilot {
       let d = bx.s0 - g.s; if (d < -b.L / 2) d += b.L; if (d > b.L / 2) d -= b.L;
       if (d > 0 && d < 250 && g.schild < (pr.box ?? 0.5)) this.zurBox = true;
       if (this.zurBox && (d < -(bx.s1 - bx.s0) || g.schild > 0.97)) this.zurBox = false;
-      if (this.zurBox) uz = bx.u;
+      // weich hinüber (wie beim Ausweichen), sonst lenkt die KI ruckartig, bremst und gerät ins Rutschen
+      const ziel = this.zurBox ? bx.u - this.linieBei(sv) : 0;
+      this.boxU += (ziel - this.boxU) * Math.min(1, dt * 1.2);
+      uz = clamp(uz + this.boxU, -(b.hw[i] - 2.4), b.hw[i] - 2.4);
     }
     const r = rahmenBei(b, sv, this.q);
     setze(_f, r.P.x + r.Ls.x * uz + r.Us.x * 1.4, r.P.y + r.Ls.y * uz + r.Us.y * 1.4, r.P.z + r.Ls.z * uz + r.Us.z * 1.4);
@@ -240,8 +243,12 @@ export class Pilot {
     this.boostT -= dt;
     if (VE.an && g.boostFrei && g.boden && this.boostT <= 0 && !this.zurBox && g.boost < 0.05 && g.schild > (pr.box ?? 0.5) + VE.kosten && v > GLEITER.vmax * 0.75) {
       this.boostT = 2;
+      // keine Magnet-/Röhren-/Sprung-Passage in den nächsten 700 m (über ~120 m/s hebt der Gleiter dort ab)
       let gerade = true;
-      for (let k = 0; k <= 300 && gerade; k += 30) gerade = this.zielBei(g.s + k) >= GLEITER.vmax * 1.2;
+      for (let k = 0; k <= 700 && gerade; k += 20) {
+        const j = ((Math.round((g.s + k) / b.ds) % b.N) + b.N) % b.N;
+        gerade = !(b.flags[j] & (F_MAGNET | F_ROEHRE | F_SPRUNG | F_LUECKE)) && (k > 300 || this.zielBei(g.s + k) >= GLEITER.vmax * 1.2);
+      }
       if (gerade && this.r() < (pr.boost ?? 0)) e.boost = 1;
     }
     // Luft: Barrel-Roll, wenn noch genug Flugzeit bleibt (Stärke-abhängig, einmal je Sprung)

@@ -26,6 +26,7 @@ export const KAM = {
   abstand: 9.5, hoehe: 2.6, blickVor: 9, fovTempo: 0,   // Sichtfeld hängt nicht am Tempo (nur Boost/Sprung/Treffer)
   panoramaAbstand: 16, panoramaHoehe: 6, panoramaZeit: 0.8, glatt: 0.09, ruck: 0.35,
   orbitRadius: 7.5, orbitHoehe: 1.8,   // Bullet-Time-Halbkreis
+  nachlaufLaengs: 0.5,   // m weiche Grenze des Nachlaufs in Fahrtrichtung (P1b)
   tauWaag: 0.039, tauSenk: 0.103, nachlauf: 0.55,   // s: Tempo-Glättung (0,35 bzw. 0,15 je 1/60 s) und Versatz-Faktor
   loopH: 1.2,                  // m Zusatzhöhe bei steiler/kopfüber Fahrbahn (?camloop=)
   nachlaufUnten: 0.6,          // m: größter Nachlauf-Versatz zur Fahrbahn hin (weich; ?camloop=0 → unbegrenzt wie bisher)
@@ -109,6 +110,13 @@ export class KameraRig {
     // waren es bis zu ~5 m, die Kamera tauchte unter die Fahrbahn
     const vs = dot(this.versatz, this.oben), L = KAM.nachlaufUnten;
     if (vs < 0 && L > 0) addSk(this.versatz, this.versatz, this.oben, -L * (1 - Math.exp(vs / L)) - vs);
+    // P1b: Nachlauf in Fahrtrichtung weich auf KAM.nachlaufLaengs begrenzt (Boost-Reserve zieht ×2 – sonst fiele die
+    // Kamera beim Boost-Start zu weit zurück; Ziel 3–6 % der Folgedistanz)
+    const gv = Math.hypot(g.v.x, g.v.y, g.v.z);
+    if (gv > 1 && KAM.nachlaufLaengs > 0) {
+      const vl = (this.versatz.x * g.v.x + this.versatz.y * g.v.y + this.versatz.z * g.v.z) / gv, M = KAM.nachlaufLaengs;
+      if (Math.abs(vl) > 1e-6) addSk(this.versatz, this.versatz, g.v, (M * Math.tanh(vl / M) - vl) / gv);
+    }
     addSk(this.pos, this.pos, this.versatz, 1);
     // Bullet-Time: Halbkreis um den Gleiter (um das Kamera-Oben)
     if (fx && fx.orbitAn) {

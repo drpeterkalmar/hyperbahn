@@ -128,6 +128,14 @@ export const VORLAGE = {
   // `rolleDauer` s erst nach der Landung
   energie: { an: 1, kosten: 0.12, gewinn: 0.35, dauer: 1.6, rest: 0.01, abRunde: 2, box: 0.35, notlauf: 0.7, warnung: 0.25,
     rolle: 0.10, rolleMin: 0.15, rolleGewinn: 0.30, rolleDauer: 1.2 },
+  // Boost-Reserve + Ketten-Deckel (?reserve=4 s, 0 = bisher): Pads addieren Zeit (höchstens `max` s); jedes weitere Pad
+  // in derselben Reserve hebt die Stufe um `kette` (Pad +50 % → +60 % → +70 % → Deckel +80 %); solange Reserve läuft,
+  // zieht der Antrieb ×`beschl`
+  reserve: { an: 1, max: 4, kette: 0.10, beschl: 2 },
+  // Flugzeit-Boost (?flugboost=0 aus): saubere Landung (Nase ≤ `sauber`° zur Fahrfläche) nach Flugzeit ≥ Schwelle gibt
+  // Reserve und Stufe: [Flugzeit s, Reserve s, +Höchsttempo]; HUD-Flugmesser bleibt `messer` s nach der Landung stehen.
+  // Stufe 3: Datenblatt-Startwert 2,0 s Reserve gab 0,65–0,80 s Zeitgewinn je Riesensprung (Ziel 0,4–0,7) → 1,5 s
+  flug: { an: 1, sauber: 12, messer: 1.5, stufen: [[0.8, 1.0, 0.15], [1.6, 1.5, 0.20], [3.0, 1.5, 0.25]] },
 };
 
 export const BLITZE = { reduziert: false, maxProSek: 3, strobeDaempfung: 0.35 };
@@ -162,6 +170,8 @@ export function leseRegler(search) {
   V.energie.kosten = zahl('boostkosten', 12) / 100;
   V.energie.box = zahl('box', 35) / 100;
   V.energie.rolle = zahl('rollkosten', 10) / 100;
+  V.reserve.max = zahl('reserve', 4); V.reserve.an = V.reserve.max > 0 ? 1 : 0;
+  V.flug.an = q.get('flugboost') === '0' ? 0 : 1;
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';

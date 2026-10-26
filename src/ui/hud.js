@@ -40,6 +40,7 @@ export class Hud {
       <div class="hinweis magnet" data-k="magnet">⟁ MAGNET</div>
       <div class="hinweis speed" data-k="speed">SPEED OK</div>
       <div class="countdown" data-k="countdown"></div>
+      <div class="flug" data-k="flug"><div class="flug-balken"><i data-k="flugI"></i><s style="left:26.7%"></s><s style="left:53.3%"></s><s style="left:calc(100% - 2px)"></s></div><span data-k="flugT"></span></div>
       <div class="meldung" data-k="meldung"></div>
       <div class="blitz" data-k="blitz"></div>
       <div class="touch">
@@ -147,6 +148,27 @@ export class Hud {
     k.speed.textContent = z.speedOk === false ? 'MEHR TEMPO!' : 'SPEED OK';
     k.countdown.textContent = z.countdown > 0 ? String(Math.ceil(z.countdown)) : '';
     if (t > this.meldungBis) k.meldung.classList.remove('an');
+  }
+
+  // Flugmesser (P1b): in der Luft Flugzeit + erreichte Stufe; nach der Landung (ergebnis) VORLAGE.flug.messer s stehen
+  flugMesser(inLuft, luftZeit, t, ergebnis = null, dauer = 1.5) {
+    const k = this.k;
+    if (ergebnis) {
+      this.flugBis = t + dauer;
+      k.flug.classList.toggle('stufe', ergebnis.stufe > 0); k.flug.classList.toggle('schief', !ergebnis.sauber);
+      k.flugT.textContent = ergebnis.sauber ? (ergebnis.stufe ? `FLUG-BOOST STUFE ${ergebnis.stufe}` : 'FLUG') : 'SCHIEF GELANDET – KEIN FLUG-BOOST';
+      k.flugI.style.transform = `scaleX(${Math.min(1, ergebnis.luft / 3)})`;
+      k.flug.classList.add('an');
+      return;
+    }
+    if (inLuft && luftZeit > 0.5) {
+      const st = luftZeit >= 3 ? 3 : luftZeit >= 1.6 ? 2 : luftZeit >= 0.8 ? 1 : 0;
+      k.flug.classList.remove('schief'); k.flug.classList.toggle('stufe', st > 0);
+      k.flugI.style.transform = `scaleX(${Math.min(1, luftZeit / 3)})`;
+      k.flugT.textContent = `FLUG ${luftZeit.toFixed(1).replace('.', ',')} s${st ? ' · STUFE ' + st : ''}`;
+      k.flug.classList.add('an');
+      this.flugBis = 0;
+    } else if (!(t < this.flugBis)) k.flug.classList.remove('an');
   }
 
   // Reset: kurze Überblendung (dunkel → klar in 0,4 s); gesperrt = Knopf kurz grau

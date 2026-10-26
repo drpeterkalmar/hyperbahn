@@ -9,7 +9,7 @@ HOCH = dict(PIXEL7_LAND, viewport={"width": 412, "height": 915})
 OUT = os.path.join(ROOT, 'tests', 'shots', 'p1b')
 ZUSTAND = """(() => { const g = __hb.spieler, r = __hb.rennen; if (!g) return null;
   return { phase: r.phase, zustand: g.zustand, boden: g.boden, luft: +g.luftZeit.toFixed(2), tempo: +g.tempo.toFixed(1), h: +g.h.toFixed(2),
-    energie: +(g.energie ?? g.schild).toFixed(3), taste: document.querySelector('[data-k=rolle]').textContent, boost: +g.boost.toFixed(2), s: Math.round(g.s), runde: __hb.rennen.alle.find((t) => t.g === g).runde }; })()"""
+    energie: +(g.energie ?? g.schild).toFixed(3), flug: document.querySelector('[data-k=flugT]').textContent, taste: document.querySelector('[data-k=rolle]').textContent, boost: +g.boost.toFixed(2), s: Math.round(g.s), runde: __hb.rennen.alle.find((t) => t.g === g).runde }; })()"""
 
 
 def collage(name, bilder, breite=420):
@@ -71,6 +71,8 @@ SZENEN = {
     'box': ('&hilfe=profi&at=Start-Ziel', "(() => { const g = __hb.spieler, x = __hb.bahn.box; g.setzeAuf(x.s0 - 30, x.u, 40); g.schild = 0.15; })()", None, 12, 0.2),
     # Energie-Warnung: 18 % → Gleiter glüht rot (Puls), Balken rot; danach Energie-Boost (Taste) mit Freigabe
     'warnung': ('&at=Start-Ziel', "(() => { const g = __hb.spieler; g.schild = 0.18; g.boostFrei = true; setTimeout(() => { dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); setTimeout(() => dispatchEvent(new KeyboardEvent('keyup', { code: 'Space' })), 200); }, 1200); })()", None, 12, 0.2),
+    # Flugmesser + Flugzeit-Boost: Riesensprung mit Pad-Kette (Reserve), Messer füllt sich, Stufe nach der Landung
+    'flug': ('&at=H%C3%A4userschlucht%20Anlauf', None, "!__hb.spieler.boden && __hb.spieler.luftZeit > 0.6", 14, 0.35),
 }
 
 if __name__ == '__main__':

@@ -47,7 +47,7 @@ export class Gleiter {
     this.ereignisse = [];
     this.statistik = { abfluege: 0, sprungLandungen: 0, sprungAbstuerze: 0, wandTreffer: 0, pads: 0, ringe: 0, rollen: 0, sprunge: [],
       miniturbos: 0, driftStufen: [0, 0, 0, 0], startboost: 0, abgefangen: 0, dreher: 0, neustarts: 0, landebonus: 0, resets: 0, hartLandungen: 0,
-      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0 };
+      energieBoosts: 0, boxZeit: 0, notlaufZeit: 0, flugBoosts: [0, 0, 0, 0] };
     this.setzeAuf(opt.s || 0, opt.u || 0, opt.v0 || 0);
   }
 
@@ -66,7 +66,7 @@ export class Gleiter {
     this.s = q.s; this.u = q.u; this.h = q.h;
     this.boden = true; this.kontakte = 4;
     this.magnet = (q.flags & F_MAGNET) ? 1 : 0;
-    this.boost = 0; this.boostZeit = 0; this.letztesPad = -1;
+    this.boost = 0; this.boostZeit = 0; this.letztesPad = -1; this.kette = 0;
     this.schild = this.schild == null ? 1 : this.schild;
     this.luftZeit = 0; this.absprung = null;
     this.rolle = null;
@@ -214,7 +214,8 @@ export class Gleiter {
     if (this.boost <= 0) vz *= kurvenFaktor(lenk, dr.aktiv);
     this.imRand = aufBahn && amBoden && Math.abs(q.u) > q.hw - GEFUEHL.randBreite;
     if (this.imRand && !this.randImmun) vz *= 1 - GEFUEHL.rand * (this.kl.rand / 0.30) * (this.boost > 0 ? 0.5 : 1);
-    if (this.boost > 0 && !steuerlos) gas = 1;
+    // Boost = Vollgas – außer die Luftbremse ist gezogen (P1b, Reserve: sonst käme man mit langer Reserve nicht vor Kurven runter)
+    if (this.boost > 0 && !steuerlos && !(VORLAGE.reserve.an && this.blW + this.brW >= 0.1 && !dr.aktiv)) gas = 1;
     if (this.stotter > 0) { this.stotter -= dt; gas *= 0.05; }
     if (this.neustartBonus > 0) this.neustartBonus -= dt;
     setze(_d, this.vor.x, this.vor.y, this.vor.z);
@@ -222,7 +223,9 @@ export class Gleiter {
     // Landehilfe richtet nur die Lage aus: Schub dann entlang der Flugbahn statt der Nase (Sprungweite bleibt wie ohne)
     else if (this.landeW > 0 && tempo > 1) { addSk(_d, _d, _d, -this.landeW); addSk(_d, _d, this.v, this.landeW / tempo); norm(_d, _d); }
     const zugBei = (v) => GLEITER.schub * (v / vmax) ** 2;
-    const band = bandBeschl(this.kl, tempo / vz) * (this.neustartBonus > 0 ? this.kl.neustart : 1);
+    const band = bandBeschl(this.kl, tempo / vz) * (this.neustartBonus > 0 ? this.kl.neustart : 1)
+      // Reserve läuft: Antrieb ×beschl – am Boden und nur ohne gezogene Luftbremse (sonst käme man vor Kurven nicht mehr runter)
+      * (VORLAGE.reserve.an && this.boostZeit > 0 && amBoden && this.blW + this.brW < 0.1 ? VORLAGE.reserve.beschl : 1);
     const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
     addSk(a, a, _d, schub);
     if (tempo > 1e-6) {
@@ -295,7 +298,7 @@ export class Gleiter {
     if ((amBoden || q.h < 3) && aufBahn) {
       const kp = padBei(b, q.s, q.u);
       if (kp >= 0 && kp !== this.letztesPad) {
-        this.padBoost();
+        this.padBoost(BOOST.gewinn, true);
         this.statistik.pads++;
         this.ereignis('pad', this.boost / BOOST.deckel);
       }
@@ -433,6 +436,20 @@ export class Gleiter {
 
   gelandet(q) {
     const sp = this.absprung;
+    // Flugzeit-Boost (P1b): saubere Landung nach ≥ 0,8 / 1,6 / 3,0 s Flug = Stufe 1–3 (Reserve + Tempo-Stufe)
+    const VF = VORLAGE.flug;
+    if (VF.an && this.luftZeit >= VF.stufen[0][0]) {
+      const sauber = Math.abs(Math.asin(clamp(dot(this.vor, q.Us), -1, 1))) <= VF.sauber * RAD;
+      let stufe = 0; for (const st of VF.stufen) if (this.luftZeit >= st[0]) stufe++;
+      if (sauber) {
+        const [, zeit, plus] = VF.stufen[stufe - 1];
+        const max = VORLAGE.reserve.an ? VORLAGE.reserve.max : zeit;
+        this.boost = Math.min(BOOST.deckel, Math.max(this.boost, plus));
+        this.boostZeit = Math.min(max, Math.max(0, this.boostZeit) + zeit);
+        this.statistik.flugBoosts[stufe]++;
+      }
+      this.ereignis('flugBoost', stufe / 3, { stufe: sauber ? stufe : 0, luft: this.luftZeit, sauber });
+    }
     // Turbo nach sauber vollendeter Rolle (P1b): erst jetzt, nach der Landung
     if (this.rolleBonus) {
       const VE = VORLAGE.energie;
@@ -534,7 +551,16 @@ export class Gleiter {
   }
 
   // Boost-Pad / Start-Boost / Item (Phase 2): stapelt bis BOOST.deckel, volle Dauer neu
-  padBoost(gewinn = BOOST.gewinn) {
+  // pad = true (P1b, ?reserve=): Reserve statt Neustart – Dauer addiert sich bis VORLAGE.reserve.max, Ketten-Stufe hebt
+  // den Wert (+50/60/70/80 %), Kette endet, wenn die Reserve leer ist
+  padBoost(gewinn = BOOST.gewinn, pad = false) {
+    const VR = VORLAGE.reserve;
+    if (VR.an && pad) {
+      this.kette = this.boostZeit > 0 ? this.kette + 1 : 0;
+      this.boost = Math.min(BOOST.deckel, Math.max(this.boost, gewinn + VR.kette * this.kette));
+      this.boostZeit = Math.min(VR.max, Math.max(0, this.boostZeit) + BOOST.dauer);
+      return;
+    }
     this.boost = Math.min(BOOST.deckel, this.boost + gewinn);
     this.boostZeit = BOOST.dauer;
   }
