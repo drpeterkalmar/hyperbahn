@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P3 Etappe 1: schneller, schärfere Kurven, mehr Boost, Windschatten, Energie weg)
+## 0.1.18 – 26.10.2026 (P3 Etappe 1: schneller, schärfere Kurven, mehr Boost, Windschatten, Energie weg)
 - **Energie standardmäßig aus** (Peter: „Das mit der Energie ist doof“): kein Balken, kein manueller Boost, keine Boxengasse,
   kein Notlauf. Boost wird verdient (Pads, Windschatten, Flug-Boost, Mini-Turbo, Start-Boost). Barrel-Roll kostet nichts,
   bleibt 1× je Sprung, Turbo bei der Landung. `?energie=1` = wie bis 0.1.17.
