@@ -15,13 +15,18 @@ export function baueHimmel(thema = HIMMEL) {
     uWolken: { value: HIMMEL.wolken }, uWolkenFarbe: { value: v3(HIMMEL.wolkenFarbe) }, uWolkenTempo: { value: 0.01 },
     uSonneDir: { value: new THREE.Vector3(0, 1, 0) }, uSonneFarbe: { value: new THREE.Vector3() }, uSonne: { value: 0 },
     uSterne: { value: 0 }, uWasser: { value: 0 }, uBlitz: { value: 0 }, uBoden: { value: v3(HIMMEL.horizont) },
+    uErde: { value: 0 }, uErdeDir: { value: new THREE.Vector3(0, -1, 0) }, uErdeSin: { value: 0.6 },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: u,
     vertexShader: 'varying vec3 vR; void main() { vR = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }',
     fragmentShader: `
-      uniform float uZeit, uWolken, uWolkenTempo, uSonne, uSterne, uWasser, uBlitz;
-      uniform vec3 uOben, uHorizont, uGlut, uWolkenFarbe, uSonneDir, uSonneFarbe, uBoden;
+      uniform float uZeit, uWolken, uWolkenTempo, uSonne, uSterne, uWasser, uBlitz, uErde, uErdeSin;
+      uniform vec3 uOben, uHorizont, uGlut, uWolkenFarbe, uSonneDir, uSonneFarbe, uBoden, uErdeDir;
+      float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+      float rau3(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+                   mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z); }
       varying vec3 vR;
       float h1(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5); }
       float rau(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -53,6 +58,30 @@ export function baueHimmel(thema = HIMMEL) {
           float k = rau(q + vec2(uZeit * 0.15, uZeit * 0.1)) * rau(q * 1.7 - vec2(uZeit * 0.12, 0.0));
           c += vec3(0.5, 0.95, 1.0) * smoothstep(0.25, 0.6, k) * smoothstep(0.1, 0.8, y) * uWasser;
         }
+        // Erde (Orbit): Kugel in Richtung uErdeDir mit Winkel-Radius asin(uErdeSin) – Kontinente/Ozeane/Wolken aus Rauschen,
+        // Tag/Nacht nach der Sonne, Stadtlichter auf der Nachtseite, blauer Atmosphären-Saum
+        if (uErde > 0.0) {
+          float cw = dot(d, uErdeDir), cosR = sqrt(1.0 - uErdeSin * uErdeSin);
+          float rand = smoothstep(cosR - 0.012, cosR + 0.002, cw);
+          float kD = uErdeSin;   // Abstand 1, Radius uErdeSin
+          float disk = kD * kD - (1.0 - cw * cw);
+          if (disk > 0.0) {
+            float t = cw - sqrt(disk);
+            vec3 n = normalize(d * t - uErdeDir) ;
+            vec3 q = n * 3.0 + vec3(uZeit * 0.004, 0.0, 0.0);
+            float land = smoothstep(0.52, 0.58, rau3(q) * 0.6 + rau3(q * 2.3) * 0.3 + rau3(q * 6.0) * 0.1);
+            float wolke = smoothstep(0.55, 0.8, rau3(q * 1.7 + vec3(0.0, uZeit * 0.006, 0.0)) * 0.7 + rau3(q * 5.0) * 0.3);
+            float licht = clamp(dot(n, uSonneDir) * 1.2 + 0.1, 0.0, 1.0);
+            vec3 boden = mix(vec3(0.02, 0.08, 0.25), mix(vec3(0.12, 0.22, 0.08), vec3(0.35, 0.3, 0.18), rau3(q * 4.0)), land);
+            vec3 tag = mix(boden, vec3(0.9), wolke * 0.8) * licht * 1.1;
+            vec3 nacht = vec3(1.0, 0.75, 0.4) * land * step(0.72, rau3(q * 18.0)) * (1.0 - smoothstep(0.0, 0.25, licht)) * 0.9;
+            float saum = pow(1.0 - clamp(dot(n, -d), 0.0, 1.0), 3.0);
+            vec3 erde = tag + nacht + vec3(0.3, 0.6, 1.2) * saum * (0.3 + licht);
+            c = mix(c, erde, rand * uErde);
+          }
+          // Atmosphären-Leuchten knapp außerhalb der Scheibe
+          c += vec3(0.25, 0.55, 1.2) * uErde * smoothstep(cosR - 0.05, cosR, cw) * (1.0 - rand) * 0.8;
+        }
         gl_FragColor = vec4(c, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -73,6 +102,8 @@ export function baueHimmel(thema = HIMMEL) {
     u.uSonne.value = s ? s.staerke ?? 1 : 0;
     if (s) { u.uSonneDir.value.fromArray(s.dir).normalize(); u.uSonneFarbe.value.fromArray(s.farbe); }
     u.uSterne.value = t.sterne || 0; u.uWasser.value = t.wasser || 0;
+    u.uErde.value = t.erde ? 1 : 0;
+    if (t.erde) { u.uErdeDir.value.fromArray(t.erde.dir).normalize(); u.uErdeSin.value = t.erde.groesse; }
   };
   m.setzeThema(thema);
   return m;

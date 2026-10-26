@@ -304,7 +304,7 @@ export class Hud {
         <table class="rang cup"><tr><th></th><th>Fahrer</th><th>Punkte</th><th></th></tr>${cup.tabelle.map((z, i) => `<tr class="${z.ich ? 'ich' : ''}"><td>${i + 1}.</td><td>${z.name}</td><td>${z.punkte}</td><td>${z.plus ? '+' + z.plus : ''}</td></tr>`).join('')}</table>
         ${fertig ? `<div class="bestzeit">${cup.tabelle[0].ich ? '<b>DU GEWINNST DEN CUP!</b>' : `Cup-Sieger: ${cup.tabelle[0].name}`}</div>` : ''}`;
     }
-    const knoepfe = cup && cup.naechste ? `<button class="start naechstes">NÄCHSTES RENNEN · ${cup.naechste}</button>` : `<button class="start">NOCHMAL</button>`;
+    const knoepfe = cup && cup.naechste ? `<button class="start naechstes">NÄCHSTES RENNEN · ${cup.naechste}</button>` : `<button class="start">${cup ? 'NEUER CUP' : 'NOCHMAL'}</button>`;
     this.menue.innerHTML = `<h1 class="titel">ZIEL</h1><table class="rang"><tr><th></th><th>Fahrer</th><th>Zeit</th><th>Beste Runde</th></tr>${zeilen}</table>${bz}${cz}${knoepfe}<button class="credits-knopf zurueck">MENÜ</button>`;
     const nx = this.menue.querySelector('.naechstes');
     if (nx) nx.addEventListener('click', () => { this.baueMenue(); this.onNaechstes && this.onNaechstes(); });

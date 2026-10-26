@@ -153,7 +153,8 @@ const hud = new Hud(document.getElementById('ui'), {
   strecke: streckeInfo(startWahl()),
   cup: cupBereit(),
   strecken: sichtbar().map((e) => ({ id: e.id, name: e.name, charakter: e.charakter, text: e.text, farbe: e.farbe, runden: rundenVon(e.id) })),
-  onStart: (e) => modelle.then(() => (hud.cupAn ? starteCup(e) : bereit().then(() => starte(e)))),
+  // im laufenden Cup startet „NEU STARTEN“ nur das aktuelle Rennen neu, sonst beginnt ein neuer Cup
+  onStart: (e) => modelle.then(() => (hud.cupAn && !(cup && rennen) ? starteCup(e) : bereit().then(() => starte(e)))),
   onWeiter: () => { if (rennen && rennen.phase !== 'ziel') { laeuft = true; hud.zeigeMenue(false); if (ton && hud.einst.ton) ton.musik('assets/musik/cyber_runner.m4a'); } },
   onStrecke: (id) => waehleStrecke(id),
   onTeilen: (id) => teilen(id),

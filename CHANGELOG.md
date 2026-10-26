@@ -2,6 +2,15 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P2: Orbital-Ring + Cup)
+- **Neue Strecke „Orbital-Ring“** (Show): Raumstation über der Erde – Sterne, die Erde groß unter der Bahn (Kontinente,
+  Wolken, Tag/Nacht, Stadtlichter, Atmosphären-Saum), Stationsring mit Solarflügeln, gläserne Trommel. **Möbius-Band**
+  (eine ganze, langsame Drehung um die Fahrtrichtung), **Wandfahrt in der Trommel** (eine Schrauben-Windung an der
+  Innenwand, 90° Querneigung), Ring-Looping, **schwache Schwerkraft** (Mondkuppe: leicht abheben; blaue Tore an den
+  Grenzen) und der **Schwerelos-Sprung** mit sechs Boost-Ringen (520 m Lücke, 7–8 s Flug). Runde 1:33, 3 Runden.
+- **Cup:** „🏆 Cup“ im Menü fährt alle 5 Strecken nacheinander, Punkte 9-7-5-3-2-1-0-0 je Platz, Tabelle nach jedem
+  Rennen, „NÄCHSTES RENNEN“, Cup-Endstand. URL `?cup=1`.
+
 ## 0.1.12 – 26.10.2026 (P2: Gewitter-Pass)
 - **Neue Strecke „Gewitter-Pass“** (Sprünge): Hochgebirge bei Nacht im Gewitter – zerklüftete Berge mit Schneegipfeln,
   Nadelwald, Regen mit Wind, Blitze (mit „⚡ Blitze reduzieren“ nur ein gedämpfter Puls je Blitz, ≤ 3/s, kein Flackern).

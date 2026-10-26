@@ -20,6 +20,9 @@ export const STRECKEN = [
   { id: 'gebirge', name: 'Gewitter-Pass', charakter: 'Sprünge', farbe: '#9fb4ff', rundenzeit: 91.6,
     text: 'Gebirgspass im Gewitter: Serpentinen-Steilkurven, Talsprünge, Schikanen, Grat ohne Bande als Abkürzung.',
     daten: () => import('./strecke_gebirge.js'), kulisse: () => import('../gfx/kulisse_gebirge.js') },
+  { id: 'orbit', name: 'Orbital-Ring', charakter: 'Show', farbe: '#b18cff', rundenzeit: 93.4,
+    text: 'Raumstation über der Erde: Möbius-Band, Wandfahrt in der Trommel, schwerelos durch Boost-Ringe.',
+    daten: () => import('./strecke_orbit.js'), kulisse: () => import('../gfx/kulisse_orbit.js') },
   // lange Fassung der Megastadt (bis 0.1.3): nur über ?strecke=lang bzw. die Wahl auf der Megastadt-Karte, nicht im Cup
   { id: 'megastadt-lang', name: 'Neon-Megastadt (lang)', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'lang', rundenzeit: 158.3, versteckt: true,
     text: 'Die lange Fassung der Megastadt.', daten: () => import('./strecke1.js'), kulisse: () => import('../gfx/kulisse_megastadt.js') },
