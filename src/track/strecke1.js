@@ -10,15 +10,53 @@
 //   Ostseite:  Schikane, Große Steilkurve, Zielanlauf
 // Die Schließ-Parameter (SCHLUSS) stimmt tools/strecke_schliessen.mjs ab (Test: test_bahn.mjs prüft den Restfehler).
 import { baueBahn } from './bahn.js';
+import { SPIEL } from '../config.js';
 
 // a = Länge Hochstraße (Nord-Süd-Schluss), b = Länge Ostgerade (Ost-West-Schluss), c = Gierwinkel der letzten Kurve,
 // d = Steigung Aufstieg/Kuppe (Höhen-Schluss)
 export const SCHLUSS = { a: 223.24, b: 1058.88, c: 90.000, d: 13.932 };
+export const SCHLUSS_KURZ = { a: 159.61, b: 505.85, c: 90.000, d: 15.099 };
 
-const kette = (n, at0, abstand, u = 0, b = 4, l = 12) =>
-  Array.from({ length: n }, (_, k) => ({ at: at0 + k * abstand, u, b, l }));
+// Fassungen (P1b, Peter 20.10.: „kürzere Rennen, max 5 min“). Die lange Runde dauert für die KI „Mittel“ ~2:45 – zwei
+// Runden wären 5:30. Die Kurzfassung behält alle Passagen (Looping, Röhre, Wand, Überkopf, Twist, Tunnel, beide
+// Riesensprünge samt Pad-Ketten, Rampen und Landezonen unverändert) und kürzt nur Geraden, Ausläufe und Kurvenbögen.
+// rundenzeit = gemessene Median-Rundenzeit der KI „Mittel“ (tools/rundenzeit_mess.mjs; test_rennen.mjs prüft ±6 s) →
+// Rundenzahl je Fassung über rundenFuer() (Ziel ≤ 5:00 inkl. Countdown).
+export const FASSUNGEN = {
+  kurz: { name: 'Neon-Megastadt', kurz: 'Kurz', schluss: SCHLUSS_KURZ, rundenzeit: 139.2 },
+  lang: { name: 'Neon-Megastadt (lang)', kurz: 'Lang', schluss: SCHLUSS, rundenzeit: 165.1 },
+};
+export const STANDARD_FASSUNG = 'kurz';
+// Kurzfassung: Länge (und ggf. Pads/Rampe) je Abschnitt
+const KURZ = {
+  'Start-Ziel': { len: 500, pads: kette(2, 360, 50, 0, 5) },
+  'Hochbahn-S rechts': { len: 260 }, 'Hochbahn-S links': { len: 260 },
+  'Looping-Auslauf': { len: 340 },
+  'Steilkurve Turm': { len: 500 },
+  'Fassade': { len: 460 },
+  // Überkopf: halbe Drehung schon im Anlauf (Magnet), damit die Querneigung trotz kürzerer Passage weich bleibt (< 3° je 2 m)
+  'Brückenanlauf': { len: 160, bank: [90], magnet: true },
+  'Unter der Brücke': { len: 740, bank: [180, 180, 180, 180, 90] },
+  'Brücke Auslauf': { len: 200, bank: [0], magnet: true },
+  'Neon-Bogen': { len: 480 },
+  'Tunnel': { len: 300 },
+  'Aufstieg': { len: 640, rampe: 240 }, 'Kuppe': { len: 640, rampe: 240 },
+  'Hafenkurve': { len: 560 },
+  'Große Steilkurve': { len: 720 },
+  'Zielanlauf': { len: 160 },
+};
 
-export function strecke1Abschnitte(sch = SCHLUSS) {
+function kette(n, at0, abstand, u = 0, b = 4, l = 12) {
+  return Array.from({ length: n }, (_, k) => ({ at: at0 + k * abstand, u, b, l }));
+}
+
+// fassung 'lang' = Original (bis 0.1.3), 'kurz' = Kurzfassung (Standard ab P1b)
+export function strecke1Abschnitte(sch = SCHLUSS, fassung = 'lang') {
+  const liste = abschnitteLang(sch);
+  return fassung === 'kurz' ? liste.map((a) => (KURZ[a.name] ? { ...a, ...KURZ[a.name] } : a)) : liste;
+}
+
+function abschnitteLang(sch) {
   return [
     // --- Nordseite ---
     { typ: 'gerade', name: 'Start-Ziel', len: 560, pads: kette(2, 420, 50, 0, 5) },
@@ -82,8 +120,23 @@ export function strecke1Abschnitte(sch = SCHLUSS) {
 // prüft, dass die Tabelle zur Physik passt (±4 m/s). Für die HUD-Anzeige „Speed OK“ vor dem Sprung.
 export const SPRUNG_MINDEST = { 'Häuserschlucht': 73, 'Neon-Schlucht': 69 };
 
-export function strecke1(sch = SCHLUSS) {
-  const b = baueBahn(strecke1Abschnitte(sch), { start: { p: { x: 0, y: 160, z: 0 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 } } });
-  b.name = 'Neon-Megastadt';
+// Strecke bauen: fassung 'kurz' | 'lang' (Standard: SPIEL.strecke, ?strecke=lang)
+export function strecke1(fassung = SPIEL.strecke) {
+  const f = FASSUNGEN[fassung] ? fassung : STANDARD_FASSUNG;
+  const b = baueBahn(strecke1Abschnitte(FASSUNGEN[f].schluss, f), { start: { p: { x: 0, y: 160, z: 0 }, vor: { x: 0, y: 0, z: -1 }, links: { x: -1, y: 0, z: 0 } } });
+  b.name = FASSUNGEN[f].name;
+  b.fassung = f;
   return b;
+}
+
+// Rundenzahl aus der Median-Rundenzeit (KI „Mittel“): so viele Runden, dass Countdown + Startverlust (stehender Start,
+// erste Runde) + n Runden ≤ ziel Sekunden bleiben; mindestens 1
+export const RENNDAUER = { ziel: 300, countdown: 3, start: 5 };
+export function rundenFuer(rundenzeit, r = RENNDAUER) {
+  if (!(rundenzeit > 0)) return 2;
+  return Math.max(1, Math.floor((r.ziel - r.countdown - r.start) / rundenzeit));
+}
+export function rundenDerFassung(fassung) {
+  const f = FASSUNGEN[fassung] || FASSUNGEN[STANDARD_FASSUNG];
+  return rundenFuer(f.rundenzeit);
 }

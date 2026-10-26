@@ -7,6 +7,7 @@ ES-Module, PWA über GitHub Pages. Plan: Phasen 1–4 als Queue-Jobs (`~/.hermes
 
 **Stand:** Phase 1 fertig (Schwebe-Physik mit Magnethaftung, Strecke „Neon-Megastadt“, Neon-Noir-Look, 7 KI-Gegner,
 3D-Minikarte, Musik) – Bericht: `PHASE1_BERICHT.md`. Nächste Phasen: Items/Waffen, Strecken-Generator + Cups, Online.
+P1b (Vorlagen-Nachträge): Änderungen je Version in `CHANGELOG.md`, Bericht `P1B_VORLAGEN_BERICHT.md`.
 
 ## Steuerung
 | Aktion | Tastatur | Touch | Gamepad |
@@ -16,7 +17,7 @@ ES-Module, PWA über GitHub Pages. Plan: Phasen 1–4 als Queue-Jobs (`~/.hermes
 | Gas weg | ↓ (S) | – | – |
 | Luftbremse links / rechts | Q / E | Tasten „◀︎ BREMSE“ / „BREMSE ▶︎“ | LB / RB |
 | Barrel-Roll im Sprung (= Turbo) | Leertaste | Taste „⟲ ROLLE“ | A |
-| Nase heben / senken (in der Luft) | ↓ / ↑ | – | linker Stick vor/zurück |
+| Nase heben / senken (in der Luft) | ↓ / ↑ neu drücken (über den Absprung gehaltenes ↑ bleibt Gas) | – | linker Stick zurück/vor |
 
 **Drift + Mini-Turbo:** In der Kurve die Luftbremse auf der Innenseite halten = Rutschen. Kurz lösen und wieder ziehen
 („pumpen“) hebt die Funkenstufe (cyan → magenta → weiß-gold); loslassen ab Stufe 2 gibt einen Turbo-Schub. Zu lange
@@ -24,6 +25,13 @@ halten (> 1,7 s) lässt die Stufe verfallen. **Start-Boost:** Gas genau auf „G
 den Bildschirm) – wer schon lange vorher Vollgas gibt, überdreht. **Treffer** (ab Phase 2): beide Luftbremsen ziehen fängt
 den Gleiter ab; im Dreher 5× schnell Gas tippen = Neustart-Schub. **Gleiter-Klassen:** Leicht (spritzig), Mittel, Schwer
 (oben stark, rammt). Fahrgefühl inspiriert von klassischen Fun-Racern der 90er.
+
+**In der Luft:** Gas einfach halten – die Nase bleibt dann auf der Flugbahn, der Gleiter landet sauber. Wer nicken will,
+drückt in der Luft neu: ↓ = Nase hoch (weiter), ↑ = Nase runter (kürzer). Eine Hülle verhindert Sturzflug und Absturz in
+die Schlucht, kurz vor dem Aufsetzen richtet die Landehilfe die Nase zur Bahn aus.
+
+**Strecke:** Neon-Megastadt in der Kurzfassung (2 Runden, ein Rennen ≈ 4:30–4:50) oder lang (1 Runde) – Menü „Strecke“.
+Bestzeiten werden je Fassung und Rundenzahl gemerkt.
 
 Luftbremsen machen Kurven enger (auf der Kurveninnenseite ziehen). Boost-Pads am Boden stapeln sich (Kette = immer
 schneller, gedeckelt), Boost-Ringe in der Luft geben Extra-Schub. In Magnet-Abschnitten (violett/cyan pulsierende Streifen)
@@ -43,7 +51,8 @@ weißem Ring. Antippen = groß/klein.
 ## URL-Regler (A/B-Vergleich)
 `?speed=1.2` Höchsttempo · `?mag=1.8` Magnetkraft (g) · `?boost=0.5` Schub je Pad · `?air=0.55` (`?sprung=`) Schwerkraft in
 der Luft · `?slowmo=0` Absprung-Zeitlupe aus · `?action=0|1|2` · `?blitze=0` Blitze reduzieren · `?horizont=1` ·
-`?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=3` · `?look=0|1|2` Grafikstufe ·
+`?hilfe=leicht|mittel|profi` · `?gegner=0…7` · `?ki=leicht|mittel|profi` · `?runden=2` (Standard: je Strecke, Rennen ≤ 5 min) ·
+`?strecke=lang` (lange Fassung, 1 Runde) · `?nase=alt` (Nase in der Luft wie bis 0.1.3) · `?look=0|1|2` Grafikstufe ·
 `?kl=-bloom` Kino-Look-Stufen · `?streak=1.2` Neon-Linsen-Streifen (0 = aus) · `?blur=0.3` Bewegungsunschärfe ·
 `?tacho=1.9` Anzeige-Faktor km/h · `?karte=3d|2d|aus` · `?kartenord=1` · `?startplatz=1…8` (Standard 6) ·
 `?online=1` (Test: Zeit-Logik wie online, nur Schein-Zeitlupe) · `?gpu=1` GPU-Zeit messen (Mess-Gate).
@@ -57,11 +66,13 @@ Für Tests/Screenshots: `?autostart=1`, `?at=<Abschnitt|Meter>` (fliegender Star
 `npm run test:node` bzw. `node --test tests/node/test_*.mjs` – Strecke (geschlossen, stetig, Pflicht-Passagen),
 Schwebe-Physik (Magnethaftung kopfüber, Looping bei 25 m/s und 800 km/h, Boost, Sprünge, Wand), KI-Gate (8 Gleiter ×
 10 Runden ohne Abflug), Zeit-Logik/Action-Momente, Fahrhilfe, Kamera, Geometrie, Modul-Rauchtest.
-Werkzeuge: `node tools/gefuehl_mess.mjs` (14 Fahrgefühl-Messgrößen als Tabelle), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
+Werkzeuge: `node tools/gefuehl_mess.mjs` (14 Fahrgefühl-Messgrößen als Tabelle), `node tools/luft_mess.mjs [?nase=alt]`
+(Spieler-Profile über die Riesensprünge), `node tools/rundenzeit_mess.mjs` (Rundenzeit je Fassung → Rundenzahl), `node tools/strecke_plan.mjs` (Grundriss), `node tools/ki_rennen.mjs 10` (KI-Rennen), `node tools/fahrt_probe.mjs`,
 `node tools/strecke_schliessen.mjs` (Runde schließen nach Änderungen an Strecke 1).
 
 ## Tests im Browser (ein Browser, stumm)
-`python3 tests/smoke.py` (Laden, Rennen, 0 Fehler) · `python3 tests/p1_shots.py [--nur looping,sprung1]` (Abnahme-Bilder
+`python3 tests/smoke.py` (Laden, Rennen, 0 Fehler) · `python3 tests/etappe0.py` (Rauchtest hoch + quer, Bildfolge
+Riesensprung mit gehaltenem ↑, neu und `?nase=alt`) · `python3 tests/p1_shots.py [--nur looping,sprung1]` (Abnahme-Bilder
 hoch + quer aller Passagen, Bullet-Time-Bildfolge, Collagen) · `python3 tests/test_eingabe_zeitlupe.py` (Lenken wirkt in der
 Bullet-Time) · `python3 tests/perf_gate.py --szenen tests/perf_szenen.json --stand <name>` (Mess-Gate Mittelklasse-Android).
 Konsole: `__hb.galerie()` zeigt alle Gleiter nebeneinander, `__hb.moment('sprungScheitel')` erzwingt eine Bullet-Time.

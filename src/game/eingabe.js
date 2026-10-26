@@ -1,9 +1,12 @@
 // Eingabe: Tastatur, Touch (Handy zuerst, hoch + quer), Gamepad → roh = { gas, lenk, bremseL, bremseR, nase, rolle }.
 // Tastatur: ←/→ bzw. A/D lenken, ↑/W Gas, ↓/S Gas weg (auf Leicht: Auto-Gas aus), Q/E Luftbremse links/rechts,
 // Leertaste Barrel-Roll (in der Luft), ↑/↓ in der Luft = Nase senken/heben, R/Rücktaste = Reset auf die Strecke.
+// P1b (Peter 20.10.): ein über den Absprung gehaltenes ↑ bleibt reines Gas und senkt die Nase nie – erst ein NEUER Druck
+// in der Luft nickt (Stick vorn genauso). ?nase=alt = bisher (↑ senkt in der Luft immer die Nase).
 // Touch: linke/rechte Bildschirmhälfte lenken (Daumen-Position = Stärke), zwei Luftbremsen-Tasten, Roll-Taste.
 // Gamepad: linker Stick lenken/Nase, RT Gas, LB/RB Luftbremsen, A Barrel-Roll, Y bzw. Zurück/View = Reset.
 import { clamp } from '../core/util.js';
+import { NASE } from '../config.js';
 
 // Lenkrampe für Tasten/Touch: weich hoch (sonst zuckt der Gleiter bei 600 km/h), schnell zurück
 export const RAMPE = { hoch: 4.5, zurueck: 9 };
@@ -20,6 +23,7 @@ export class Eingabe {
     this.lenk = 0;
     this.roh = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0 };
     this.resetWunsch = false; this.gpReset = false;
+    this.hochSperre = false; this.stickSperre = false;   // ↑ bzw. Stick vorn seit dem Boden gehalten → nickt nicht
     if (ziel) {
       ziel.addEventListener('keydown', (e) => {
         if ((e.code === 'KeyR' || e.code === 'Backspace') && !e.repeat) { this.resetWunsch = true; e.preventDefault(); }
@@ -86,7 +90,11 @@ export class Eingabe {
     if (this.touch.benutzt && gas === 0) gas = 1;
     let bl = t.has('KeyQ') || this.touch.bremseL ? 1 : 0, br = t.has('KeyE') || this.touch.bremseR ? 1 : 0;
     let rolle = t.has('Space') || this.touch.rolle ? 1 : 0;
-    let nase = inLuft ? (runter ? 1 : 0) - (hoch ? 1 : 0) : 0;   // wie im Flugzeug: zurückziehen = Nase hoch
+    // Sperre: am Boden gehaltenes ↑ sperrt das Nase-Senken, bis ↑ in der Luft losgelassen wird
+    const alt = NASE.modus === 'alt';
+    if (!inLuft) this.hochSperre = hoch; else if (!hoch) this.hochSperre = false;
+    const senken = hoch && (alt || !this.hochSperre);
+    let nase = inLuft ? (runter ? 1 : 0) - (senken ? 1 : 0) : 0;   // wie im Flugzeug: zurückziehen = Nase hoch
     // Gamepad
     const gp = typeof navigator !== 'undefined' && navigator.getGamepads ? [...navigator.getGamepads()].find((p) => p && p.connected) : null;
     if (gp) {
@@ -97,7 +105,9 @@ export class Eingabe {
       if (gp.buttons[4] && gp.buttons[4].pressed) bl = 1;
       if (gp.buttons[5] && gp.buttons[5].pressed) br = 1;
       if (gp.buttons[0] && gp.buttons[0].pressed) rolle = 1;
-      if (inLuft && Math.abs(ay) > 0.15) nase = ay;
+      // Stick vorn (ay < 0 = Nase senken) über den Absprung gehalten: erst nach Rückkehr zur Mitte wirksam
+      if (!inLuft) this.stickSperre = ay < -0.15; else if (ay > -0.15) this.stickSperre = false;
+      if (inLuft && Math.abs(ay) > 0.15 && (alt || ay > 0 || !this.stickSperre)) nase = ay;
     }
     this.lenk = gp && Math.abs(gp.axes[0] || 0) > 0.12 ? sollLenk : rampe(this.lenk, sollLenk, dt);
     r.gas = gas; r.lenk = this.lenk; r.bremseL = bl; r.bremseR = br; r.rolle = rolle; r.nase = nase;

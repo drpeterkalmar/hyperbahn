@@ -4,21 +4,26 @@
 // 🎬 Action-Momente, Horizont halten, Ton) werden in localStorage gemerkt; URL-Regler haben Vorrang.
 import { fmtTime } from '../core/util.js';
 import { ANZEIGE } from '../config.js';
+import { VERSION } from '../version.js';
 
 const SPEICHER = 'hyperbahn-einstellungen';
-export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, runden: 3, karte: '3d', karteNord: false };
+// P1b: `runden` nicht mehr gemerkt (kommt aus der Strecken-Fassung, Rennen ≤ 5 min); alte gespeicherte 3 Runden zählen nicht
+export const STANDARD = { hilfe: 'leicht', klasse: 'mittel', gegner: 7, ki: 'mittel', blitzeReduziert: false, action: 1, horizont: false, ton: true, strecke: 'kurz', karte: '3d', karteNord: false };
 
 export function ladeEinstellungen() {
-  try { return { ...STANDARD, ...JSON.parse(localStorage.getItem(SPEICHER) || '{}') }; } catch { return { ...STANDARD }; }
+  try { const e = { ...STANDARD, ...JSON.parse(localStorage.getItem(SPEICHER) || '{}') }; delete e.runden; return e; } catch { return { ...STANDARD }; }
 }
 export function speichereEinstellungen(e) { try { localStorage.setItem(SPEICHER, JSON.stringify(e)); } catch { /* privat */ } }
 
 const el = (tag, cls, html = '') => { const e = document.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };
 
 export class Hud {
-  constructor(root, { onStart, onEinstellung, onWeiter } = {}) {
+  // strecke = { name, runden, wahl: [[fassung, Beschriftung], …] } (Menü-Zeile + Strecken-Wahl)
+  constructor(root, { onStart, onEinstellung, onWeiter, strecke } = {}) {
     this.root = root; this.onStart = onStart; this.onEinstellung = onEinstellung; this.onWeiter = onWeiter;
+    this.strecke = strecke || { name: 'Neon-Megastadt', runden: 2, wahl: [] };
     this.einst = ladeEinstellungen();
+    if (this.strecke.aktiv) this.einst.strecke = this.strecke.aktiv;   // ?strecke= hat Vorrang: Wahl zeigt die geladene Fassung
     root.innerHTML = '';
     // Spiel-HUD
     this.hud = el('div', 'hud');
@@ -61,10 +66,11 @@ export class Hud {
     const wahl = (key, opts) => `<div class="wahl" data-wahl="${key}">${opts.map(([v, t]) => `<button data-v="${v}" class="${String(e[key]) === String(v) ? 'an' : ''}">${t}</button>`).join('')}</div>`;
     this.menue.innerHTML = `
       <h1 class="titel">HYPER<span>BAHN</span></h1>
-      <div class="unter">Neon-Megastadt · Runde ${e.runden}</div>
+      <div class="unter">${this.strecke.name} · ${this.strecke.runden} ${this.strecke.runden === 1 ? 'Runde' : 'Runden'}</div>
       <button class="weiter">WEITER</button>
       <button class="start">RENNEN STARTEN</button>
       <div class="einst">
+        ${this.strecke.wahl.length > 1 ? `<label>Strecke</label>${wahl('strecke', this.strecke.wahl)}` : ''}
         <label>Fahrhilfe</label>${wahl('hilfe', [['leicht', 'Leicht'], ['mittel', 'Mittel'], ['profi', 'Profi']])}
         <label>Gleiter-Klasse</label>${wahl('klasse', [['leicht', 'Leicht (spritzig)'], ['mittel', 'Mittel'], ['schwer', 'Schwer (rammt)']])}
         <label>Gegner</label>${wahl('gegner', [[0, '0'], [3, '3'], [7, '7']])}
@@ -77,7 +83,8 @@ export class Hud {
         <label>Karte dreht</label>${wahl('karteNord', [[false, 'Mit'], [true, 'Norden oben']])}
       </div>
       <button class="credits-knopf">Credits</button>
-      <div class="steuerung">← → lenken · ↑ Gas (beim Countdown auf „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste Barrel-Roll im Sprung (= Turbo) · ↑/↓ in der Luft Nase</div>`;
+      <div class="version">v${VERSION}</div>
+      <div class="steuerung">← → lenken · ↑ Gas (beim Countdown auf „Grün“ tippen = Start-Boost) · Q/E Luftbremsen · in der Kurve Luftbremse innen halten = Drift, kurz lösen und neu ziehen = Turbo-Stufe · Leertaste Barrel-Roll im Sprung (= Turbo) · in der Luft ↓ = Nase hoch, ↑ neu drücken = Nase runter (über den Absprung gehaltenes Gas verstellt die Nase nie)</div>`;
     this.menue.querySelector('.start').addEventListener('click', () => this.onStart && this.onStart(this.einst));
     this.menue.querySelector('.weiter').addEventListener('click', () => this.onWeiter && this.onWeiter());
     this.menue.querySelector('.credits-knopf').addEventListener('click', () => this.zeigeCredits());
@@ -147,9 +154,11 @@ export class Hud {
   // Weißblitz/Farbflash als DOM-Ebene (zusätzlich zum Kino-Look): k 0…1 (schon durch die Blitz-Bremse)
   blitz(k, farbe = '#fff') { const b = this.k.blitz; b.style.background = farbe; b.style.opacity = String(Math.min(1, k)); }
 
-  ziel(rangliste, spielerK) {
+  // best = { rennen, runde, neuRennen, neuRunde, titel } (Bestzeiten je Fassung/Rundenzahl, game/bestzeiten.js) oder null
+  ziel(rangliste, spielerK, best = null) {
     const zeilen = rangliste.map((t) => `<tr class="${t.k === spielerK ? 'ich' : ''}"><td>${t.platz}.</td><td>${t.name}</td><td>${t.ziel ? fmtTime(t.ziel.zeit) : '—'}</td><td>${isFinite(t.beste) ? fmtTime(t.beste) : ''}</td></tr>`).join('');
-    this.menue.innerHTML = `<h1 class="titel">ZIEL</h1><table class="rang"><tr><th></th><th>Fahrer</th><th>Zeit</th><th>Beste Runde</th></tr>${zeilen}</table><button class="start">NOCHMAL</button>`;
+    const bz = best ? `<div class="bestzeit">${best.titel}: Rennen ${best.rennen != null ? fmtTime(best.rennen) : '—'}${best.neuRennen ? ' <b>NEU!</b>' : ''} · Runde ${best.runde != null ? fmtTime(best.runde) : '—'}${best.neuRunde ? ' <b>NEU!</b>' : ''}</div>` : '';
+    this.menue.innerHTML = `<h1 class="titel">ZIEL</h1><table class="rang"><tr><th></th><th>Fahrer</th><th>Zeit</th><th>Beste Runde</th></tr>${zeilen}</table>${bz}<button class="start">NOCHMAL</button>`;
     this.menue.querySelector('.start').addEventListener('click', () => { this.baueMenue(); this.onStart && this.onStart(this.einst); });
     this.zeigeMenue(true);
   }

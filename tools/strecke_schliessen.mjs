@@ -1,13 +1,16 @@
 // Stimmt die Schließ-Parameter von Strecke 1 ab (Nelder-Mead): zwei Geraden-Längen (a, b), Gierwinkel der letzten
 // Kurve (c) und Steigung des Aufstiegs (d), damit Ende = Anfang (Lage + Rahmen). Ausgabe: SCHLUSS-Zeile für strecke1.js.
-// Aufruf: node tools/strecke_schliessen.mjs
+// Aufruf: node tools/strecke_schliessen.mjs [kurz|lang]   (Standard lang = SCHLUSS, kurz = SCHLUSS_KURZ)
 import { baueBahn } from '../src/track/bahn.js';
-import { strecke1Abschnitte, SCHLUSS } from '../src/track/strecke1.js';
+import { strecke1Abschnitte, SCHLUSS, SCHLUSS_KURZ } from '../src/track/strecke1.js';
+
+const fassung = process.argv[2] === 'kurz' ? 'kurz' : 'lang';
+const START = fassung === 'kurz' ? SCHLUSS_KURZ : SCHLUSS;
 
 function fehler(x) {
   const [a, b, c, d] = x;
   if (a < 60 || b < 150 || d < 0 || d > 16) return 1e12;
-  const bahn = baueBahn(strecke1Abschnitte({ a, b, c, d }));
+  const bahn = baueBahn(strecke1Abschnitte({ a, b, c, d }, fassung));
   return bahn.schluss.m ** 2 + (bahn.schluss.grad * 20) ** 2;
 }
 
@@ -40,8 +43,8 @@ function nelderMead(f, x0, schritt, iter = 400) {
   return { x: pts[i0], f: val[i0] };
 }
 
-const x0 = [SCHLUSS.a, SCHLUSS.b, SCHLUSS.c, SCHLUSS.d];
-const vor = baueBahn(strecke1Abschnitte(SCHLUSS));
+const x0 = [START.a, START.b, START.c, START.d];
+const vor = baueBahn(strecke1Abschnitte(START, fassung));
 console.log('vorher', vor.schluss, 'L', vor.L.toFixed(0));
 let best = { x: x0, f: fehler(x0) };
 for (let r = 0; r < 4; r++) {
@@ -49,6 +52,6 @@ for (let r = 0; r < 4; r++) {
   if (e.f < best.f) best = e;
 }
 const [a, b, c, d] = best.x;
-const nach = baueBahn(strecke1Abschnitte({ a, b, c, d }));
+const nach = baueBahn(strecke1Abschnitte({ a, b, c, d }, fassung));
 console.log('nachher', nach.schluss, 'L', nach.L.toFixed(0));
-console.log(`export const SCHLUSS = { a: ${a.toFixed(2)}, b: ${b.toFixed(2)}, c: ${c.toFixed(3)}, d: ${d.toFixed(3)} };`);
+console.log(`export const ${fassung === 'kurz' ? 'SCHLUSS_KURZ' : 'SCHLUSS'} = { a: ${a.toFixed(2)}, b: ${b.toFixed(2)}, c: ${c.toFixed(3)}, d: ${d.toFixed(3)} };`);

@@ -12,7 +12,9 @@
 //   ?horizont=1    Kamera „Horizont halten“ (gegen Übelkeit am Handy)
 //   ?hilfe=leicht|mittel|profi   Fahrhilfe-Stufe
 //   ?gegner=7      Anzahl KI-Gegner (0–7), ?ki=leicht|mittel|profi Stärke
-//   ?runden=3      Runden je Rennen
+//   ?runden=2      Runden je Rennen (Standard: aus der Strecken-Fassung, Rennen ≤ 5 min)
+//   ?strecke=lang  lange Fassung der Megastadt (bis 0.1.3; Standard = Kurzfassung)
+//   ?nase=alt      Nase in der Luft wie bis 0.1.3 (↑ senkt immer die Nase, keine Hülle/Landehilfe)
 //   ?online=1      nur zum Testen: Zeit-Logik wie online (Schein-Zeitlupe, timeScale bleibt 1)
 //   ?look=0|1|2, ?kl=-bloom  Kino-Look-Stufe / Einzelstufen (aus kinolook.js)
 
@@ -62,6 +64,16 @@ export const LUFT = {
   faktor: 0.55,      // Schwerkraft-Faktor in der Luft (?air= / ?sprung=): Gleiter fliegt flach und weit
 };
 
+// Nase in der Luft (P1b, Peter 20.10.: „kein Abschmieren in der Luft, wenn ich Pfeil hinauf halte“). ?nase=alt = bis 0.1.3:
+// ↑ senkt in der Luft immer die Nase, keine Hülle, keine Landehilfe.
+//  • ↑ über den Absprung gehalten = reines Gas, verstellt die Nase nie; Nase senken erst nach NEUEM Druck in der Luft (bzw. ↓
+//    = heben). Gamepad-Stick genauso (vorn gehalten über den Absprung zählt erst nach Loslassen).
+//  • Hülle: Nase höchstens `unten`° unter / `oben`° über der Flugbahn (weich, Rückstell-Rate `rate` je rad); über einer
+//    Sprung-Lücke kein Senken mehr, sobald die Wurfparabel die Landezone nicht mit `reserve` m Höhe erreicht; ab `decke` m
+//    über der Bahn kein Heben mehr
+//  • Landehilfe: ab `landeZeit` s vor dem Aufsetzen Nase zur Fahrfläche (+`landeZiel`°), ab `landeVoll` s ganz
+export const NASE = { modus: 'neu', unten: 12, oben: 25, rate: 4, reserve: 4, decke: [30, 50], landeZeit: 0.9, landeVoll: 0.35, landeRate: 5, landeZiel: 2 };
+
 export const WAND = {
   verlust: 0.12,     // Tempoverlust-Anteil bei frontalem Einschlag (skaliert mit Aufprallwinkel)
   schild: 0.06,      // Schild-Abzug bei frontalem Einschlag bei Höchsttempo (Schild 0…1)
@@ -89,7 +101,8 @@ export const ACTION = {
 export const BLITZE = { reduziert: false, maxProSek: 3, strobeDaempfung: 0.35 };
 // unschaerfe: Tempo (m/s) → Kino-Look-Bewegungsunschärfe (P1-Abnahme: 0,4 verschmierte Sprünge/Boost zu stark) – ?blur=
 export const KAMERA = { horizontHalten: false, rollFolge: 0.85, rollTraeg: 0.18, unschaerfe: 0.3 };
-export const SPIEL = { hilfe: 'leicht', gegner: 7, ki: 'mittel', runden: 3, online: false };
+// runden: 0 = aus der Strecken-Fassung (rundenDerFassung), ?runden= überschreibt; strecke: 'kurz' | 'lang' (?strecke=)
+export const SPIEL = { hilfe: 'leicht', gegner: 7, ki: 'mittel', runden: 0, strecke: 'kurz', online: false };
 
 // URL-Overrides anwenden (Browser: location.search; Node-Tests können eigene Strings übergeben)
 export function leseRegler(search) {
@@ -103,6 +116,7 @@ export function leseRegler(search) {
   MAGNET.g = zahl('mag', MAGNET.g);
   BOOST.gewinn = zahl('boost', BOOST.gewinn);
   LUFT.faktor = zahl('air', zahl('sprung', LUFT.faktor));
+  NASE.modus = q.get('nase') === 'alt' ? 'alt' : 'neu';
   ZEIT.slowmo = zahl('slowmo', ZEIT.slowmo);
   ACTION.stufe = Math.max(0, Math.min(2, Math.round(zahl('action', ACTION.stufe))));
   BLITZE.reduziert = q.get('blitze') === '0' || q.get('blitze') === 'reduziert';
@@ -112,7 +126,8 @@ export function leseRegler(search) {
   if (['leicht', 'mittel', 'profi'].includes(q.get('hilfe'))) SPIEL.hilfe = q.get('hilfe');
   if (['leicht', 'mittel', 'profi'].includes(q.get('ki'))) SPIEL.ki = q.get('ki');
   SPIEL.gegner = Math.max(0, Math.min(7, Math.round(zahl('gegner', SPIEL.gegner))));
-  SPIEL.runden = Math.max(1, Math.min(99, Math.round(zahl('runden', SPIEL.runden))));
+  SPIEL.runden = q.has('runden') ? Math.max(1, Math.min(99, Math.round(zahl('runden', 2)))) : 0;
+  SPIEL.strecke = q.get('strecke') === 'lang' ? 'lang' : 'kurz';
   SPIEL.online = q.get('online') === '1';
   return q;
 }

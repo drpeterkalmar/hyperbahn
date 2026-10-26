@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = '3f79470cc3';
+const VERSION = '9faa432ff2';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -28,6 +28,7 @@ const ASSETS = [
   'src/core/util.js',
   'src/core/vec.js',
   'src/core/zeit.js',
+  'src/game/bestzeiten.js',
   'src/game/eingabe.js',
   'src/game/fahrhilfe.js',
   'src/game/items.js',
@@ -52,7 +53,8 @@ const ASSETS = [
   'src/physics/gleiter.js',
   'src/track/bahn.js',
   'src/track/strecke1.js',
-  'src/ui/hud.js'
+  'src/ui/hud.js',
+  'src/version.js'
 ];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));

@@ -12,7 +12,8 @@ const ab = bahn.abschnitte;
 const segNamen = (typ) => ab.map((a, k) => [a, k]).filter(([a]) => a.typ === typ);
 const segBereich = (k) => {
   const s0 = bahn.segStart[k], s1 = s0 + ab[k].len;
-  return [Math.round(s0 / bahn.ds), Math.min(N, Math.round(s1 / bahn.ds))];
+  // Stützstellen, deren Bogenlänge im Abschnitt liegt (ds ist nicht genau 2 m, Runden träfe am Rand den Nachbarn)
+  return [Math.ceil(s0 / bahn.ds - 1e-9), Math.min(N, Math.floor(s1 / bahn.ds - 1e-9) + 1)];
 };
 
 test('Runde ist geschlossen (Rohfehler vor dem Verteilen < 1 m, < 0,1°)', () => {

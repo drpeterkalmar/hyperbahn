@@ -2,6 +2,22 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P1b Etappe 0: kein Abschmieren in der Luft, Rennen ≤ 5 min)
+- **Gehaltenes ↑ senkt in der Luft nie mehr die Nase** (Peter: „kein Abschmieren in der Luft, wenn ich Pfeil hinauf
+  halte“): wer über den Absprung Gas hält, fliegt wie ohne Taste. Nicken nur nach einem NEUEN Druck in der Luft (↑ = Nase
+  runter, ↓ = Nase hoch; Gamepad-Stick genauso). Sicherheits-Hülle: Nase höchstens 12° unter / 25° über der Flugbahn, über
+  einer Sprung-Lücke kein Nase-Senken, sobald die Landezone nicht mehr sicher erreicht würde, ab 30–50 m über der Bahn kein
+  Steigen mehr; Landehilfe richtet die Nase in den letzten 0,9 s zur Fahrfläche aus (ändert die Flugbahn nicht).
+  `?nase=alt` = bisher. Gemessen (`node tools/luft_mess.mjs`, 4 Riesensprünge mit/ohne Pad-Kette): ↑ dauerhaft vorher
+  4/4 Abstürze, jetzt 0 Abstürze, 0 Bauchlandungen, Weite = neutral; Kürzer/Weiter-Spanne 1 198 → 2 216 m; 2 Runden mit
+  ↑ dauerhaft: 4 → 0 Abflüge. Mindesttempo an den Kanten unverändert (73/70 m/s).
+- **Rennen höchstens 5 Minuten:** neue Kurzfassung der Neon-Megastadt (13,3 statt 15,8 km; alle Passagen bleiben, die
+  Sprünge samt Pad-Ketten, Rampen und Landezonen sind unverändert, gekürzt sind Geraden, Ausläufe und Bögen) mit 2 Runden.
+  Rundenzahl je Fassung aus der gemessenen Median-Rundenzeit der KI „Mittel“ (`node tools/rundenzeit_mess.mjs`): Kurz
+  139 s → 2 Runden, Rennen inkl. Countdown Mittel 4:44, schnellste KI 4:37; Lang 165 s → 1 Runde. Menü „Strecke: Kurz ·
+  2 Runden / Lang · 1 Runde“, `?strecke=lang`, `?runden=` überschreibt. Bestzeiten je Fassung + Rundenzahl getrennt
+  (Zielanzeige, „NEU!“). Versionsnummer im Menü.
+
 ## 0.1.3 – 23.10.2026 (Mess-Gate-Nachbesserung zu 0.1.2)
 - 0.1.2 kostete in den Sprung-Szenen des Mess-Gates +8 bis +30 % p95 (CPU-Profil: `Gleiter.schritt` +50 %): die Felder des
   weichen Stoßes wurden erst beim ersten Stoß an die Gleiter gehängt – das ändert die Objektform mitten im Rennen und bremst

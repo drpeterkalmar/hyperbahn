@@ -7,7 +7,8 @@
 // Start), ?autopilot=1 (Spieler fährt per KI – Screenshots/Mess-Gate), ?nosw (ohne Service-Worker), ?look=, ?kl=.
 import * as THREE from 'three';
 import { leseRegler, SPIEL, ZEIT, BLITZE, KAMERA, ACTION, GLEITER, BOOST } from './config.js';
-import { strecke1, SPRUNG_MINDEST } from './track/strecke1.js';
+import { strecke1, SPRUNG_MINDEST, FASSUNGEN, STANDARD_FASSUNG, rundenDerFassung } from './track/strecke1.js';
+import { bestzeitSchluessel, trageBestzeitEin } from './game/bestzeiten.js';
 import { F_MAGNET } from './track/bahn.js';
 import { bauePlan, Pilot, PROFILE } from './ai/pilot.js';
 import { Rennen, TEAMS } from './game/rennen.js';
@@ -21,11 +22,12 @@ import { KameraRig, wendeAn, leseKamera } from './gfx/kamera.js';
 import { KinoLook } from './gfx/kinolook.js';
 import { baueHimmel, neonUmgebung } from './gfx/himmel.js';
 import { Funken } from './gfx/funken.js';
-import { Hud } from './ui/hud.js';
+import { Hud, ladeEinstellungen } from './ui/hud.js';
 import { Minikarte } from './gfx/minikarte.js';
 import { GpuZeit } from './gfx/gpuzeit.js';
 import { leseGefuehl, GEFUEHL, KLASSEN_LISTE } from './physics/fahrgefuehl.js';
 import { RESET_SPERRE } from './physics/gleiter.js';
+import { VERSION } from './version.js';
 
 const q = leseRegler(location.search);
 leseGefuehl(location.search);
@@ -55,7 +57,13 @@ const lookStufe = q.has('look') ? +q.get('look') : 1;
 const kino = new KinoLook(renderer, { level: lookStufe, grade: 'neonnoir', stages: q.get('kl') || '', streak: q.has('streak') ? +q.get('streak') : 1.2 });
 
 // --- Strecke, Plan, Grafik der Bahn ---
-const bahn = strecke1();
+// Fassung (P1b): ?strecke=lang hat Vorrang, sonst die Menü-Wahl (Kurz = Standard); Wechsel im Menü lädt die Seite neu
+const einst0 = ladeEinstellungen();
+const fassung = q.has('strecke') ? SPIEL.strecke : (FASSUNGEN[einst0.strecke] ? einst0.strecke : STANDARD_FASSUNG);
+const bahn = strecke1(fassung);
+// Runden je Fassung aus der gemessenen Rundenzeit (Rennen ≤ 5 min), ?runden= überschreibt
+const RUNDEN = q.has('runden') ? SPIEL.runden : rundenDerFassung(bahn.fassung);
+const rundenText = (n) => `${n} ${n === 1 ? 'Runde' : 'Runden'}`;
 const plan = bauePlan(bahn);
 const bahnMesh = baueBahnMesh(bahn);
 scene.add(bahnMesh.gruppe);
@@ -86,6 +94,7 @@ function startStelle() {
 // Gleiter-Modelle (GLB) laden; das Rennen startet erst danach (Rückfall-Keil, falls das Laden scheitert)
 const modelle = ladeGleiterModelle().catch((e) => console.warn('Gleiter-Modelle', e));
 const hud = new Hud(document.getElementById('ui'), {
+  strecke: { name: bahn.name, runden: RUNDEN, aktiv: bahn.fassung, wahl: Object.keys(FASSUNGEN).map((f) => [f, `${FASSUNGEN[f].kurz} · ${rundenText(q.has('runden') ? SPIEL.runden : rundenDerFassung(f))}`]) },
   onStart: (e) => modelle.then(() => starte(e)),
   onWeiter: () => { if (rennen && rennen.phase !== 'ziel') { laeuft = true; hud.zeigeMenue(false); if (ton && hud.einst.ton) ton.musik('assets/musik/cyber_runner.m4a'); } },
   onEinstellung: (key, v) => {
@@ -96,6 +105,10 @@ const hud = new Hud(document.getElementById('ui'), {
     if (key === 'karte') { karte.modus = v; karteRechteck(); }
     if (key === 'karteNord') karte.nord = v;
     if (key === 'blitzeReduziert') karte.reduziert = v;
+    if (key === 'strecke' && v !== bahn.fassung) {
+      // andere Fassung: Strecke, Stadt und Minikarte neu bauen = Seite neu laden (URL-Regler ?strecke= fällt dabei weg)
+      const u = new URL(location.href); u.searchParams.delete('strecke'); location.replace(u.toString());
+    }
   },
 });
 // Einstellungen aus dem Menü übernehmen, URL-Regler haben Vorrang
@@ -136,7 +149,7 @@ function starte(e) {
   teil.splice(platz - 1, 0, { ...TEAMS[0], name: 'DU', klasse: q.get('klasse') || e.klasse || 'mittel' });
   const at = startStelle();
   fliegend = at !== null;   // fliegender Start (Abnahme): kein Start-Boost-Fenster
-  rennen = new Rennen(bahn, teil, { runden: q.has('runden') ? SPIEL.runden : e.runden, ohneCountdown: at !== null });
+  rennen = new Rennen(bahn, teil, { runden: RUNDEN, ohneCountdown: at !== null });
   spielerT = rennen.spieler;
   if (at !== null) {
     // fliegender Start an einer Stelle (Abnahme/Screenshots): Feld versetzt dahinter, mit 85 % Höchsttempo
@@ -247,6 +260,14 @@ function zuruecksetzen() {
   else if (r === 'sprung') hud.meldung('IM SPRUNG – ERST LANDEN', praes, 0.9);
 }
 
+// Bestzeiten (P1b) je Fassung + Rundenzahl + Streckenlänge – nur echte Rennen (kein fliegender Start, kein Autopilot)
+function bestzeit() {
+  if (fliegend || autopilot || !spielerT.ziel) return null;
+  let speicher = null; try { speicher = window.localStorage; } catch { /* privat */ }
+  const r = trageBestzeitEin(speicher, bestzeitSchluessel(bahn, rennen.runden), spielerT.ziel.zeit, spielerT.beste);
+  return { ...r.neu, neuRennen: r.neuRennen && !!r.alt, neuRunde: r.neuRunde && !!r.alt, titel: `Bestzeit ${FASSUNGEN[bahn.fassung].kurz} · ${rundenText(rennen.runden)}` };
+}
+
 // --- Hauptschleife ---
 let tAlt = performance.now() / 1000;
 window.__app = { ready: true, frames: 0 };   // wie Stuntbahn: tests/util.py wartet auf ready + frames
@@ -285,7 +306,7 @@ function bild() {
       ereignisse();
     }
     driftFunken();
-    if (rennen.phase === 'ziel' && laeuft) { laeuft = false; setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k), 1500); }
+    if (rennen.phase === 'ziel' && laeuft) { laeuft = false; const best = bestzeit(); setTimeout(() => hud.ziel(rennen.rangliste, spielerT.k, best), 1500); }
     rennen.alle.forEach((t, k) => { meshes[k].setzeLage(t.g); meshes[k].update(dt, t.g, t === spielerT ? spielerT.ein : t.pilot && t.pilot.ein); });
     rig.update(dt, g, fx);
     const schein = praes < scheinBis ? 1 : 0;   // Schein-Akzent online: kurzer Ran-Zoom statt Zeitlupe
@@ -348,7 +369,7 @@ let fpsN = 0, fpsT = 0;
 
 // für Mess-/Abnahme-Skripte des Heavy-Jobs (Screenshots, Collagen, Mess-Gate)
 window.__hb = {
-  bahn, plan, kino, renderer, blitze, karte, gpu, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
+  version: VERSION, bahn, plan, kino, renderer, blitze, karte, gpu, fps: 0, get meshes() { return meshes; }, get ton() { return ton; },
   get rennen() { return rennen; }, get spieler() { return spielerT && spielerT.g; }, get rig() { return rig; }, reset: () => zuruecksetzen(),
   starte: () => modelle.then(() => starte(hud.einst)), regie: () => regie,
   // Action-Moment sofort auslösen (Bildfolgen für die Collage): art z. B. 'sprungScheitel', 'ueberholen', 'beinahe'

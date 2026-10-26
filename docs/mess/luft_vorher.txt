@@ -1,0 +1,39 @@
+Luft-Messung (Standard)
+
+Häuserschlucht mit Pads  (Absprung 95 m/s)
+  neutral        ok 5.30 s 543 m (Nase -9°)  Nase/Flugbahn -0…2°
+  ↑ dauerhaft    ABSTURZ 2.70 s 0 m  Nase/Flugbahn -90…0°
+  kürzer (best)  ok 3.63 s 405 m (Nase -8°) T=0.2
+  weiter (best)  ok 10.97 s 999 m (Nase -16°) T=0.8
+  ↑ neu 5 s      ABSTURZ 2.78 s 0 m
+  ↓ 5 s          BAUCH 7.15 s 434 m (Nase -48°)
+  Spanne kürzer↔weiter 593 m
+
+Häuserschlucht ohne Pads  (Absprung 95 m/s)
+  neutral        ok 4.65 s 398 m (Nase -9°)  Nase/Flugbahn -0…2°
+  ↑ dauerhaft    ABSTURZ 2.31 s 0 m  Nase/Flugbahn -90…0°
+  kürzer (best)  –
+  weiter (best)  ok 10.39 s 874 m (Nase -15°) T=0.8
+  ↑ neu 5 s      ABSTURZ 2.44 s 0 m
+  ↓ 5 s          ABSTURZ 7.12 s 0 m
+  Spanne kürzer↔weiter 0 m
+
+Neon-Schlucht mit Pads  (Absprung 95 m/s)
+  neutral        ok 5.61 s 579 m (Nase -10°)  Nase/Flugbahn -0…2°
+  ↑ dauerhaft    ABSTURZ 2.79 s 0 m  Nase/Flugbahn -90…0°
+  kürzer (best)  ok 3.83 s 438 m (Nase -9°) T=0.2
+  weiter (best)  ok 11.39 s 1043 m (Nase -17°) T=0.8
+  ↑ neu 5 s      ABSTURZ 2.83 s 0 m
+  ↓ 5 s          BAUCH 7.34 s 461 m (Nase -46°)
+  Spanne kürzer↔weiter 605 m
+
+Neon-Schlucht ohne Pads  (Absprung 95 m/s)
+  neutral        ok 4.91 s 422 m (Nase -9°)  Nase/Flugbahn -0…2°
+  ↑ dauerhaft    ABSTURZ 2.39 s 0 m  Nase/Flugbahn -90…0°
+  kürzer (best)  –
+  weiter (best)  ok 11.82 s 976 m (Nase -17°) T=1
+  ↑ neu 5 s      ABSTURZ 2.52 s 0 m
+  ↓ 5 s          ABSTURZ 6.87 s 0 m
+  Spanne kürzer↔weiter 0 m
+
+Summe ↑ dauerhaft: 4 Abstürze, 0 Bauchlandungen; Spanne gesamt 1198 m

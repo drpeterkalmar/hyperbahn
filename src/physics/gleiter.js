@@ -10,10 +10,12 @@
 // Eingabe je Schritt: { gas 0…1, lenk −1…1 (+ links), bremseL 0…1, bremseR 0…1 (Luftbremsen), nase −1…1 (+ hoch, nur in
 // der Luft), rolle −1|0|1 (Barrel-Roll im Sprung = Turbo) }.
 // Ereignisse (für Effekte/Ton/HUD/Action-Momente) landen in `ereignisse` und werden vom Spiel abgeholt.
-import { G, GLEITER, MAGNET, BOOST, LUFT, WAND } from '../config.js';
+import { G, GLEITER, MAGNET, BOOST, LUFT, WAND, NASE } from '../config.js';
 import { v3, von, setze, dot, kreuz, norm, addSk, dreheRahmen, orthoRahmen, endlich } from '../core/vec.js';
 import { neueAbfrage, padBei, F_MAGNET, F_LUECKE, F_LANDEZONE } from '../track/bahn.js';
-import { clamp } from '../core/util.js';
+import { clamp, smoothstep } from '../core/util.js';
+
+const RAD = Math.PI / 180;
 import { GEFUEHL, klasse, bandBeschl, lenkFaktor, kurvenFaktor, Drift, miniTurbo, neustartErfuellt } from './fahrgefuehl.js';
 
 // Schwebe-Punkte im Körper-Rahmen (vor, links, oben)
@@ -72,6 +74,7 @@ export class Gleiter {
     this.treff = null; this.drehWinkel = 0; this.stotter = 0; this.neustartBonus = 0; this.neustartFenster = 0;
     this.tipps = []; this.gasAlt = false; this.imRand = false; this.randImmun = this.randImmun || false;
     this.boostAbbau = 0;
+    this.landeW = 0;
   }
 
   get kmh() { return this.tempo * 3.6; }
@@ -187,6 +190,8 @@ export class Gleiter {
     if (this.neustartBonus > 0) this.neustartBonus -= dt;
     setze(_d, this.vor.x, this.vor.y, this.vor.z);
     if (amBoden) { addSk(_d, _d, q.Us, -dot(_d, q.Us)); norm(_d, _d); }
+    // Landehilfe richtet nur die Lage aus: Schub dann entlang der Flugbahn statt der Nase (Sprungweite bleibt wie ohne)
+    else if (this.landeW > 0 && tempo > 1) { addSk(_d, _d, _d, -this.landeW); addSk(_d, _d, this.v, this.landeW / tempo); norm(_d, _d); }
     const zugBei = (v) => GLEITER.schub * (v / vmax) ** 2;
     const band = bandBeschl(this.kl, tempo / vz) * (this.neustartBonus > 0 ? this.kl.neustart : 1);
     const schub = gas * (band + zugBei(Math.min(tempo, vz))) * (amBoden || kontakte ? 1 : GLEITER.luftSchub);
@@ -226,6 +231,7 @@ export class Gleiter {
       kreuz(_t, this.oben, q.Us);
       addSk(this.w, this.w, _t, 6 * dt);
       if (this.rolle) this.rolleAbbrechen();
+      this.landeW = 0;
     } else {
       this.luftDrehung(dt, ein, q, aufBahn);
     }
@@ -285,12 +291,34 @@ export class Gleiter {
       const steig = clamp(dot(this.v, this.oben) / t, -1, 1);
       nickZiel = steig * 1.2;   // Flugbahn zeigt „über“ die Nase → Nase heben (negativ um links)
       nickZiel = -nickZiel;
+    } else if (NASE.modus !== 'alt') {
+      // Hülle (P1b): Nase höchstens NASE.unten° unter / NASE.oben° über der Flugbahn – weich, nie Sturzflug
+      const nick = Math.asin(clamp(-dot(this.v, this.oben) / (this.tempo || 1), -1, 1));   // + = Nase über der Flugbahn
+      // über einer Sprung-Lücke kein Nase-Senken, sobald die Wurfparabel den Anfang der Landezone nicht mehr mit `reserve` m
+      // erreicht (nie in die Schlucht drücken); hoch oben kein Steigen mehr (Decke: sonst segelt er über die Landezone hinaus)
+      const unten = (q.flags & F_LUECKE) && this.reicht(q) < NASE.reserve ? 0 : NASE.unten;
+      const oben = NASE.oben * (1 - smoothstep(NASE.decke[0], NASE.decke[1], q.h));
+      const hoch = clamp(-nickZiel, NASE.rate * (-unten * RAD - nick), NASE.rate * (oben * RAD - nick));
+      nickZiel = -hoch;
+    }
+    // Landehilfe (P1b): kurz vor dem Aufsetzen Nase zur Fahrfläche (Zeit bis zum Kontakt aus Höhe und Sinkrate)
+    this.landeW = 0;
+    if (NASE.modus !== 'alt' && q.h > -1) {
+      const sink = -dot(this.v, q.Us);
+      const tk = sink > 0.5 ? Math.max(0, q.h - GLEITER.hoehe) / sink : Infinity;
+      if (tk < NASE.landeZeit) {
+        const w = 1 - smoothstep(NASE.landeVoll, NASE.landeZeit, tk);
+        const neig = Math.asin(clamp(dot(this.vor, q.Us), -1, 1));   // + = Nase von der Fläche weg
+        const ziel = -NASE.landeRate * (NASE.landeZiel * RAD - neig);
+        nickZiel += (ziel - nickZiel) * w;
+        this.landeW = w;
+      }
     }
     addSk(this.w, this.w, this.links, (nickZiel - wl) * Math.min(1, 8 * dt));
     // Auftrieb: Nase über der Flugbahn → flacher und weiter
     const t = this.tempo || 1;
     const anstell = clamp(-dot(this.v, this.oben) / t, -0.4, 0.4);   // Bahn unter der Nase = positiver Anstellwinkel
-    if (anstell > 0) addSk(this.v, this.v, this.oben, GLEITER.luftAuftrieb * t * anstell * dt);
+    if (anstell > 0) addSk(this.v, this.v, this.oben, GLEITER.luftAuftrieb * t * anstell * dt * (1 - this.landeW));
     // Barrel-Roll
     // nur auf neuen Tastendruck (Flanke), sonst rollte gehaltene Taste endlos
     const neu = ein.rolle && !this.rolleTaste;
@@ -315,6 +343,19 @@ export class Gleiter {
       addSk(this.w, this.w, this.vor, (fehl * 2.5 - wv) * Math.min(1, 4 * dt));
     }
     void aufBahn;
+  }
+
+  // Wurfparabel bis zum Ende der Sprung-Lücke unter dem Gleiter: Höhenreserve (m) über der Landezone (Schwerkraft wie in
+  // der Luft, ohne Schub und Auftrieb). Negativ = fällt in die Schlucht.
+  reicht(q) {
+    const b = this.bahn, ende = lueckenEnde(b)[Math.floor(q.i) % b.N];
+    if (ende < 0) return Infinity;
+    const E = b.punkt(ende * b.ds, q.u, GLEITER.hoehe, _e);
+    const dx = E.x - this.p.x, dz = E.z - this.p.z, d = Math.hypot(dx, dz);
+    const vh = (this.v.x * dx + this.v.z * dz) / Math.max(d, 1e-6);
+    if (vh < 1) return -Infinity;
+    const t = d / vh;
+    return this.p.y + this.v.y * t - 0.5 * G * LUFT.faktor * t * t - E.y;
   }
 
   rolleAbbrechen() {
@@ -468,4 +509,16 @@ export class Gleiter {
   }
 }
 
-const _a = v3(), _tau = v3(), _r = v3(), _pi = v3(), _vp = v3(), _f = v3(), _t = v3(), _d = v3(), _l = v3(), _n = v3();
+// je Stützstelle in einer Sprung-Lücke: erste Stützstelle dahinter (sonst −1), einmal je Bahn
+function lueckenEnde(b) {
+  if (b._lueckenEnde) return b._lueckenEnde;
+  const N = b.N, e = new Int32Array(N).fill(-1);
+  for (let n = 2 * N - 1, nach = -1; n >= 0; n--) {
+    const i = n % N;
+    if (b.flags[i] & F_LUECKE) e[i] = nach; else nach = i;
+  }
+  b._lueckenEnde = e;
+  return e;
+}
+
+const _e = v3(), _a = v3(), _tau = v3(), _r = v3(), _pi = v3(), _vp = v3(), _f = v3(), _t = v3(), _d = v3(), _l = v3(), _n = v3();
