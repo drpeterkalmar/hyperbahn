@@ -1,10 +1,14 @@
-// Ton (reine WebAudio-Synthese, keine Assets): Antrieb, Boost-Fauchen mit Tonhöhen-Anstieg, Wand-Kratzen, Magnet-Summen,
+// Ton (reine WebAudio-Synthese, keine Assets): Boost-Fauchen mit Tonhöhen-Anstieg, Wand-Kratzen, Magnet-Summen,
 // kurze Töne für Landung/Ring/Rolle/Mini-Turbo/Start-Boost. Peters Handy-Regeln: zurückhaltend, Klangkörper im Mittelton
 // (300–700 Hz), kein Dauerfeuer, im Menü still, Lautlos-Schalter respektieren (audioSession 'ambient').
 // Zeitlupe: tonFaktor < 1 senkt die Tonhöhe. Musik: CC0-Synthwave-Loop „Cyber Runner“ (ansimuz, OpenGameArt, LICENSES.md),
 // nur im Rennen (im Menü still), auf −16 LUFS gebracht (assets/musik/cyber_runner.m4a).
 // Startwerte – TODO Heavy-Job: am Handy-Lautsprecher abhören (Pegel, Tonhöhen).
-export const MISCHUNG = { gesamt: 0.55, antrieb: 0.16, boost: 0.14, wand: 0.18, magnet: 0.05, ereignis: 0.22, musik: 0.35 };
+// 26.10.2026 (Peter): Antriebs-/Motorsound ersatzlos gestrichen (war antrieb 0.16), Musik lauter (war 0.35).
+// URL-Regler ?musik=0..1.2 (Musik-Pegel, 0 = aus).
+const _q = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('musik') : null;
+const _musik = _q !== null && _q !== '' && Number.isFinite(+_q) ? Math.max(0, Math.min(1.2, +_q)) : 0.8;
+export const MISCHUNG = { gesamt: 0.55, boost: 0.14, wand: 0.18, magnet: 0.05, ereignis: 0.22, musik: _musik };
 
 export class Ton {
   constructor() {
@@ -20,13 +24,6 @@ export class Ton {
     const c = this.ctx = new AC();
     this.master = c.createGain(); this.master.gain.value = this.stummAn ? 0 : MISCHUNG.gesamt;
     this.master.connect(c.destination);
-    // Antrieb: Sägezahn + Rechteck (Oktave tiefer) → Tiefpass, Tonhöhe nach Tempo
-    this.osc1 = c.createOscillator(); this.osc1.type = 'sawtooth';
-    this.osc2 = c.createOscillator(); this.osc2.type = 'square';
-    this.lp = c.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.frequency.value = 900; this.lp.Q.value = 2;
-    this.antrieb = c.createGain(); this.antrieb.gain.value = 0;
-    const g2 = c.createGain(); g2.gain.value = 0.45;
-    this.osc1.connect(this.lp); this.osc2.connect(g2); g2.connect(this.lp); this.lp.connect(this.antrieb); this.antrieb.connect(this.master);
     // Rauschen (Boost-Fauchen, Wand-Kratzen)
     const len = c.sampleRate * 1.5, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
     let s = 7; for (let i = 0; i < len; i++) { s = (s * 16807) % 2147483647; d[i] = (s / 2147483647) * 2 - 1; }
@@ -47,7 +44,7 @@ export class Ton {
     const tremG = c.createGain(); tremG.gain.value = 0.3;
     this.trem.connect(tremG); tremG.connect(this.magG.gain);
     this.mag1.connect(this.magG); this.mag2.connect(this.magG); this.magG.connect(this.master);
-    for (const o of [this.osc1, this.osc2, this.mag1, this.mag2, this.trem]) o.start();
+    for (const o of [this.mag1, this.mag2, this.trem]) o.start();
     this.an = true;
   }
 
@@ -59,13 +56,7 @@ export class Ton {
   // je Bild: tempo (m/s), vmax, boost (0…), magnet (0…1), wand (bool), luft (bool), tonFaktor (Zeitlupe)
   update({ tempo = 0, vmax = 95, boost = 0, magnet = 0, wand = false, luft = false, tonFaktor = 1 } = {}) {
     if (!this.ctx || !this.an) return;
-    const t = this.ctx.currentTime, x = Math.min(1.8, tempo / vmax);
-    // Klangkörper 300–700 Hz (Grundton tiefer, Obertöne tragen am Handy-Lautsprecher)
-    const f = (95 + 120 * x + 60 * boost) * tonFaktor;
-    this.osc1.frequency.setTargetAtTime(f * 2, t, 0.05);
-    this.osc2.frequency.setTargetAtTime(f, t, 0.05);
-    this.lp.frequency.setTargetAtTime((500 + 900 * x + (luft ? -200 : 0)) * tonFaktor, t, 0.08);
-    this.antrieb.gain.setTargetAtTime(MISCHUNG.antrieb * (0.35 + 0.65 * Math.min(1, x)), t, 0.1);
+    const t = this.ctx.currentTime;
     this.boostR.g.gain.setTargetAtTime(MISCHUNG.boost * Math.min(1, boost * 1.4), t, 0.08);
     this.boostR.fl.frequency.setTargetAtTime((450 + 500 * Math.min(1, boost)) * tonFaktor, t, 0.1);
     this.wandR.g.gain.setTargetAtTime(wand ? MISCHUNG.wand : 0, t, 0.03);
@@ -77,7 +68,7 @@ export class Ton {
   ruhe() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    for (const g of [this.antrieb.gain, this.boostR.g.gain, this.wandR.g.gain, this.magG.gain]) g.setTargetAtTime(0, t, 0.1);
+    for (const g of [this.boostR.g.gain, this.wandR.g.gain, this.magG.gain]) g.setTargetAtTime(0, t, 0.1);
     this.musikStopp();
   }
 

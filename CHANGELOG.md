@@ -2,6 +2,10 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## 0.1.15 – 26.10.2026
+- Ton (Peter): Antriebs-/Motorsound ersatzlos entfernt; Musik deutlich lauter (Pegel 0,35 → 0,8, Regler `?musik=0…1.2`,
+  0 = aus). Boost-Fauchen, Wand-Kratzen, Magnet-Summen und Ereignis-Töne bleiben.
+
 ## 0.1.14 – 26.10.2026 (P2 Abschluss)
 - Bericht `P2_STRECKEN_BERICHT.md` (Messtabelle je Strecke, Mess-Gate, Bild-Prüfung, Handy-Testhinweise), Messprotokolle
   `docs/mess/p2_*`, Bildfolgen `docs/bilder/p2_*`.
