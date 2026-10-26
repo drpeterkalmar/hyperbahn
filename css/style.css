@@ -79,10 +79,11 @@ body.ruhig .schild.warn i { animation: none; }
 .tk.rolle { border-color: rgba(255, 43, 214, 0.7); }
 .tk.rolle.an { background: rgba(255, 43, 214, 0.35); box-shadow: var(--glow-m); }
 .pause { pointer-events: auto; position: absolute; top: calc(max(10px, env(safe-area-inset-top)) + 64px); right: max(12px, env(safe-area-inset-right)); background: var(--glas); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 16px; min-width: 48px; min-height: 48px; }
-/* Reset (p1c): links über der linken Bremse – mit dem linken Daumen erreichbar, auch ohne Touch sichtbar */
-.reset { pointer-events: auto; position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: calc(max(10px, env(safe-area-inset-bottom)) + 84px);
-  width: 60px; height: 60px; border-radius: 50%; background: var(--glas); border: 1px solid rgba(255, 212, 0, 0.7); color: var(--gelb);
-  font: 700 28px var(--schrift); line-height: 1; touch-action: none; backdrop-filter: blur(4px); text-shadow: 0 0 8px var(--gelb); cursor: pointer; }
+/* Reset: oben rechts unter der Pause (26.10.2026, Peter: links unten lag er in der Lenkfläche und wurde beim Lenken ständig
+   getroffen; vorher p1c: left 12px, bottom +84px/+96px hoch) */
+.reset { pointer-events: auto; position: absolute; right: max(12px, env(safe-area-inset-right)); top: calc(max(10px, env(safe-area-inset-top)) + 132px);
+  width: 52px; height: 52px; border-radius: 50%; background: var(--glas); border: 1px solid rgba(255, 212, 0, 0.7); color: var(--gelb);
+  font: 700 24px var(--schrift); line-height: 1; touch-action: none; backdrop-filter: blur(4px); text-shadow: 0 0 8px var(--gelb); cursor: pointer; }
 .reset:active { background: rgba(255, 212, 0, 0.3); }
 .reset.gesperrt { opacity: 0.35; }
 .abblende { position: absolute; inset: 0; background: #05060a; opacity: 0; pointer-events: none; }
@@ -92,7 +93,6 @@ body.ruhig .schild.warn i { animation: none; }
   .hud-tempo { right: 50%; transform: translateX(50%); text-align: center; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 96px); }
   .tk { padding: 22px 14px; min-width: 30vw; }
   .tk.rolle { min-width: 24vw; }
-  .reset { bottom: calc(max(10px, env(safe-area-inset-bottom)) + 96px); width: 64px; height: 64px; }
 }
 
 /* --- Menü --- */

@@ -2,6 +2,10 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## 0.1.16 – 26.10.2026
+- Reset-Knopf ↺ (Peter): von links unten (mitten in der Lenkfläche, beim Lenken ständig getroffen) nach oben rechts unter
+  die Pause verlegt.
+
 ## 0.1.15 – 26.10.2026
 - Ton (Peter): Antriebs-/Motorsound ersatzlos entfernt; Musik deutlich lauter (Pegel 0,35 → 0,8, Regler `?musik=0…1.2`,
   0 = aus). Boost-Fauchen, Wand-Kratzen, Magnet-Summen und Ereignis-Töne bleiben.
