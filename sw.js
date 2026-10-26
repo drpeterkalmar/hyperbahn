@@ -1,5 +1,5 @@
 // Service-Worker: offline spielbar, Cache-Busting über Inhalts-Hash (tools/update_sw.py)
-const VERSION = '317aa63e8c';
+const VERSION = 'c1864cd0e1';
 const CACHE = 'hyperbahn-' + VERSION;
 const ASSETS = [
   './',
@@ -46,6 +46,9 @@ const ASSETS = [
   'src/gfx/kern/taau.js',
   'src/gfx/kern/taau_mathe.js',
   'src/gfx/kinolook.js',
+  'src/gfx/kulisse_kern.js',
+  'src/gfx/kulisse_megastadt.js',
+  'src/gfx/kulisse_wueste.js',
   'src/gfx/minikarte.js',
   'src/gfx/regen.js',
   'src/gfx/stadt.js',
@@ -53,9 +56,14 @@ const ASSETS = [
   'src/main.js',
   'src/physics/fahrgefuehl.js',
   'src/physics/gleiter.js',
+  'src/track/alle.js',
   'src/track/bahn.js',
+  'src/track/runden.js',
   'src/track/strecke1.js',
+  'src/track/strecke_wueste.js',
+  'src/track/strecken.js',
   'src/ui/hud.js',
+  'src/ui/vorschau.js',
   'src/version.js'
 ];
 self.addEventListener('install', (e) => {

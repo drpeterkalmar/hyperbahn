@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P2: Streckenwahl + Wüsten-Raumhafen)
+## 0.1.10 – 26.10.2026 (P2: Streckenwahl + Wüsten-Raumhafen)
 - **Streckenwahl im Menü:** Karten mit drehender 3D-Vorschau der Strecke (Höhen, Magnet/Röhre/Landezone farbig, Pads gelb),
   Name, Charakter, Rundenzahl und Bestzeit; „🎲 Zufällig“ (nie zweimal hintereinander dieselbe), 🔗 Teilen-Link je Strecke.
   URL `?strecke=wueste|megastadt|lang|zufall`; die Megastadt behält Kurz/Lang und alle Bestzeiten. Wechsel ohne Neuladen.
