@@ -21,7 +21,7 @@ export class Eingabe {
     this.tasten = new Set();
     this.touch = { lenk: 0, bremseL: 0, bremseR: 0, rolle: 0, aktiv: false };
     this.lenk = 0;
-    this.roh = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0, strafe: 0 };
+    this.roh = { gas: 0, lenk: 0, bremseL: 0, bremseR: 0, nase: 0, rolle: 0, boost: 0, strafe: 0, autoGas: false };
     this.resetWunsch = false; this.gpReset = false;
     this.hochSperre = false; this.stickSperre = false;   // ↑ bzw. Stick vorn seit dem Boden gehalten → nickt nicht
     if (ziel) {
@@ -93,7 +93,8 @@ export class Eingabe {
     if (this.touch.aktiv) sollLenk = this.touch.lenk;
     let gas = hoch ? 1 : runter ? -1 : 0;   // −1 = „Gas weg“ (für Auto-Gas)
     // Touch hat keine Gas-Taste: wer per Touch fährt, hat auf allen Stufen Auto-Gas (Stufen unterscheiden dann der Lenkzug)
-    if (this.touch.benutzt && gas === 0) gas = 1;
+    let autoGas = false;
+    if (this.touch.benutzt && gas === 0) { gas = 1; autoGas = true; }
     let bl = t.has('KeyQ') || this.touch.bremseL ? 1 : 0, br = t.has('KeyE') || this.touch.bremseR ? 1 : 0;
     let rolle = t.has('Space') || this.touch.rolle ? 1 : 0;
     let boost = 0;
@@ -110,7 +111,7 @@ export class Eingabe {
       const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
       if (Math.abs(ax) > 0.12) sollLenk = -ax;
       const rt = gp.buttons[7] ? gp.buttons[7].value : 0;
-      if (rt > 0.05) gas = rt;
+      if (rt > 0.05) { gas = rt; autoGas = false; }
       if (gp.buttons[4] && gp.buttons[4].pressed) bl = 1;
       if (gp.buttons[5] && gp.buttons[5].pressed) br = 1;
       if (gp.buttons[0] && gp.buttons[0].pressed) rolle = 1;
@@ -122,6 +123,7 @@ export class Eingabe {
       if (inLuft && Math.abs(ay) > 0.15 && (alt || ay > 0 || !this.stickSperre)) nase = ay;
     }
     this.lenk = gp && Math.abs(gp.axes[0] || 0) > 0.12 ? sollLenk : rampe(this.lenk, sollLenk, dt);
+    r.autoGas = autoGas;   // P3: Gas kommt vom Touch-Automaten (die Fahrhilfe darf es vor Kurven zurücknehmen)
     r.gas = gas; r.lenk = this.lenk; r.bremseL = bl; r.bremseR = br; r.rolle = rolle; r.nase = nase; r.boost = boost; r.strafe = strafe;
     return r;
   }

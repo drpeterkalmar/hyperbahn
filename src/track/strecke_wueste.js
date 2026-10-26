@@ -56,7 +56,7 @@ export function abschnitte(sch = SCHLUSS) {
 }
 
 // Mindesttempo an der Sprungkante (m/s, Vollgas) – „SPEED OK“ im HUD; test_strecken.mjs prüft es gegen die Physik (±4 m/s)
-export const SPRUNG_MINDEST = { 'Raketensilo': 63 };
+export const SPRUNG_MINDEST = { 'Raketensilo': 53 };   // P3: bis 0.1.17 63
 
 export function baue() {
   const b = baueBahn(abschnitte(SCHLUSS), { start: START });

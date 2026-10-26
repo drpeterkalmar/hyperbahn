@@ -247,7 +247,7 @@ export class Gleiter {
       // Luftbremsen-Widerstand: im Drift wie bisher (Drift = Rutschen, nicht Bremsen); sonst Vorlage: eine ≈ 80 %, beide ≈ 45 %
       const eine = Math.max(this.blW, this.brW), beide = Math.min(this.blW, this.brW);
       const bremsZug = !amBoden ? 0 : (dr.aktiv || !VB.an) ? GLEITER.luftbremseZug * (this.blW + this.brW) * 0.5 * (dr.aktiv ? GEFUEHL.driftZug : 1)
-        : VB.zug * (eine - beide) + VB.zugBeide * beide;
+        : (VB.zug * (eine - beide) + VB.zugBeide * beide) * (GLEITER.basis / 95);   // P3: mit dem Grundtempo skaliert (wie die Bänder)
       const zug = zugBei(tempo) + bremsZug;
       addSk(a, a, this.v, -zug / tempo);
     }

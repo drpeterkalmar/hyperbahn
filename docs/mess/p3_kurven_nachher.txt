@@ -1,0 +1,17 @@
+Kurven-Messung (Standard)
+Kleinster Radius bei Höchsttempo (Vollgas, voll eingeschlagen): 129 m bei 90.6 m/s (Höchsttempo 105 m/s)
+megastadt vollgas Kurven geschafft 9/9, Abflüge 0 · engste: Hafenkurve R168 ✓, Schikane rechts R172 ✓, Schikane links R172 ✓, Steilkurve Turm R242 ✓
+megastadt handy   Kurven geschafft 9/9, Abflüge 0 · engste: Hafenkurve R168 ✓, Schikane rechts R172 ✓, Schikane links R172 ✓, Steilkurve Turm R242 ✓
+megastadt gasweg  Kurven geschafft 9/9, Abflüge 0 · engste: Hafenkurve R168 ✓, Schikane rechts R172 ✓, Schikane links R172 ✓, Steilkurve Turm R242 ✓
+wueste    vollgas Kurven geschafft 5/6, Abflüge 0 · engste: Wüstenbogen R182 ✓, Wüsten-S links R204 ✓, Wüsten-S rechts R204 ✓, Dünenbogen R318 ✓
+wueste    handy   Kurven geschafft 6/6, Abflüge 0 · engste: Wüstenbogen R182 ✓, Wüsten-S links R204 ✓, Wüsten-S rechts R204 ✓, Dünenbogen R318 ✓
+wueste    gasweg  Kurven geschafft 6/6, Abflüge 0 · engste: Wüstenbogen R182 ✓, Wüsten-S links R204 ✓, Wüsten-S rechts R204 ✓, Dünenbogen R318 ✓
+riff      vollgas Kurven geschafft 6/8, Abflüge 0 · engste: Tiefseekurve R175 ✓, Riffbogen R177 ✗(1W), Zielkurve R255 ✗(1W), Korallenkurve R278 ✓
+riff      handy   Kurven geschafft 8/8, Abflüge 0 · engste: Tiefseekurve R175 ✓, Riffbogen R177 ✓, Zielkurve R255 ✓, Korallenkurve R278 ✓
+riff      gasweg  Kurven geschafft 8/8, Abflüge 0 · engste: Tiefseekurve R175 ✓, Riffbogen R177 ✓, Zielkurve R255 ✓, Korallenkurve R278 ✓
+gebirge   vollgas Kurven geschafft 5/8, Abflüge 0 · engste: Serpentine 1 R121 ✗(1W), Schikane rechts R158 ✓, Schikane links R158 ✓, Passkurve R161 ✗(1W)
+gebirge   handy   Kurven geschafft 8/8, Abflüge 0 · engste: Serpentine 1 R121 ✓, Schikane rechts R158 ✓, Schikane links R158 ✓, Passkurve R161 ✓
+gebirge   gasweg  Kurven geschafft 8/8, Abflüge 0 · engste: Serpentine 1 R121 ✓, Schikane rechts R158 ✓, Schikane links R158 ✓, Passkurve R161 ✓
+orbit     vollgas Kurven geschafft 2/5, Abflüge 0 · engste: Andockbogen R157 ✗(1W), Ringkurve R160 ✓, Trommel R166 ✗(1W), Erdkurve R229 ✓
+orbit     handy   Kurven geschafft 5/5, Abflüge 0 · engste: Andockbogen R157 ✓, Ringkurve R160 ✓, Trommel R166 ✓, Erdkurve R229 ✓
+orbit     gasweg  Kurven geschafft 5/5, Abflüge 0 · engste: Andockbogen R157 ✓, Ringkurve R160 ✓, Trommel R166 ✓, Erdkurve R229 ✓

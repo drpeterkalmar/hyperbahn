@@ -56,7 +56,7 @@ export function abschnitte(sch = SCHLUSS) {
   ], SCHARF);
 }
 
-export const SPRUNG_MINDEST = { 'Scharte': 55, 'Talsprung': 70 };
+export const SPRUNG_MINDEST = { 'Scharte': 52, 'Talsprung': 64 };   // P3: bis 0.1.17 55 / 70
 
 export function baue() {
   const b = baueBahn(abschnitte(SCHLUSS), { start: START });

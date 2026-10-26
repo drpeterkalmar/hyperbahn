@@ -125,7 +125,7 @@ export function mess9(n = 8, runden = 2) {
     const gaps = [], spreads = [], wechsel = [];
     for (let r = 0; r < n; r++) {
       const profile = ['mittel', 'profi', 'profi', 'mittel', 'mittel', 'mittel', 'leicht', 'leicht'];
-      const teil = TEAMS.map((t, k) => ({ ...t, klasse: KLASSEN_LISTE[(k + r) % 3], spieler: k === 0, pilot: new Pilot(b, plan, PROFILE[profile[k]], 1000 * r + 31 * k + 7) }));
+      const teil = TEAMS.map((t, k) => ({ ...t, klasse: KLASSEN_LISTE[(k + r) % 3], spieler: k === 0, pilot: new Pilot(b, plan, k === 0 ? { ...PROFILE[profile[k]], streu: 0 } : PROFILE[profile[k]], 1000 * r + 31 * k + 7) }));   // P3: Mensch ohne KI-Handschrift
       const rn = new Rennen(b, teil, { runden, gummiband: staerke, ohneCountdown: true });
       let n2 = 0, ordnung = null, w = 0, tProbe = 0;
       while (rn.phase !== 'ziel' && n2++ < 240 * 200 * runden) {

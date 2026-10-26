@@ -2,29 +2,29 @@
 // Nur Beschreibungen + Lade-Funktionen – die Strecken-Daten (track/strecke_*.js) und Kulissen (gfx/kulisse_*.js) werden erst
 // geladen, wenn sie gebraucht werden (dynamischer import). Node-Werkzeuge nehmen track/alle.js (statisch, synchron).
 //
-// rundenzeit = gemessene Median-Rundenzeit der KI „Mittel“ (tools/rundenzeit_mess.mjs <id>; test_strecken.mjs prüft ±6 s)
+// rundenzeit = gemessene Median-Rundenzeit der KI „Mittel“ (P3 neu gemessen: 105 m/s, engere Kurven, mehr Pads) (tools/rundenzeit_mess.mjs <id>; test_strecken.mjs prüft ±6 s)
 // → Rundenzahl über rundenFuer() (Rennen ≤ 5:00 inkl. Countdown).
 // URL: ?strecke=<id> (auch die alten Werte kurz/lang der Megastadt), ?strecke=zufall, ?cup=1.
 import { rundenFuer } from './runden.js';
 
 export const STRECKEN = [
-  { id: 'megastadt', name: 'Neon-Megastadt', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'kurz', rundenzeit: 135.4,
+  { id: 'megastadt', name: 'Neon-Megastadt', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'kurz', rundenzeit: 130.6,
     text: 'Nacht und Regen zwischen Wolkenkratzern: Looping, Korkenzieher-Röhre, Wandfahrt, zwei Riesensprünge.',
     daten: () => import('./strecke1.js'), kulisse: () => import('../gfx/kulisse_megastadt.js') },
-  { id: 'wueste', name: 'Wüsten-Raumhafen', charakter: 'Vollgas', farbe: '#ff9a3c', rundenzeit: 87.7,
+  { id: 'wueste', name: 'Wüsten-Raumhafen', charakter: 'Vollgas', farbe: '#ff9a3c', rundenzeit: 83.9,
     text: 'Dämmerung, Sandsturm: lange Geraden mit Boost-Ketten, weite schnelle Bögen, Riesensprung über das Raketensilo.',
     daten: () => import('./strecke_wueste.js'), kulisse: () => import('../gfx/kulisse_wueste.js') },
-  { id: 'riff', name: 'Riff-Röhre', charakter: 'Technik', farbe: '#2be0ff', rundenzeit: 89.5,
+  { id: 'riff', name: 'Riff-Röhre', charakter: 'Technik', farbe: '#2be0ff', rundenzeit: 86.9,
     text: 'Glasröhren durch ein Korallenriff: Korkenzieher, Magnet-Überkopf, Gabelung mit engem Schnell-Weg.',
     daten: () => import('./strecke_riff.js'), kulisse: () => import('../gfx/kulisse_riff.js') },
-  { id: 'gebirge', name: 'Gewitter-Pass', charakter: 'Sprünge', farbe: '#9fb4ff', rundenzeit: 91.6,
+  { id: 'gebirge', name: 'Gewitter-Pass', charakter: 'Sprünge', farbe: '#9fb4ff', rundenzeit: 90.3,
     text: 'Gebirgspass im Gewitter: Serpentinen-Steilkurven, Talsprünge, Schikanen, Grat ohne Bande als Abkürzung.',
     daten: () => import('./strecke_gebirge.js'), kulisse: () => import('../gfx/kulisse_gebirge.js') },
-  { id: 'orbit', name: 'Orbital-Ring', charakter: 'Show', farbe: '#b18cff', rundenzeit: 93.4,
+  { id: 'orbit', name: 'Orbital-Ring', charakter: 'Show', farbe: '#b18cff', rundenzeit: 88.5,
     text: 'Raumstation über der Erde: Möbius-Band, Wandfahrt in der Trommel, schwerelos durch Boost-Ringe.',
     daten: () => import('./strecke_orbit.js'), kulisse: () => import('../gfx/kulisse_orbit.js') },
   // lange Fassung der Megastadt (bis 0.1.3): nur über ?strecke=lang bzw. die Wahl auf der Megastadt-Karte, nicht im Cup
-  { id: 'megastadt-lang', name: 'Neon-Megastadt (lang)', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'lang', rundenzeit: 158.3, versteckt: true,
+  { id: 'megastadt-lang', name: 'Neon-Megastadt (lang)', charakter: 'Allrounder', farbe: '#ff2bd6', fassung: 'lang', rundenzeit: 149.1, versteckt: true,
     text: 'Die lange Fassung der Megastadt.', daten: () => import('./strecke1.js'), kulisse: () => import('../gfx/kulisse_megastadt.js') },
 ];
 // Cup: alle sichtbaren Strecken nacheinander (erst freigeschaltet, wenn alle fünf gebaut sind)

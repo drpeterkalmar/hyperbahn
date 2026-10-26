@@ -120,7 +120,8 @@ test('#9/#10 Gummiband (Kurzfassung, 3 Rennen à 2 Runden): Feld enger als ohne'
   const m = mess9(3, 2);
   console.log(`  mit: P1-Abstand ${m.mit.medianAbstandP1.toFixed(1)} s, Spreizung ${m.mit.medianSpreizung.toFixed(1)} s; ohne: ${m.ohne.medianSpreizung.toFixed(1)} s`);
   assert.ok(m.mit.medianAbstandP1 <= 4.5);
-  assert.ok(m.ohne.medianSpreizung > m.mit.medianSpreizung * 1.5);
+  // P3 (Peter: „nicht alle auf dasselbe Tempo nageln“): Gummiband hält zusammen, aber die KI-Handschrift bleibt – ≥ 1,25× statt 1,5×
+  assert.ok(m.ohne.medianSpreizung > m.mit.medianSpreizung * 1.25);
 });
 
 test('Gummiband greift nie in Rennen ohne Menschen (KI-Gate unverändert) und nie über das Profil hinaus', () => {

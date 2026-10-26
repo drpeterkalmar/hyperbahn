@@ -47,14 +47,14 @@ test('Flugzeit-Boost: Stufe nach Flugzeit, nur bei sauberer Landung (Nase ≤ 12
   assert.equal(schief.e.stufe, 0); assert.ok(!schief.e.sauber); assert.equal(schief.boost, 0);
 });
 
-test('#7 Pad-Kette: +50/60/70 % (3er-Kette +70 %), nie über +80 %, Reserve ≤ 4 s; ?reserve=0 bisher sofort +80 %', () => {
+// P3: je Pad +15 % (statt +10 %), Deckel +65 % (statt +80 %: bei 105 m/s Grundtempo ≈ 173 m/s wie bisher 95 × 1,8)
+test('#7 Pad-Kette: +50/65 % (ab dem 2. Pad Deckel +65 %), nie darüber, Reserve ≤ 4 s; ?reserve=0 bisher sofort Deckel', () => {
   const r = mess('', ['7'])[7], alt = mess('?reserve=0', ['7'])[7];
   console.log(`  Stufen ${r.stufen.map((x) => Math.round(x * 100)).join('/')} %, Reserve max ${r.resMax.toFixed(2)} s; bisher ${alt.stufen.map((x) => Math.round(x * 100)).join('/')} %`);
-  assert.deepEqual(r.stufen.slice(0, 4).map((x) => Math.round(x * 100)), [50, 60, 70, 80]);
+  assert.deepEqual(r.stufen.slice(0, 4).map((x) => Math.round(x * 100)), [50, 65, 65, 65]);
   assert.ok(Math.max(...r.stufen) <= BOOST.deckel + 1e-9);
   assert.ok(r.resMax <= 4 + 1e-9 && r.resMax > 3.9);
-  assert.ok(r.stufen[2] >= 0.7 && r.stufen[2] <= 0.8);
-  assert.equal(Math.round(alt.stufen[1] * 100), 80);
+  assert.equal(Math.round(alt.stufen[1] * 100), 65);
 });
 
 test('Reserve: Antrieb ×2 nur ohne gezogene Luftbremse; mit Bremse kein Zwangs-Vollgas', () => {

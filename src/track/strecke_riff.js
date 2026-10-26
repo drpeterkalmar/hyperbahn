@@ -52,7 +52,7 @@ export function abschnitte(sch = SCHLUSS) {
   ], SCHARF);
 }
 
-export const SPRUNG_MINDEST = { 'Riffgraben': 71 };
+export const SPRUNG_MINDEST = { 'Riffgraben': 64 };   // P3: bis 0.1.17 71
 
 export function baue() {
   const b = baueBahn(abschnitte(SCHLUSS), { start: START });

@@ -24,8 +24,8 @@ export const SCHLUSS_KURZ = { a: 159.61, b: 505.85, c: 90.000, d: 15.099 };
 // rundenzeit = gemessene Median-Rundenzeit der KI „Mittel“ (tools/rundenzeit_mess.mjs; test_rennen.mjs prüft ±6 s) →
 // Rundenzahl je Fassung über rundenFuer() (Ziel ≤ 5:00 inkl. Countdown).
 export const FASSUNGEN = {
-  kurz: { name: 'Neon-Megastadt', kurz: 'Kurz', schluss: SCHLUSS_KURZ, rundenzeit: 135.4 },
-  lang: { name: 'Neon-Megastadt (lang)', kurz: 'Lang', schluss: SCHLUSS, rundenzeit: 158.3 },
+  kurz: { name: 'Neon-Megastadt', kurz: 'Kurz', schluss: SCHLUSS_KURZ, rundenzeit: 130.6 },
+  lang: { name: 'Neon-Megastadt (lang)', kurz: 'Lang', schluss: SCHLUSS, rundenzeit: 149.1 },
 };
 export const STANDARD_FASSUNG = 'kurz';
 // Kurzfassung: Länge (und ggf. Pads/Rampe) je Abschnitt
@@ -123,7 +123,7 @@ function abschnitteLang(sch) {
 
 // Mindesttempo an der Sprungkante (m/s, Vollgas, Ringe zählen mit) – gemessen von tests/node/test_gleiter.mjs, der Test
 // prüft, dass die Tabelle zur Physik passt (±4 m/s). Für die HUD-Anzeige „Speed OK“ vor dem Sprung.
-export const SPRUNG_MINDEST = { 'Häuserschlucht': 73, 'Neon-Schlucht': 69 };
+export const SPRUNG_MINDEST = { 'Häuserschlucht': 65, 'Neon-Schlucht': 59 };   // P3 (105 m/s, Bänder skaliert): bis 0.1.17 73 / 69
 
 // Strecke bauen: fassung 'kurz' | 'lang' (Standard: SPIEL.strecke, ?strecke=lang)
 export function strecke1(fassung = SPIEL.strecke) {

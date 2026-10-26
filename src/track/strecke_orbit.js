@@ -54,7 +54,7 @@ export function abschnitte(sch = SCHLUSS) {
   ], SCHARF);
 }
 
-export const SPRUNG_MINDEST = { 'Schwerelos': 39 };
+export const SPRUNG_MINDEST = { 'Schwerelos': 29 };   // P3: bis 0.1.17 39
 
 export function baue() {
   const b = baueBahn(abschnitte(SCHLUSS), { start: START });

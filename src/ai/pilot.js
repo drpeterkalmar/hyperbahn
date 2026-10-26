@@ -239,7 +239,8 @@ export class Pilot {
     const P = this.persona;
     // P3: Höchsttempo der Handschrift mit langsamer Form-Welle (Positionswechsel im Rennverlauf)
     const form = P ? Math.sin(2 * Math.PI * g.zeit / P.formPer + P.formPh) : 0;
-    if (P) g.kiTempo = P.top * (1 + P.formAmp * form);
+    // Höchsttempo höchstens +3 % über dem Grundtempo (sonst heben sie an Kuppen ab – Wüste „Rampe Kuppe“ bei 130 m/s)
+    if (P) g.kiTempo = Math.min(1.03, P.top * (1 + P.formAmp * form));
     // menschliche Fehler: langsames Linienrauschen + seltene Wackler
     this.rauschT -= dt;
     if (this.rauschT <= 0) { this.rauschZiel = (this.r() * 2 - 1) * pr.linie; this.rauschT = 1.5 + this.r() * 2.5; }
@@ -316,6 +317,10 @@ export class Pilot {
       let ds = o.s - g.s; if (ds < -b.L / 2) ds += b.L; if (ds > b.L / 2) ds -= b.L;
       if (Math.abs(ds) < AUSWEICH.laengs && Math.abs(o.u - g.u) < AUSWEICH.quer) ziel = (g.u >= o.u ? 1 : -1) * AUSWEICH.weg;
     }
+    // P3: in Röhren/Magnet-Passagen (Korkenzieher, Wandfahrt, Überkopf) nicht seitlich ausweichen – bei 105 m/s hebt ein
+    // Spurwechsel im Drehen den Gleiter ab; dort hintereinander bleiben (Stöße sind weich)
+    const igA = ((Math.floor(g.s / b.ds) % b.N) + b.N) % b.N;
+    if (b.flags[igA] & (F_ROEHRE | F_MAGNET)) { ziel = 0; rate = 3; }
     this.ausweich += (ziel - this.ausweich) * Math.min(1, dt * rate);
     // Vorschaupunkt auf der Linie
     const la = clamp((14 + 0.42 * v) * pr.vorschau, 16, 85);

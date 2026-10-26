@@ -398,13 +398,17 @@ export function schaerfe(liste, faktoren) {
     };
     const r2 = Math.min(len / 3, 120);
     const t = Math.max(0, tangente(a.len, r0) - tangente(len, r2));
-    const bank = Array.isArray(a.bank) ? a.bank.map((w) => Math.sign(w) * Math.min(50, Math.abs(w) * 1.25)) : a.bank;
+    // Querneigung: Spitze ×1,1 (höchstens 50°); Auf- und Abbau reicht zur Hälfte in die Ein-/Ausfahrt hinein – sonst kippt die
+    // kurze Kurve so schnell, dass ein Gleiter außerhalb der Mitte abhebt (Riff „Tiefseekurve“, 96 m/s)
+    const spitze = Array.isArray(a.bank) ? Math.max(...a.bank.map(Math.abs)) * Math.sign(a.bank.find((w) => w) || 1) : 0;
+    const b2 = Math.sign(spitze) * Math.min(50, Math.abs(spitze) * 1.1);
+    const bankRampe = Array.isArray(a.bank) && a.bank[a.bank.length - 1] === 0 && t > 20;
     const { pads, ringe, ...rest } = a;
     void pads; void ringe;
     return [
-      { typ: 'gerade', name: `${a.name} Einfahrt`, len: t, breite: a.breite },
-      { ...rest, len, bank, rampe: undefined, scharf: f },
-      { typ: 'gerade', name: `${a.name} Ausfahrt`, len: t, breite: a.breite },
+      { typ: 'gerade', name: `${a.name} Einfahrt`, len: t, breite: a.breite, ...(bankRampe ? { bank: [b2 / 2] } : {}) },
+      { ...rest, len, bank: bankRampe ? [b2, b2, b2 / 2] : a.bank, rampe: undefined, scharf: f },
+      { typ: 'gerade', name: `${a.name} Ausfahrt`, len: t, breite: a.breite, ...(bankRampe ? { bank: [0] } : {}) },
     ].filter((x) => x.len > 0);
   });
 }

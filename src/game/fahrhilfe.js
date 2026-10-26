@@ -8,11 +8,15 @@ import { clamp } from '../core/util.js';
 import { Pilot, PROFILE } from '../ai/pilot.js';
 import { F_TEILER } from '../track/bahn.js';
 
+// gasPlan (P3, Peter 26.10.: „ich verwende die Airbrakes nie“ – am Handy gibt es kein Gas-Pedal): das Auto-Gas (Leicht bzw.
+// Touch auf jeder Stufe) nimmt vor engen Kurven selbst Gas weg wie die KI nach dem Tempoplan – nie Luftbremse, nie unter
+// AUTO_GAS_MIN. Profi: Auto-Gas bleibt Vollgas. ?autogas=0 = immer Vollgas (bis 0.1.17)
 export const HILFE = {
-  leicht: { name: 'Leicht', autoGas: true, zug: 0.6 },
-  mittel: { name: 'Mittel', autoGas: false, zug: 0.3 },
-  profi: { name: 'Profi', autoGas: false, zug: 0 },
+  leicht: { name: 'Leicht', autoGas: true, zug: 0.6, gasPlan: true },
+  mittel: { name: 'Mittel', autoGas: false, zug: 0.3, gasPlan: true },
+  profi: { name: 'Profi', autoGas: false, zug: 0, gasPlan: false },
 };
+export const AUTO_GAS = { an: typeof location === 'undefined' || new URLSearchParams(location.search).get('autogas') !== '0', min: 0.2 };
 export const DEUTLICH = 0.35;     // |Lenkung| ab der eine Eingabe als deutlich gilt
 export const AUS_ZEIT = 0.25;     // s bis der Zug ganz weg ist (≤ 0,3 s)
 export const ZURUECK_ZEIT = 1.2;  // s bis er nach dem Loslassen wieder voll zieht
@@ -42,14 +46,17 @@ export class Fahrhilfe {
     e.nase = roh.nase || 0; e.boost = roh.boost || 0; e.strafe = roh.strafe || 0;
     // Auto-Gas: nur Leicht; „Gas weg“ (roh.gas < 0 = Bremstaste) bleibt möglich
     e.gas = c.autoGas ? (roh.gas < 0 ? 0 : 1) : clamp(roh.gas || 0, 0, 1);
+    const auto = (c.autoGas && roh.gas >= 0) || !!roh.autoGas;   // Gas kommt automatisch (Leicht bzw. Touch)
     // Gewicht des Lenkzugs: deutliche Eingabe → schnell aus, sonst sanft zurück
     const deutlich = Math.abs(roh.lenk || 0) > DEUTLICH || (roh.bremseL || 0) > 0.5 || (roh.bremseR || 0) > 0.5;
     this.gewicht = deutlich ? Math.max(0, this.gewicht - dt / AUS_ZEIT) : Math.min(1, this.gewicht + dt / ZURUECK_ZEIT);
     let lenk = clamp(roh.lenk || 0, -1, 1);
-    if (c.zug > 0 && g.zustand === 'fahrt') {
+    if ((c.zug > 0 || c.gasPlan) && g.zustand === 'fahrt') {
       if (this.gabel) this.pilot = this.piloten[this.wegBei(g)];
-      const wunsch = this.pilot.steuer(g, dt, andere).lenk;
-      lenk = clamp(lenk + this.gewicht * c.zug * wunsch, -1, 1);
+      const w = this.pilot.steuer(g, dt, andere);
+      if (c.zug > 0) lenk = clamp(lenk + this.gewicht * c.zug * w.lenk, -1, 1);
+      // P3: Auto-Gas nach Tempoplan (nimmt vor engen Kurven Gas weg)
+      if (auto && c.gasPlan && AUTO_GAS.an && e.gas > 0) e.gas = Math.min(e.gas, Math.max(AUTO_GAS.min, w.gas));
     }
     e.lenk = lenk;
     return e;

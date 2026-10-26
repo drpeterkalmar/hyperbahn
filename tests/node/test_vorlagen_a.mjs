@@ -56,7 +56,9 @@ test('Luftbremse baut sich in 0,2 s auf (Wirkung), Drift-Automat sieht die Taste
 });
 
 test('Gegenlenken baut schneller um als Anlenken; Gier-Beschleunigung begrenzt (?lenk=alt sofort)', () => {
-  const neu = mess('', ['L']).L, alt = mess('?lenk=alt', ['L']).L;
+  // Mechanik bei Grundtempo 95 m/s (?tempo=alt) prüfen; P3-Standard (105 m/s, mehr Querbeschleunigung) wird nur protokolliert
+  const neu = mess('?tempo=alt', ['L']).L, alt = mess('?tempo=alt&lenk=alt', ['L']).L, p3 = mess('', ['L']).L;
+  console.log(`  P3 (105 m/s): Anlenken 90 % ${p3.anlenken.toFixed(2)} s, Gegenlenken 90 % ${p3.wechsel90.toFixed(2)} s`);
   console.log(`  Anlenken 90 % ${neu.anlenken.toFixed(2)} s (alt ${alt.anlenken.toFixed(2)}), Gegenlenken 90 % ${neu.wechsel90.toFixed(2)} s (alt ${alt.wechsel90.toFixed(2)})`);
   // Gegenlenken überstreicht die doppelte Gier-Änderung, braucht aber weniger als die doppelte Zeit
   assert.ok(neu.wechsel90 < 2 * neu.anlenken * 0.85, 'Gegenlenken ×2');
