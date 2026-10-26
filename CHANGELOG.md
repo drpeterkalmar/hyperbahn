@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P2 Abschluss)
+## 0.1.14 – 26.10.2026 (P2 Abschluss)
 - Bericht `P2_STRECKEN_BERICHT.md` (Messtabelle je Strecke, Mess-Gate, Bild-Prüfung, Handy-Testhinweise), Messprotokolle
   `docs/mess/p2_*`, Bildfolgen `docs/bilder/p2_*`.
 - Orbit: kein Sonnen-Schleier mehr über dem halben Bild (kein Hof/keine Linsenblendung im All).
