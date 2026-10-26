@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P1b Etappe D: Start-Varianten, KI-Revanche, Seitwärts-Schub, G-Vignette)
+## 0.1.8 – 26.10.2026 (P1b Etappe D: Start-Varianten, KI-Revanche, Seitwärts-Schub, G-Vignette)
 - **Abgestufter Start-Boost** (`?startgrad=0` = bisher „Tipp auf Grün“): Idealpunkt 0,25 s **vor** Grün = 100 % („PERFEKTER
   START!“), linear bis 30 % am Fensterrand (±0,2 s), Meldung zeigt die Stärke. KI trifft je Profil Ø 12/33/54 %.
 - **Drehzahl-Band** für den analogen Gas-Abzug (Gamepad RT, `?startband=0` aus): Drehzahl-Anzeige im Countdown, bei Grün
