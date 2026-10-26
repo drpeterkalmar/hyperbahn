@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P1b Abschluss)
+## 0.1.9 – 26.10.2026 (P1b Abschluss)
 - Bericht `P1B_VORLAGEN_BERICHT.md` (Messtabelle Vorlage / Ziel / vorher / nachher, Handy-Testhinweise, Regler, Grenzen),
   Messprotokolle `docs/mess/`, Bilder `docs/bilder/p1b_*`. Rundenzeit der langen Fassung neu gemessen (158 s, weiter 1 Runde).
 

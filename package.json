@@ -1,6 +1,6 @@
 {
   "name": "hyperbahn",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "type": "module",
   "description": "Hyperbahn – Anti-Grav-Racer im Browser (Three.js, PWA, Neon-Noir)",
