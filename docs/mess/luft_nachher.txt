@@ -1,41 +1,41 @@
 Luft-Messung (Standard)
 
-Häuserschlucht mit Pads  (Absprung 139 m/s)
-  neutral        ok 5.42 s 553 m (Nase 0°)  Nase/Flugbahn -0…12°
-  ↑ dauerhaft    ok 5.42 s 553 m (Nase 0°)  Nase/Flugbahn -0…12°
-  kürzer (best)  ok 3.55 s 395 m (Nase 1°) T=3
-  weiter (best)  ok 11.08 s 1010 m (Nase -2°) T=2
-  ↑ neu 5 s      ok 3.55 s 395 m (Nase 1°)
-  ↓ 5 s          ok 10.12 s 932 m (Nase 1°)
-  Spanne kürzer↔weiter 615 m
+Häuserschlucht mit Pads  (Absprung 170 m/s)
+  neutral        ok 5.85 s 691 m (Nase 0°)  Nase/Flugbahn -0…13°
+  ↑ dauerhaft    ok 5.85 s 691 m (Nase 0°)  Nase/Flugbahn -0…13°
+  kürzer (best)  ok 3.53 s 476 m (Nase 0°) T=3
+  weiter (best)  ok (hart) 10.61 s 1067 m (Nase -2°) T=1
+  ↑ neu 5 s      ok 3.53 s 476 m (Nase 0°)
+  ↓ 5 s          ok (hart) 10.35 s 1049 m (Nase -2°)
+  Spanne kürzer↔weiter 591 m
 
 Häuserschlucht ohne Pads  (Absprung 92 m/s)
-  neutral        ok 4.78 s 410 m (Nase 0°)  Nase/Flugbahn -0…12°
-  ↑ dauerhaft    ok 4.78 s 410 m (Nase 0°)  Nase/Flugbahn -0…12°
+  neutral        ok 4.80 s 411 m (Nase 0°)  Nase/Flugbahn -0…12°
+  ↑ dauerhaft    ok 4.80 s 411 m (Nase 0°)  Nase/Flugbahn -0…12°
   kürzer (best)  ok 4.61 s 395 m (Nase 1°) T=2
-  weiter (best)  ok 10.90 s 904 m (Nase 1°) T=3
+  weiter (best)  ok 10.89 s 904 m (Nase 1°) T=3
   ↑ neu 5 s      ok 4.61 s 395 m (Nase 2°)
   ↓ 5 s          ok 10.00 s 831 m (Nase 1°)
   Spanne kürzer↔weiter 509 m
 
-Neon-Schlucht mit Pads  (Absprung 145 m/s)
-  neutral        ok 5.72 s 588 m (Nase 0°)  Nase/Flugbahn -0…13°
-  ↑ dauerhaft    ok 5.72 s 588 m (Nase 0°)  Nase/Flugbahn -0…13°
-  kürzer (best)  ok 3.63 s 416 m (Nase 0°) T=5
-  weiter (best)  ok 10.91 s 1008 m (Nase 1°) T=2
-  ↑ neu 5 s      ok 3.63 s 416 m (Nase 0°)
-  ↓ 5 s          ok 10.14 s 945 m (Nase 1°)
-  Spanne kürzer↔weiter 592 m
+Neon-Schlucht mit Pads  (Absprung 171 m/s)
+  neutral        ok 6.10 s 712 m (Nase 1°)  Nase/Flugbahn -0…14°
+  ↑ dauerhaft    ok 6.10 s 712 m (Nase 1°)  Nase/Flugbahn -0…14°
+  kürzer (best)  ok 3.63 s 492 m (Nase 1°) T=5
+  weiter (best)  ok 11.38 s 1129 m (Nase 1°) T=1.5
+  ↑ neu 5 s      ok 3.63 s 492 m (Nase 1°)
+  ↓ 5 s          ok (hart) 10.75 s 1085 m (Nase -1°)
+  Spanne kürzer↔weiter 637 m
 
 Neon-Schlucht ohne Pads  (Absprung 92 m/s)
-  neutral        ok 5.06 s 435 m (Nase 1°)  Nase/Flugbahn -0…13°
-  ↑ dauerhaft    ok 5.06 s 435 m (Nase 1°)  Nase/Flugbahn -0…13°
-  kürzer (best)  ok 4.74 s 408 m (Nase 0°) T=5
+  neutral        ok 5.08 s 436 m (Nase 1°)  Nase/Flugbahn -0…13°
+  ↑ dauerhaft    ok 5.08 s 436 m (Nase 1°)  Nase/Flugbahn -0…13°
+  kürzer (best)  ok 4.75 s 408 m (Nase 0°) T=5
   weiter (best)  ok 10.68 s 891 m (Nase 1°) T=3
-  ↑ neu 5 s      ok 4.74 s 408 m (Nase 0°)
-  ↓ 5 s          ok 9.94 s 830 m (Nase 1°)
-  Spanne kürzer↔weiter 484 m
+  ↑ neu 5 s      ok 4.75 s 408 m (Nase 0°)
+  ↓ 5 s          ok 9.95 s 831 m (Nase 1°)
+  Spanne kürzer↔weiter 483 m
 
-Summe ↑ dauerhaft: 0 Abstürze, 0 Bauchlandungen; Spanne gesamt 2199 m
-2 Runden, KI-Lenker mittel, ↑ dauerhaft: 5 Luft-Phasen > 0,4 s (längste 5.7 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 271 s
-2 Runden, KI-Lenker profi, ↑ dauerhaft: 4 Luft-Phasen > 0,4 s (längste 5.7 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 267 s
+Summe ↑ dauerhaft: 0 Abstürze, 0 Bauchlandungen; Spanne gesamt 2219 m
+2 Runden, KI-Lenker mittel, ↑ dauerhaft: 4 Luft-Phasen > 0,4 s (längste 6.1 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 268 s
+2 Runden, KI-Lenker profi, ↑ dauerhaft: 4 Luft-Phasen > 0,4 s (längste 6.1 s), 0 Abflüge, 0 schiefe Landungen (> 20°), 262 s

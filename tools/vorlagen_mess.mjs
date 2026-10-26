@@ -180,7 +180,8 @@ export function m5() {
   return { boosts, minE, boxVoll: voll };
 }
 export function m5ki() {
-  const { r } = kiRennen(2, '');
+  const { r } = kiRennen(2, REGLER_JETZT);
+  leseRegler(REGLER_JETZT);
   const zeilen = r.alle.map((t) => ({ name: t.name, boosts: t.g.statistik.energieBoosts, box: +t.g.statistik.boxZeit.toFixed(1), notlauf: +t.g.statistik.notlaufZeit.toFixed(1), energie: +t.g.schild.toFixed(2) }));
   return { zeilen, boosts: zeilen.reduce((a, z) => a + z.boosts, 0) / zeilen.length, boxen: zeilen.filter((z) => z.box > 0).length, notlauf: zeilen.reduce((a, z) => a + z.notlauf, 0) };
 }

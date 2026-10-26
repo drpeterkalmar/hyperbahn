@@ -1,4 +1,4 @@
-Vorlagen-Messgrößen ?schwebe=0&bremse=0&lenk=alt&wand=0&bergung=0&nicken=0
+Vorlagen-Messgrößen ?nase=alt&schwebe=0&bremse=0&lenk=alt&wand=0&bergung=0&nicken=0&energie=0&reserve=0&flugboost=0&startgrad=0&startband=0&revanche=0&strafe=0&gvignette=0&strecke=lang
 #1 Schwebe-Ruhelage & Federweg nach Landung aus 10 m
    Ziel: 1,15–1,25 m; Einfedern ≤ 0,4 m, ruhig ≤ 0,5 s, kein Durchschlag
    gemessen: Ruhe 1.17 m · Einfedern 0.03 m (tiefste 1.14 m) · ruhig nach 0.06 s · Aufsetzer 0
@@ -11,12 +11,36 @@ Vorlagen-Messgrößen ?schwebe=0&bremse=0&lenk=alt&wand=0&bergung=0&nicken=0
 #4 Gleitwinkel beim Bremsen-Drift
    Ziel: max. 15–25°, zurück ≤ 1,2 s
    gemessen: max. 33.2° · zurück nach 0.63 s
+#5 Boosts aus vollem Balken · Boxengasse leer → voll
+   Ziel: 8 Boosts (12 %); Boxengasse 2,5–3,5 s
+   gemessen: 0 Boosts (Energie nie unter 100 %) · Boxengasse voll nach -1.00 s
+#6 Flugzeit-Boost je Riesensprung
+   Ziel: jeder Riesensprung mit sauberer Landung = Stufe 3; Zeitgewinn 0,4–0,7 s
+   gemessen: Häuserschlucht mit Pads: Stufe -1 (0.0 s, schief) +0.00 s · Häuserschlucht ohne Pads: Stufe -1 (0.0 s, schief) +0.00 s · Neon-Schlucht mit Pads: Stufe -1 (0.0 s, schief) +0.00 s · Neon-Schlucht ohne Pads: Stufe -1 (0.0 s, schief) +0.00 s
+#7 Pad-Kette (Reserve + Ketten-Deckel)
+   Ziel: 3er-Kette +70–80 %, nie über +80 %; Reserve ≤ 4 s
+   gemessen: Stufe nach Pad 1…6: +50 % / +80 % / +80 % / +80 % / +80 % / +80 % · Reserve 1.3 / 1.3 / 1.3 / 1.3 / 1.3 / 1.3 s (max 1.30 s)
 #8 Wandtreffer 30° bei Top
    Ziel: −15…−25 % Tempo, −4…−8 % Energie
    gemessen: Tempo -46 % · Energie -15.7 %
 #9 Sprung verfehlt (Häuserschlucht)
    Ziel: Zeitverlust 2,0–3,0 s, nie vor den Sprung zurück
-   gemessen: Zeitverlust 1.73 s · Abflüge 1 · vor den Sprung zurück: nein
+   gemessen: Zeitverlust 1.14 s · Abflüge 1 · vor den Sprung zurück: nein
+#10 KI-Revanche (20 Rennen à 2 Runden, Mensch = Autopilot Mittel)
+   Ziel: Zurück-Überholquote der KI „Mittel“ 25–40 %
+   gemessen: mit Revanche 11 % (4/36, 0 Revanchen) · ohne 11 % (4/36)
+#11 Start-Boost abgestuft (KI-Telemetrie je Profil)
+   Ziel: Ø-Stärke Tester Handy 50–70 % (Tester offen)
+   gemessen: leicht: Ø 0 % (Treffer 0 %) · mittel: Ø 0 % (Treffer 0 %) · profi: Ø 0 % (Treffer 0 %)
+#13 G-Vignette
+   Ziel: in jedem Looping, nie > 35 %, aus mit „Blitze reduzieren“
+   gemessen: Looping-Durchfahrten 0 % / 0 % · max. 0 % (G-Last max. 17.6 g) · reduziert 0 %
+#K KI-Rennen 2 Runden: Energie-Nutzung
+   Ziel: KI nutzt Boost und Boxengasse, kein Notlauf
+   gemessen: Ø 0.0 Boosts je Gleiter · 0/8 durch die Boxengasse · Notlauf gesamt 0.0 s · Vanta 0/0s/98% Kyrie 0/0s/85% Oszill 0/0s/99% Nadir 0/0s/84% Halcyon 0/0s/76% Ion 0/0s/81% Ferro 0/0s/82% Quell 0/0s/70%
 #L Lenkwechsel bei 60 m/s (Gegenlenken)
    Ziel: Gegenlenken ≈ doppelt so schnell wie Anlenken (Vorlage), Gierrate ≤ 100°/s
    gemessen: volle Gierrate 42°/s · Anlenken bis 90 % 0.16 s · Gegenlenken: Richtungswechsel nach 0.05 s, 90 % nach 0.21 s
+#S Seitwärts-Schub 1 s bei 80 m/s
+   Ziel: 6 m/s² quer, kostet kein Tempo
+   gemessen: Versatz 0.0 m · Tempo +0.00 m/s · Nase dreht 0.0°

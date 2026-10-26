@@ -1,0 +1,130 @@
+{
+ "datum": "2026-10-26T09:05:40",
+ "stand": "p1b_vorher_013_w2",
+ "wurzel": "/tmp/hb013",
+ "git": "",
+ "profil": {
+  "drossel": 4,
+  "dpr": 2.6,
+  "sek": 10,
+  "geraete": "quer",
+  "gpu": "ANGLE/Metal headless",
+  "start": "open",
+  "vsync": false,
+  "zusatz": ""
+ },
+ "szenen": {
+  "pulk_standard": {
+   "quer": {
+    "n": 1714,
+    "p50": 5.6,
+    "p95": 8.4,
+    "p99": 10.2,
+    "fps": 171.2,
+    "calls": 78,
+    "callsMax": 85,
+    "tris": 508227,
+    "tex": 24,
+    "gpu50": 3.589,
+    "gpu95": 4.076,
+    "zusatz": {
+     "fps": 181.11254853807205,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 88.58592858831112,
+     "gpuSzene": 3.544704399999999,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 95,
+     "prog": 40
+    },
+    "boot_s": 0.5,
+    "fehler": []
+   }
+  },
+  "sprung_standard": {
+   "quer": {
+    "n": 1867,
+    "p50": 5.2,
+    "p95": 6.9,
+    "p99": 8.5,
+    "fps": 186.5,
+    "calls": 67,
+    "callsMax": 79,
+    "tris": 474490,
+    "tex": 24,
+    "gpu50": 3.131,
+    "gpu95": 3.499,
+    "zusatz": {
+     "fps": 179.85611511648287,
+     "kino": {
+      "level": 1,
+      "name": "Standard",
+      "pipeline": true,
+      "scale": 0.84,
+      "msaa": 0,
+      "stages": [
+       "scale",
+       "aa",
+       "sharpen",
+       "bloom",
+       "flare",
+       "aerial",
+       "grade",
+       "vignette",
+       "blur",
+       "dither",
+       "contact",
+       "dof"
+      ],
+      "grade": "neonnoir",
+      "size": [
+       1537,
+       692
+      ],
+      "taa": {
+       "modus": "aus",
+       "rueckfall": false
+      }
+     },
+     "tempo": 85.56752386269523,
+     "gpuSzene": 3.0507932499999995,
+     "gpuKarte": null,
+     "gpuKarte95": null,
+     "geo": 99,
+     "prog": 42
+    },
+    "boot_s": 0.4,
+    "fehler": []
+   }
+  }
+ }
+}

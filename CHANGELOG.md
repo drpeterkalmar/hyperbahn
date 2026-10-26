@@ -2,6 +2,10 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
+## NEU (P1b Abschluss)
+- Bericht `P1B_VORLAGEN_BERICHT.md` (Messtabelle Vorlage / Ziel / vorher / nachher, Handy-Testhinweise, Regler, Grenzen),
+  Messprotokolle `docs/mess/`, Bilder `docs/bilder/p1b_*`. Rundenzeit der langen Fassung neu gemessen (158 s, weiter 1 Runde).
+
 ## 0.1.8 – 26.10.2026 (P1b Etappe D: Start-Varianten, KI-Revanche, Seitwärts-Schub, G-Vignette)
 - **Abgestufter Start-Boost** (`?startgrad=0` = bisher „Tipp auf Grün“): Idealpunkt 0,25 s **vor** Grün = 100 % („PERFEKTER
   START!“), linear bis 30 % am Fensterrand (±0,2 s), Meldung zeigt die Stärke. KI trifft je Profil Ø 12/33/54 %.

@@ -1,0 +1,10 @@
+Rechenzeit 4.9 s, Rennzeit 1416.6 s, Phase ziel
+1. Kyrie    profi  Ziel 1324.1 s  beste 131.3 s  Runden 135 132 133 132 132 133 132 131 132 133  Abflüge 0  Landungen 21  Wand 7  Rollen 17
+2. Vanta    profi  Ziel 1324.7 s  beste 131.7 s  Runden 134 133 133 132 132 134 132 132 132 132  Abflüge 0  Landungen 21  Wand 1  Rollen 17
+3. Quell    profi  Ziel 1330.5 s  beste 131.3 s  Runden 140 133 131 133 132 133 133 132 132 132  Abflüge 0  Landungen 21  Wand 10  Rollen 16
+4. Halcyon  mittel Ziel 1357.5 s  beste 133.4 s  Runden 138 135 135 134 137 133 138 137 134 136  Abflüge 0  Landungen 21  Wand 5  Rollen 10
+5. Nadir    mittel Ziel 1358.6 s  beste 133.5 s  Runden 141 136 135 137 135 134 137 136 134 134  Abflüge 0  Landungen 21  Wand 6  Rollen 8
+6. Oszill   mittel Ziel 1360.8 s  beste 133.3 s  Runden 139 136 138 137 135 137 133 137 135 134  Abflüge 0  Landungen 21  Wand 7  Rollen 9
+7. Ion      leicht Ziel 1409.7 s  beste 138.8 s  Runden 144 141 140 141 141 143 139 141 139 141  Abflüge 0  Landungen 20  Wand 16  Rollen 3
+8. Ferro    leicht Ziel 1416.6 s  beste 138.8 s  Runden 144 139 143 141 139 142 142 142 142 143  Abflüge 0  Landungen 20  Wand 16  Rollen 5
+Ereignisse {"stoss":242,"wand":68,"absturz":0,"rolle":85,"pad":1296,"ring":166}

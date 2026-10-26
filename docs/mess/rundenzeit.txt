@@ -1,4 +1,4 @@
-kurz: Median Runde (KI Mittel, ohne Runde 1) 139.2 s (eingetragen 139.2 s) → 2 Runde(n) (Ziel ≤ 300 s)
-  Rennen über 2 Runde(n) inkl. Countdown (Median je Profil): profi 4:46 · mittel 4:44 · leicht 4:51 · Spitze 4:37
-lang: Median Runde (KI Mittel, ohne Runde 1) 165.1 s (eingetragen 165.1 s) → 1 Runde(n) (Ziel ≤ 300 s)
-  Rennen über 1 Runde(n) inkl. Countdown (Median je Profil): profi 2:49 · mittel 2:51 · leicht 2:55 · Spitze 2:46
+kurz: Median Runde (KI Mittel, ohne Runde 1) 135.5 s (eingetragen 135.4 s) → 2 Runde(n) (Ziel ≤ 300 s)
+  Rennen über 2 Runde(n) inkl. Countdown (Median je Profil): profi 4:31 · mittel 4:38 · leicht 4:47 · Spitze 4:30
+lang: Median Runde (KI Mittel, ohne Runde 1) 158.3 s (eingetragen 165.1 s) → 1 Runde(n) (Ziel ≤ 300 s)
+  Rennen über 1 Runde(n) inkl. Countdown (Median je Profil): profi 2:41 · mittel 2:43 · leicht 2:48 · Spitze 2:38
