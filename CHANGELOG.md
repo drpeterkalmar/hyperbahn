@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P2: Riff-Röhre)
+## 0.1.11 – 26.10.2026 (P2: Riff-Röhre)
 - **Neue Strecke „Riff-Röhre“** (Technik): unter Wasser – Glasröhren durch ein Korallenriff, Lichtstrahlen von oben,
   wogender Seetang, Fischschwärme, Luftblasen. Korkenzieher, Doppel-Korkenzieher, Röhren-Schlange, lange
   Magnet-Überkopf-Röhre, **Gabelung**: innen schmal, ohne Bande und mit Boost-Pads (≈ 2 s je Runde schneller, aber wer
