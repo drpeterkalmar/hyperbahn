@@ -2,7 +2,7 @@
 
 Kurzfassung je Version; Details in den Berichten (`*_BERICHT.md`).
 
-## NEU (P1b Etappe 0: kein Abschmieren in der Luft, Rennen ≤ 5 min)
+## 0.1.4 – 26.10.2026 (P1b Etappe 0: kein Abschmieren in der Luft, Rennen ≤ 5 min)
 - **Gehaltenes ↑ senkt in der Luft nie mehr die Nase** (Peter: „kein Abschmieren in der Luft, wenn ich Pfeil hinauf
   halte“): wer über den Absprung Gas hält, fliegt wie ohne Taste. Nicken nur nach einem NEUEN Druck in der Luft (↑ = Nase
   runter, ↓ = Nase hoch; Gamepad-Stick genauso). Sicherheits-Hülle: Nase höchstens 12° unter / 25° über der Flugbahn, über
